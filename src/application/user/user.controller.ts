@@ -16,7 +16,7 @@ import { UpdateUserDto } from './dto/update-user.dto'
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
+  @Get('/:username')
   public async getUser(
     @Param('username') username,
     @Res() res: Response
@@ -63,7 +63,7 @@ export class UserController {
     }
   }
 
-  @Delete()
+  @Delete('/:id')
   public async deleteUser(
     @Param('id') id: number,
     @Res() res: Response
