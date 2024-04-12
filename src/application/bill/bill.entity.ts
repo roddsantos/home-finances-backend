@@ -43,10 +43,16 @@ export class Bill extends Model<Bill> {
   public description: string
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.NUMBER,
+    allowNull: true
+  })
+  public total: number
+
+  @Column({
+    type: DataType.BOOLEAN,
     allowNull: false
   })
-  public color: string
+  public settled: boolean
 
   @Column({
     type: DataType.NUMBER,
@@ -58,7 +64,7 @@ export class Bill extends Model<Bill> {
     type: DataType.NUMBER,
     allowNull: true
   })
-  public taxes: string
+  public taxes: number
 
   @Column({
     type: DataType.NUMBER,
@@ -71,6 +77,18 @@ export class Bill extends Model<Bill> {
     allowNull: true
   })
   public due: Date
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false
+  })
+  public month: string
+
+  @Column({
+    type: DataType.NUMBER,
+    allowNull: true
+  })
+  public year: number
 
   @ForeignKey(() => Company)
   @Column({
