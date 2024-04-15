@@ -1,49 +1,41 @@
 import {
-  Table,
-  Model,
-  TableOptions,
-  CreatedAt,
-  UpdatedAt,
-  DeletedAt
-} from 'sequelize-typescript'
-import { Column, DataType } from 'sequelize-typescript'
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  EntityOptions,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm'
 
-const tableOptions: TableOptions = {
-  tableName: 'users'
+const tableOptions: EntityOptions = {
+  name: 'users'
 }
 
-@Table(tableOptions)
-export class User extends Model<User> {
-  @Column({
-    type: DataType.BIGINT,
-    allowNull: false,
-    autoIncrement: true,
-    unique: true,
-    primaryKey: true
-  })
-  public id: number
+@Entity(tableOptions)
+export class User {
+  @PrimaryGeneratedColumn('uuid')
+  public id: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public name: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public surname: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false,
+    unique: true
   })
   public username: string
 
-  @CreatedAt public createdAt: Date
+  @CreateDateColumn() public createdAt: Date
 
-  @UpdatedAt public updatedAt: Date
+  @UpdateDateColumn() public updatedAt: Date
 
-  @DeletedAt public deletedAt: Date
+  @DeleteDateColumn() public deletedAt: Date
 }

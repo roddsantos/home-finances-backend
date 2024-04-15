@@ -1,4 +1,152 @@
-import { Controller } from '@nestjs/common'
+import { Body, Controller, Get, Patch, Post, Res } from '@nestjs/common'
+import { BillService } from './bill.service'
+import { Response } from 'express'
+import { ErrorHandler } from '../utils/ErrorHandler'
+import {
+  AllBillProps,
+  BillBank,
+  BillCompany,
+  BillCreditCard,
+  CreateBillTemplateDto
+} from './dto/bill-template.dto'
+import { ResponseHandler } from '../utils/ResponseHandler'
+import {
+  AllUpdateBillProps,
+  UpdateBillBank,
+  UpdateBillCompany,
+  UpdateBillCreditCard,
+  UpdateBillTemplateDto
+} from './dto/update-bill.dto'
+import { GetBillsDto } from './dto/get-bills.dto'
 
 @Controller('bill')
-export class BillController {}
+export class BillController {
+  constructor(private readonly billService: BillService) {}
+
+  verifyCreateTemplate(data: Pick<AllBillProps, keyof CreateBillTemplateDto>) {
+    return (
+      data.name ||
+      data.description === '' ||
+      data.typeBill ||
+      data.year < 0 ||
+      data.month === '' ||
+      data.user
+    )
+  }
+
+  verifyUpdateTemplate(data: Pick<AllUpdateBillProps, keyof UpdateBillTemplateDto>) {
+    return (
+      data.id ||
+      data.name ||
+      data.month === '' ||
+      data.description === '' ||
+      data.year < 0
+    )
+  }
+
+  @Post('/transaction')
+  public async createTransaction(@Body() data: BillBank, @Res() res: Response) {
+    try {
+      if (!Boolean(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (this.verifyCreateTemplate(data) || data.bank1)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+
+      const result = await this.billService.createTransactionBill(data)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Post('/cc')
+  public async createCc(@Body() data: BillCreditCard, @Res() res: Response) {
+    try {
+      if (!Boolean(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (this.verifyCreateTemplate(data) || data.creditCard)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+
+      const result = await this.billService.createCreditCardBill(data)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Post('/company')
+  public async createCompany(@Body() data: BillCompany, @Res() res: Response) {
+    try {
+      if (!Boolean(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (this.verifyCreateTemplate(data) || data.company || Boolean(data.due))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+
+      const result = await this.billService.createCompanyBill(data)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Patch('/transaction')
+  public async updateTransaction(@Body() data: UpdateBillBank, @Res() res: Response) {
+    try {
+      if (!Boolean(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (this.verifyUpdateTemplate(data) || data.bank1)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+
+      const { bank1, id, ...rest } = data
+      const result = await this.billService.updateTransactionBill(id, bank1, rest)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Patch('/cc')
+  public async updateCc(@Body() data: UpdateBillCreditCard, @Res() res: Response) {
+    try {
+      if (!Boolean(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (this.verifyUpdateTemplate(data) || data.creditCard)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+
+      const { creditCard, id, ...rest } = data
+      const result = await this.billService.updateCreditCardBill(id, creditCard, rest)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Patch('/company')
+  public async updateCompany(@Body() data: UpdateBillCompany, @Res() res: Response) {
+    try {
+      if (!Boolean(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (this.verifyUpdateTemplate(data) || data.company || Boolean(data.due))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+
+      const { company, id, ...rest } = data
+      const result = await this.billService.updateCompanyBill(id, company, rest)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Get()
+  public async getFilteredBills(@Body() filters: GetBillsDto, @Res() res: Response) {
+    try {
+      if (Boolean(filters.page) || Boolean(filters.limit))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      const { page, limit, user, ...rest } = filters
+      const result = await this.billService.getBills(user, page, limit, rest)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+}

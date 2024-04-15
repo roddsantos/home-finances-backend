@@ -4,10 +4,11 @@ import { CreditCard } from './credit-card.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto'
 import { GetCreditCardDto } from './dto/get-credit-cards.dto'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class CreditCardService {
-  constructor(private readonly creditCardRepository: typeof CreditCard) {}
+  constructor(private readonly creditCardRepository: Repository<CreditCard>) {}
 
   async create(createCreditCard: CreateCreditCardDto) {
     try {
@@ -18,10 +19,10 @@ export class CreditCardService {
     }
   }
 
-  async update(updateCreditCardDto: UpdateCreditCardDto) {
+  async update(id: string, data: Omit<UpdateCreditCardDto, 'id'>) {
     try {
-      const res = await this.creditCardRepository.update(updateCreditCardDto, {
-        where: { id: updateCreditCardDto.id }
+      const res = await this.creditCardRepository.update(data, {
+        id
       })
       return res
     } catch (error) {
@@ -29,19 +30,19 @@ export class CreditCardService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: string) {
     try {
-      const res = await this.creditCardRepository.destroy({ where: { id } })
+      const res = await this.creditCardRepository.delete(id)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
     }
   }
 
-  async getAllById(filters: GetCreditCardDto) {
+  async getAllById(id: string, filters: Omit<GetCreditCardDto, 'user'>) {
     try {
-      const res = await this.creditCardRepository.findAll<CreditCard>({
-        where: { ...filters }
+      const res = await this.creditCardRepository.find({
+        where: { ...filters, user: { id } }
       })
       return res
     } catch (error) {

@@ -6,15 +6,21 @@ import {
   CreateCompanyBillDto,
   CreateCreditCardBillDto
 } from './dto/bill-creation.dto'
-import { UpdateBillTemplateDto } from './dto/update-bill.dto'
+import {
+  UpdateBillBank,
+  UpdateBillCompany,
+  UpdateBillCreditCard
+} from './dto/update-bill.dto'
 import { GetBillsDto } from './dto/get-bills.dto'
+import { CreateBillTemplateDto } from './dto/bill-template.dto'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class BillService {
-  constructor(private readonly billService: typeof Bill) {}
+  constructor(private readonly billService: Repository<Bill>) {}
 
   async createTransactionBill(
-    createTransactionBillDto: CreateBankTransactionDto & UpdateBillTemplateDto
+    createTransactionBillDto: CreateBankTransactionDto & CreateBillTemplateDto
   ) {
     try {
       const res = await this.billService.create(createTransactionBillDto)
@@ -25,7 +31,7 @@ export class BillService {
   }
 
   async createCompanyBill(
-    createCompanyBillDto: CreateCompanyBillDto & UpdateBillTemplateDto
+    createCompanyBillDto: CreateCompanyBillDto & CreateBillTemplateDto
   ) {
     try {
       const res = await this.billService.create(createCompanyBillDto)
@@ -36,7 +42,7 @@ export class BillService {
   }
 
   async createCreditCardBill(
-    createCreditCardBillDto: CreateCreditCardBillDto & UpdateBillTemplateDto
+    createCreditCardBillDto: CreateCreditCardBillDto & CreateBillTemplateDto
   ) {
     try {
       const res = await this.billService.create(createCreditCardBillDto)
@@ -47,13 +53,15 @@ export class BillService {
   }
 
   async updateTransactionBill(
-    updateTransactionBillDto: UpdateBillTemplateDto & UpdateBillTemplateDto
+    id: string,
+    bankId: string,
+    data: Omit<UpdateBillBank, 'id' | 'bank1'>
   ) {
     try {
-      const res = await this.billService.update(
-        { ...updateTransactionBillDto },
-        { where: { id: updateTransactionBillDto.id } }
-      )
+      const res = await this.billService.update(data, {
+        id,
+        bank1: { id: bankId }
+      })
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -61,13 +69,15 @@ export class BillService {
   }
 
   async updateCompanyBill(
-    updateCompanyBillDto: UpdateBillTemplateDto & UpdateBillTemplateDto
+    id: string,
+    companyId: string,
+    data: Omit<UpdateBillCompany, 'company' | 'id'>
   ) {
     try {
-      const res = await this.billService.update(
-        { ...updateCompanyBillDto },
-        { where: { id: updateCompanyBillDto.id } }
-      )
+      const res = await this.billService.update(data, {
+        id,
+        company: { id: companyId }
+      })
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -75,26 +85,35 @@ export class BillService {
   }
 
   async updateCreditCardBill(
-    updateCreditCardBillDto: CreateCreditCardBillDto & UpdateBillTemplateDto
+    id: string,
+    creditCardId: string,
+    data: Omit<UpdateBillCreditCard, 'creditCard' | 'id'>
   ) {
     try {
-      const res = await this.billService.update(
-        { ...updateCreditCardBillDto },
-        { where: { id: updateCreditCardBillDto.id } }
-      )
+      const res = await this.billService.update(data, {
+        id,
+        creditCard: { id: creditCardId }
+      })
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
     }
   }
 
-  async getBills(getBillsDto: GetBillsDto) {
+  async getBills(
+    userId: string,
+    page: number,
+    take: number,
+    data: Omit<GetBillsDto, 'limit' | 'page' | 'user'>
+  ) {
     try {
-      const { page, limit, ...rest } = getBillsDto
-      const res = await this.billService.findAndCountAll({
-        where: { ...rest },
-        limit,
-        offset: limit * page
+      const { typeBill, ...rest } = data
+      const res = await this.billService.find({
+        relations: ['creditCard', 'company', 'bank', 'typeBill'],
+        ...rest,
+        take,
+        skip: take * page,
+        where: { user: { id: userId }, typeBill: { id: typeBill } }
       })
       return res
     } catch (error) {

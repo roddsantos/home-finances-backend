@@ -1,66 +1,50 @@
-import {
-  Table,
-  Model,
-  TableOptions,
-  CreatedAt,
-  UpdatedAt,
-  DeletedAt,
-  ForeignKey,
-  BelongsTo
-} from 'sequelize-typescript'
-import { Column, DataType } from 'sequelize-typescript'
 import { User } from '../user/user.entity'
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  EntityOptions,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm'
 
-const tableOptions: TableOptions = {
-  tableName: 'banks'
+const tableOptions: EntityOptions = {
+  name: 'bank'
 }
 
-@Table(tableOptions)
-export class Bank extends Model<Bank> {
-  @Column({
-    type: DataType.BIGINT,
-    allowNull: false,
-    autoIncrement: true,
-    unique: true,
-    primaryKey: true
-  })
-  public id: number
+@Entity(tableOptions)
+export class Bank {
+  @PrimaryGeneratedColumn('uuid')
+  public id: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public name: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public description: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public color: string
 
   @Column({
-    type: DataType.NUMBER,
-    allowNull: false
+    nullable: false
   })
   public savings: number
 
-  @ForeignKey(() => User)
-  @Column({
-    type: DataType.NUMBER,
-    allowNull: false
-  })
-  @BelongsTo(() => User)
-  public user: number
+  @ManyToOne(() => User, (user) => user)
+  public user: User
 
-  @CreatedAt public createdAt: Date
+  @CreateDateColumn() public createdAt: Date
 
-  @UpdatedAt public updatedAt: Date
+  @UpdateDateColumn() public updatedAt: Date
 
-  @DeletedAt public deletedAt: Date
+  @DeleteDateColumn() public deletedAt: Date
 }

@@ -1,55 +1,46 @@
 import {
-  Table,
-  Model,
-  TableOptions,
-  CreatedAt,
-  UpdatedAt,
-  DeletedAt
-} from 'sequelize-typescript'
-import { Column, DataType } from 'sequelize-typescript'
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  EntityOptions,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm'
 
-const tableOptions: TableOptions = {
-  tableName: 'typebills'
+const tableOptions: EntityOptions = {
+  name: 'typebills'
 }
 
-@Table(tableOptions)
-export class TypeBill extends Model<TypeBill> {
-  @Column({
-    type: DataType.BIGINT,
-    allowNull: false,
-    autoIncrement: true,
-    unique: true,
-    primaryKey: true
-  })
-  public id: number
+@Entity(tableOptions)
+export class TypeBill {
+  @PrimaryGeneratedColumn('uuid')
+  public id: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public name: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: true
+    nullable: true
   })
   public description: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public icon: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false,
+    unique: true
   })
   public referTo: string
 
-  @CreatedAt public createdAt: Date
+  @CreateDateColumn() public createdAt: Date
 
-  @UpdatedAt public updatedAt: Date
+  @UpdateDateColumn() public updatedAt: Date
 
-  @DeletedAt public deletedAt: Date
+  @DeleteDateColumn() public deletedAt: Date
 }

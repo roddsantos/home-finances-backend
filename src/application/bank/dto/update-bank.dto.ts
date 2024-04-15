@@ -1,5 +1,5 @@
 export class UpdateBankDto {
-  id: number
+  id: string
   name: string
   description: string
   color: string

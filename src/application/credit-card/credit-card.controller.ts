@@ -13,7 +13,7 @@ export class CreditCardController {
   constructor(private readonly creditCardService: CreditCardService) {}
 
   @Post()
-  public async createCreditCard(@Body() data: CreateCreditCardDto, @Res() res: Response) {
+  public async createCC(@Body() data: CreateCreditCardDto, @Res() res: Response) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -28,16 +28,18 @@ export class CreditCardController {
   }
 
   @Patch()
-  public async updateCreditCard(
+  public async updateCC(
     @Body() data: UpdateCreditCardDto,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (!data.year || data.month === '' || data.name === '' || data.id < 0)
+      if (!data.year || data.month === '' || data.name === '' || data.id === '')
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const result = await this.creditCardService.update(data)
+
+      const { id, ...rest } = data
+      const result = await this.creditCardService.update(id, rest)
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -45,8 +47,8 @@ export class CreditCardController {
   }
 
   @Delete('/:id')
-  public async deleteUser(
-    @Param('id') id: number,
+  public async deleteCC(
+    @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<boolean>> {
     try {
@@ -58,12 +60,13 @@ export class CreditCardController {
   }
 
   @Get()
-  public async getUser(
+  public async getCC(
     @Body() data: GetCreditCardDto,
     @Res() res: Response
   ): Promise<Response<CreditCard>> {
     try {
-      const result = await this.creditCardService.getAllById(data)
+      const { user, ...rest } = data
+      const result = await this.creditCardService.getAllById(user, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

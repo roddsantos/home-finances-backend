@@ -16,7 +16,7 @@ export class CompanyController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (!data.name || data.description === '' || data.color === '' || data.userId < 0) {
+      if (data.name == '' || data.description === '' || data.color === '' || !data.user) {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
       const result = await this.companyService.create(data)
@@ -34,15 +34,10 @@ export class CompanyController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (
-        !data.name ||
-        data.description === '' ||
-        data.color === '' ||
-        data.userId < 0 ||
-        data.id < 0
-      )
+      if (data.name === '' || data.description === '' || data.color === '' || data.id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const result = await this.companyService.update(data)
+      const { id, ...rest } = data
+      const result = await this.companyService.update(id, rest)
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -51,7 +46,7 @@ export class CompanyController {
 
   @Delete('/:id')
   public async deleteUser(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<boolean>> {
     try {
@@ -64,7 +59,7 @@ export class CompanyController {
 
   @Get()
   public async getCompanies(
-    @Param('/:id') id: number,
+    @Param('/:id') id: string,
     @Res() res: Response
   ): Promise<Response<Company>> {
     try {

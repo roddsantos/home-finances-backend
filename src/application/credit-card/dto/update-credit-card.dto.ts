@@ -1,9 +1,8 @@
 export class UpdateCreditCardDto {
-  id: number
+  id: string
   name: string
   description?: string
   color: string
-  user: number
   limit: number
   month: string
   year: number

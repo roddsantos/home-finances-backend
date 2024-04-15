@@ -3,10 +3,11 @@ import { User } from './user.entity'
 import { CreateUserDto } from './dto/create-user.dto'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { UpdateUserDto } from './dto/update-user.dto'
+import { Repository } from 'typeorm'
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: typeof User) {}
+  constructor(private readonly userRepository: Repository<User>) {}
 
   async create(createUserDto: CreateUserDto) {
     try {
@@ -20,7 +21,7 @@ export class UserService {
   async update(updateUserDto: UpdateUserDto) {
     try {
       const res = await this.userRepository.update(updateUserDto, {
-        where: { id: updateUserDto.id }
+        id: updateUserDto.id
       })
       return res
     } catch (error) {
@@ -30,7 +31,7 @@ export class UserService {
 
   async delete(id: number) {
     try {
-      const res = await this.userRepository.destroy({ where: { id } })
+      const res = await this.userRepository.delete(id)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -39,7 +40,7 @@ export class UserService {
 
   async getOne(username: string) {
     try {
-      const res = await this.userRepository.findOne<User>({ where: { username } })
+      const res = await this.userRepository.find({ where: { username } })
       return res
     } catch (error) {
       return ErrorHandler.handle(error)

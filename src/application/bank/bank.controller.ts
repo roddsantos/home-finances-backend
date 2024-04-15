@@ -20,7 +20,7 @@ export class BankController {
         !data.name ||
         data.description === '' ||
         data.color === '' ||
-        data.user < 0 ||
+        data.user ||
         data.savings < 0
       ) {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -41,14 +41,15 @@ export class BankController {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (
-        !data.name ||
+        data.name === '' ||
         data.description === '' ||
         data.color === '' ||
-        data.id < 0 ||
+        !data.id ||
         data.savings < 0
       )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const result = await this.bankService.update(data)
+      const { id, ...rest } = data
+      const result = await this.bankService.update(id, rest)
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -57,7 +58,7 @@ export class BankController {
 
   @Delete('/:id')
   public async deleteUser(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<boolean>> {
     try {
@@ -70,7 +71,7 @@ export class BankController {
 
   @Get()
   public async getCompanies(
-    @Param('/:id') id: number,
+    @Param('/:id') id: string,
     @Res() res: Response
   ): Promise<Response<Bank>> {
     try {

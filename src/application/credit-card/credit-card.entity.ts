@@ -1,84 +1,65 @@
-import {
-  Table,
-  Model,
-  TableOptions,
-  CreatedAt,
-  UpdatedAt,
-  DeletedAt,
-  ForeignKey,
-  BelongsTo
-} from 'sequelize-typescript'
-import { Column, DataType } from 'sequelize-typescript'
 import { User } from '../user/user.entity'
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  EntityOptions,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm'
 
-const tableOptions: TableOptions = {
-  tableName: 'creditcards'
+const tableOptions: EntityOptions = {
+  name: 'creditcards'
 }
 
-@Table(tableOptions)
-export class CreditCard extends Model<CreditCard> {
-  @Column({
-    type: DataType.BIGINT,
-    allowNull: false,
-    autoIncrement: true,
-    unique: true,
-    primaryKey: true
-  })
-  public id: number
+@Entity(tableOptions)
+export class CreditCard {
+  @PrimaryGeneratedColumn('uuid')
+  public id: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public name: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: true
+    nullable: true
   })
   public description: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public color: string
 
   @Column({
-    type: DataType.NUMBER,
-    allowNull: false
+    nullable: false
   })
   public limit: number
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public month: string
 
   @Column({
-    type: DataType.NUMBER,
-    allowNull: false
+    nullable: false
   })
   public year: number
 
   @Column({
-    type: DataType.BOOLEAN,
-    allowNull: false
+    nullable: false
   })
   public isClosed: boolean
 
-  @ForeignKey(() => User)
-  @Column({
-    type: DataType.NUMBER,
-    allowNull: false
-  })
-  @BelongsTo(() => User)
-  public user: number
+  @ManyToOne(() => User)
+  public user: User
 
-  @CreatedAt public createdAt: Date
+  @CreateDateColumn() public createdAt: Date
 
-  @UpdatedAt public updatedAt: Date
+  @UpdateDateColumn() public updatedAt: Date
 
-  @DeletedAt public deletedAt: Date
+  @DeleteDateColumn() public deletedAt: Date
 }

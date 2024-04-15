@@ -1,146 +1,119 @@
-import {
-  Table,
-  Model,
-  TableOptions,
-  CreatedAt,
-  UpdatedAt,
-  DeletedAt,
-  ForeignKey,
-  BelongsTo
-} from 'sequelize-typescript'
-import { Column, DataType } from 'sequelize-typescript'
 import { User } from '../user/user.entity'
 import { Company } from '../company/company.entity'
 import { TypeBill } from '../type-bill/type-bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
 import { Bank } from '../bank/bank.entity'
+import {
+  Column,
+  CreateDateColumn,
+  DeleteDateColumn,
+  Entity,
+  EntityOptions,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm'
 
-const tableOptions: TableOptions = {
-  tableName: 'creditcards'
+const tableOptions: EntityOptions = {
+  name: 'creditcards'
 }
 
-@Table(tableOptions)
-export class Bill extends Model<Bill> {
-  @Column({
-    type: DataType.BIGINT,
-    allowNull: false,
-    autoIncrement: true,
-    unique: true,
-    primaryKey: true
-  })
-  public id: number
+@Entity(tableOptions)
+export class Bill {
+  @PrimaryGeneratedColumn('uuid')
+  public id: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public name: string
 
   @Column({
-    type: DataType.STRING,
-    allowNull: true
+    nullable: true
   })
   public description: string
 
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
   public total: number
 
   @Column({
-    type: DataType.BOOLEAN,
-    allowNull: false
+    nullable: false
   })
   public settled: boolean
 
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
   public parcels: number
 
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
   public taxes: number
 
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
   public delta: number
 
   @Column({
-    type: DataType.DATE,
-    allowNull: true
+    nullable: true
   })
   public due: Date
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false
+    nullable: false
   })
   public month: string
 
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
   public year: number
 
-  @ForeignKey(() => Company)
+  @ManyToOne(() => Company)
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
-  @BelongsTo(() => Company)
-  public company: number
+  @JoinColumn()
+  public company: Company
 
-  @ForeignKey(() => TypeBill)
+  @ManyToOne(() => TypeBill)
   @Column({
-    type: DataType.NUMBER,
-    allowNull: false
+    nullable: false
   })
-  @BelongsTo(() => TypeBill)
-  public typeBill: number
+  public typeBill: TypeBill
 
-  @ForeignKey(() => Bank)
+  @ManyToOne(() => Bank)
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
-  @BelongsTo(() => Bank)
-  public bank1: number
+  public bank1: Bank
 
-  @ForeignKey(() => Bank)
+  @ManyToOne(() => Bank)
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
-  @BelongsTo(() => Bank)
-  public bank2: number
+  public bank2: Bank
 
-  @ForeignKey(() => CreditCard)
+  @ManyToOne(() => CreditCard)
   @Column({
-    type: DataType.NUMBER,
-    allowNull: true
+    nullable: true
   })
-  @BelongsTo(() => CreditCard)
-  public creditCard: number
+  public creditCard: CreditCard
 
-  @ForeignKey(() => User)
+  @ManyToOne(() => User)
   @Column({
-    type: DataType.NUMBER,
-    allowNull: false
+    nullable: false
   })
-  @BelongsTo(() => User)
-  public user: number
+  public user: User
 
-  @CreatedAt public createdAt: Date
+  @CreateDateColumn() public createdAt: Date
 
-  @UpdatedAt public updatedAt: Date
+  @UpdateDateColumn() public updatedAt: Date
 
-  @DeletedAt public deletedAt: Date
+  @DeleteDateColumn() public deletedAt: Date
 }

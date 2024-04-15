@@ -1,8 +1,8 @@
 export class GetBillsDto {
-  id: number
+  user: string
   page: number
   limit: number
-  typeBill?: number
+  typeBill?: string
   month?: string
   year?: number
   settled?: boolean
