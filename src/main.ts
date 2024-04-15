@@ -1,13 +1,12 @@
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './application/app/app.module'
-import { HttpStatus, ValidationPipe } from '@nestjs/common'
 import * as dotenv from 'dotenv'
 import { resolve } from 'path'
 
 dotenv.config({ path: resolve(__dirname, '../.env') })
 
 export const appConfig = {
-  port: process.env.DB_PORT,
+  port: parseInt(process.env.DB_PORT),
   host: process.env.DB_HOST,
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
@@ -22,16 +21,18 @@ async function bootstrap() {
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     preflightContinue: false,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
+    allowedHeaders: [
+      'Access-Control-Allow-Headers',
+      'Origin',
+      'Accept',
+      'X-Requested-With',
+      'Content-Type',
+      'Access-Control-Request-Method',
+      'Access-Control-Request-Headers',
+      'Authorization'
+    ]
   })
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY
-    })
-  )
 
   await app.listen(process.env.PORT)
 }

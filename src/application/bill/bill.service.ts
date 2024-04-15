@@ -1,27 +1,25 @@
 import { Injectable } from '@nestjs/common'
 import { Bill } from './bill.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import {
-  CreateBankTransactionDto,
-  CreateCompanyBillDto,
-  CreateCreditCardBillDto
-} from './dto/bill-creation.dto'
+import { CreateCompanyBillDto, CreateCreditCardBillDto } from './dto/bill-creation.dto'
 import {
   UpdateBillBank,
   UpdateBillCompany,
   UpdateBillCreditCard
 } from './dto/update-bill.dto'
 import { GetBillsDto } from './dto/get-bills.dto'
-import { CreateBillTemplateDto } from './dto/bill-template.dto'
+import { BillBank, CreateBillTemplateDto } from './dto/bill-template.dto'
 import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
 
 @Injectable()
 export class BillService {
-  constructor(private readonly billService: Repository<Bill>) {}
+  constructor(
+    @InjectRepository(Bill)
+    private readonly billService: Repository<Bill>
+  ) {}
 
-  async createTransactionBill(
-    createTransactionBillDto: CreateBankTransactionDto & CreateBillTemplateDto
-  ) {
+  async createTransactionBill(createTransactionBillDto: BillBank) {
     try {
       const res = await this.billService.create(createTransactionBillDto)
       return res
@@ -54,13 +52,13 @@ export class BillService {
 
   async updateTransactionBill(
     id: string,
-    bankId: string,
+    bank1Id: string,
     data: Omit<UpdateBillBank, 'id' | 'bank1'>
   ) {
     try {
       const res = await this.billService.update(data, {
         id,
-        bank1: { id: bankId }
+        bank1Id
       })
       return res
     } catch (error) {
@@ -76,7 +74,7 @@ export class BillService {
     try {
       const res = await this.billService.update(data, {
         id,
-        company: { id: companyId }
+        companyId
       })
       return res
     } catch (error) {
@@ -92,7 +90,7 @@ export class BillService {
     try {
       const res = await this.billService.update(data, {
         id,
-        creditCard: { id: creditCardId }
+        creditCardId
       })
       return res
     } catch (error) {
@@ -104,16 +102,16 @@ export class BillService {
     userId: string,
     page: number,
     take: number,
-    data: Omit<GetBillsDto, 'limit' | 'page' | 'user'>
+    data: Omit<GetBillsDto, 'limit' | 'page' | 'userId'>
   ) {
     try {
-      const { typeBill, ...rest } = data
+      const { typeBillId, ...rest } = data
       const res = await this.billService.find({
         relations: ['creditCard', 'company', 'bank', 'typeBill'],
         ...rest,
         take,
         skip: take * page,
-        where: { user: { id: userId }, typeBill: { id: typeBill } }
+        where: { userId, typeBillId }
       })
       return res
     } catch (error) {

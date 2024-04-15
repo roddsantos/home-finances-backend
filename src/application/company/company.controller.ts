@@ -16,7 +16,12 @@ export class CompanyController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (data.name == '' || data.description === '' || data.color === '' || !data.user) {
+      if (
+        data.name == '' ||
+        data.description === '' ||
+        data.color === '' ||
+        data.userId === ''
+      ) {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
       const result = await this.companyService.create(data)

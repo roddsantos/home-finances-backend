@@ -9,7 +9,6 @@ import {
   DeleteDateColumn,
   Entity,
   EntityOptions,
-  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn
@@ -75,41 +74,52 @@ export class Bill {
   public year: number
 
   @ManyToOne(() => Company)
-  @Column({
-    nullable: true
-  })
-  @JoinColumn()
   public company: Company
 
-  @ManyToOne(() => TypeBill)
   @Column({
-    nullable: false
+    nullable: true
   })
+  public companyId: string
+
+  @ManyToOne(() => TypeBill)
   public typeBill: TypeBill
 
-  @ManyToOne(() => Bank)
-  @Column({
-    nullable: true
-  })
-  public bank1: Bank
-
-  @ManyToOne(() => Bank)
-  @Column({
-    nullable: true
-  })
-  public bank2: Bank
-
-  @ManyToOne(() => CreditCard)
-  @Column({
-    nullable: true
-  })
-  public creditCard: CreditCard
-
-  @ManyToOne(() => User)
   @Column({
     nullable: false
   })
+  public typeBillId: string
+
+  @ManyToOne(() => Bank)
+  public bank1: Bank
+
+  @Column({
+    nullable: true
+  })
+  public bank1Id: string
+
+  @ManyToOne(() => Bank)
+  public bank2: Bank
+
+  @Column({
+    nullable: true
+  })
+  public bank2Id: string
+
+  @ManyToOne(() => CreditCard)
+  public creditCard: CreditCard
+
+  @Column({
+    nullable: true
+  })
+  public creditCardId: string
+
+  @ManyToOne(() => User)
   public user: User
+
+  @Column({
+    nullable: false
+  })
+  public userId: string
 
   @CreateDateColumn() public createdAt: Date
 

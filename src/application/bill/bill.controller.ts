@@ -27,10 +27,10 @@ export class BillController {
     return (
       data.name ||
       data.description === '' ||
-      data.typeBill ||
+      data.typeBillId === '' ||
       data.year < 0 ||
       data.month === '' ||
-      data.user
+      data.userId === ''
     )
   }
 
@@ -49,7 +49,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || data.bank1)
+      if (this.verifyCreateTemplate(data) || data.bank1Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.billService.createTransactionBill(data)
@@ -64,7 +64,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || data.creditCard)
+      if (this.verifyCreateTemplate(data) || data.creditCardId)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.billService.createCreditCardBill(data)
@@ -79,7 +79,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || data.company || Boolean(data.due))
+      if (this.verifyCreateTemplate(data) || data.companyId || Boolean(data.due))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.billService.createCompanyBill(data)
@@ -142,8 +142,8 @@ export class BillController {
     try {
       if (Boolean(filters.page) || Boolean(filters.limit))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const { page, limit, user, ...rest } = filters
-      const result = await this.billService.getBills(user, page, limit, rest)
+      const { page, limit, userId, ...rest } = filters
+      const result = await this.billService.getBills(userId, page, limit, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

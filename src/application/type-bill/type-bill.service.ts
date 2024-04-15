@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common'
 import { TypeBill } from './type-bill.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
 
 @Injectable()
 export class TypeBillService {
-  constructor(private readonly typebillRepository: Repository<TypeBill>) {}
+  constructor(
+    @InjectRepository(TypeBill)
+    private readonly typebillRepository: Repository<TypeBill>
+  ) {}
 
   async getAll() {
     try {

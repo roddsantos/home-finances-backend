@@ -39,8 +39,13 @@ export class Bank {
   })
   public savings: number
 
-  @ManyToOne(() => User, (user) => user)
+  @ManyToOne(() => User)
   public user: User
+
+  @Column({
+    nullable: false
+  })
+  public userId: string
 
   @CreateDateColumn() public createdAt: Date
 

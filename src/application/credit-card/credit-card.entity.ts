@@ -57,6 +57,11 @@ export class CreditCard {
   @ManyToOne(() => User)
   public user: User
 
+  @Column({
+    nullable: false
+  })
+  public userId: string
+
   @CreateDateColumn() public createdAt: Date
 
   @UpdateDateColumn() public updatedAt: Date

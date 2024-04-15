@@ -54,7 +54,12 @@ export class UserController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (data.name === '' || data.surname == '' || data.username === '' || data.id < 0)
+      if (
+        data.name === '' ||
+        data.surname == '' ||
+        data.username === '' ||
+        data.id === ''
+      )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       const result = await this.userService.update(data)
       return ResponseHandler.sendAcceptedResponse(result, res)

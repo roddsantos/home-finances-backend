@@ -5,10 +5,14 @@ import { ErrorHandler } from '../utils/ErrorHandler'
 import { UpdateCreditCardDto } from './dto/update-credit-card.dto'
 import { GetCreditCardDto } from './dto/get-credit-cards.dto'
 import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
 
 @Injectable()
 export class CreditCardService {
-  constructor(private readonly creditCardRepository: Repository<CreditCard>) {}
+  constructor(
+    @InjectRepository(CreditCard)
+    private readonly creditCardRepository: Repository<CreditCard>
+  ) {}
 
   async create(createCreditCard: CreateCreditCardDto) {
     try {
@@ -39,10 +43,10 @@ export class CreditCardService {
     }
   }
 
-  async getAllById(id: string, filters: Omit<GetCreditCardDto, 'user'>) {
+  async getAllById(userId: string, filters: Omit<GetCreditCardDto, 'userId'>) {
     try {
       const res = await this.creditCardRepository.find({
-        where: { ...filters, user: { id } }
+        where: { ...filters, userId }
       })
       return res
     } catch (error) {

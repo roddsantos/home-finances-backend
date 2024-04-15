@@ -37,7 +37,13 @@ export class Company {
   @ManyToOne(() => User)
   public user: User
 
-  @CreateDateColumn() public createdAt: Date
+  @Column({
+    nullable: false
+  })
+  public userId: string
+
+  @CreateDateColumn()
+  public createdAt: Date
 
   @UpdateDateColumn() public updatedAt: Date
 

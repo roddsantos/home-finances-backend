@@ -1,18 +1,14 @@
-import { Bank } from 'src/application/bank/bank.entity'
-import { Company } from 'src/application/company/company.entity'
-import { CreditCard } from 'src/application/credit-card/credit-card.entity'
-
 export class CreateBankTransactionDto {
-  bank1: Bank
-  bank2?: Bank
+  bank1Id: string
+  bank2Id?: string
 }
 
 export class CreateCreditCardBillDto {
-  creditCard: CreditCard
+  creditCardId: string
 }
 
 export class CreateCompanyBillDto {
-  company: Company
+  companyId: string
   parcels: number
   delta: number
   due: Date

@@ -4,10 +4,14 @@ import { CreateUserDto } from './dto/create-user.dto'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { UpdateUserDto } from './dto/update-user.dto'
 import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: Repository<User>) {}
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     try {

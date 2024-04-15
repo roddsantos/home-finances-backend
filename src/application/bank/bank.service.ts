@@ -4,10 +4,14 @@ import { ErrorHandler } from '../utils/ErrorHandler'
 import { CreateBankDto } from './dto/create-bank.dto'
 import { UpdateBankDto } from './dto/update-bank.dto'
 import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
 
 @Injectable()
 export class BankService {
-  constructor(private readonly bankRepository: Repository<Bank>) {}
+  constructor(
+    @InjectRepository(Bank)
+    private readonly bankRepository: Repository<Bank>
+  ) {}
 
   async create(createBankDto: CreateBankDto) {
     try {
@@ -38,10 +42,10 @@ export class BankService {
     }
   }
 
-  async getAllById(id: string) {
+  async getAllById(userId: string) {
     try {
       const res = await this.bankRepository.find({
-        where: { user: { id } }
+        where: { userId }
       })
       return res
     } catch (error) {

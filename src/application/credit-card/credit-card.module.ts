@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 @Module({
   imports: [TypeOrmModule.forFeature([CreditCard])],
   controllers: [CreditCardController],
-  providers: [CreditCardService]
+  providers: [CreditCardService],
+  exports: [TypeOrmModule]
 })
 export class CreditCardModule {}

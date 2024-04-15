@@ -1,5 +1,3 @@
-import { TypeBill } from 'src/application/type-bill/type-bill.entity'
-import { User } from 'src/application/user/user.entity'
 import {
   CreateBankTransactionDto,
   CreateCompanyBillDto,
@@ -9,9 +7,9 @@ import {
 export class CreateBillTemplateDto {
   name: string
   description: string
-  typeBill: TypeBill
+  typeBillId: string
   total: number
-  user: User
+  userId: string
   month: string
   year: number
   settled: boolean

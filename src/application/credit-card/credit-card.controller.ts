@@ -65,8 +65,8 @@ export class CreditCardController {
     @Res() res: Response
   ): Promise<Response<CreditCard>> {
     try {
-      const { user, ...rest } = data
-      const result = await this.creditCardService.getAllById(user, rest)
+      const { userId, ...rest } = data
+      const result = await this.creditCardService.getAllById(userId, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
