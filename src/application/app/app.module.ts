@@ -3,13 +3,12 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { dataBaseConfig } from '../database/database.config'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { DataSource } from 'typeorm'
 import { BankModule } from '../bank/bank.module'
 import { BillModule } from '../bill/bill.module'
 import { CompanyModule } from '../company/company.module'
-import { CreditCard } from '../credit-card/credit-card.entity'
-import { TypeBill } from '../type-bill/type-bill.entity'
-import { User } from '../user/user.entity'
+import { TypeBillModule } from '../type-bill/type-bill.module'
+import { CreditCardModule } from '../credit-card/credit-card.module'
+import { UserModule } from '../user/user.module'
 
 @Module({
   imports: [
@@ -17,13 +16,11 @@ import { User } from '../user/user.entity'
     BankModule,
     BillModule,
     CompanyModule,
-    CreditCard,
-    TypeBill,
-    User
+    CreditCardModule,
+    TypeBillModule,
+    UserModule
   ],
   controllers: [AppController],
   providers: [AppService]
 })
-export class AppModule {
-  constructor(private dataSource: DataSource) {}
-}
+export class AppModule {}

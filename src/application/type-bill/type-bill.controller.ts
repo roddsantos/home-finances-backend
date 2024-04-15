@@ -5,7 +5,7 @@ import { TypeBill } from './type-bill.entity'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { ErrorHandler } from '../utils/ErrorHandler'
 
-@Controller('type-bill')
+@Controller('/typebill')
 export class TypeBillController {
   constructor(private readonly typebillService: TypeBillService) {}
 
