@@ -1,0 +1,16 @@
+version: '3.7'
+
+services:
+  dev:
+    container_name: homepay-nest
+    image: homepay-nest:1.0.0
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    command: npm run start:debug
+    ports:
+      - 4001:4001
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: unless-stopped
