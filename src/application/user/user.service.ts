@@ -44,7 +44,7 @@ export class UserService {
 
   async getOne(username: string) {
     try {
-      const res = await this.userRepository.find({ where: { username } })
+      const res = await this.userRepository.findOne({ where: { username } })
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
