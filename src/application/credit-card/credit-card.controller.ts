@@ -61,7 +61,7 @@ export class CreditCardController {
 
   @Get()
   public async getCC(
-    @Body() data: GetCreditCardDto,
+    @Param() data: GetCreditCardDto,
     @Res() res: Response
   ): Promise<Response<CreditCard>> {
     try {
