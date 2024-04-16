@@ -12,7 +12,7 @@ export class BankController {
   constructor(private readonly bankService: BankService) {}
 
   @Post()
-  public async createCompany(@Body() data: CreateBankDto, @Res() res: Response) {
+  public async createBank(@Body() data: CreateBankDto, @Res() res: Response) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -26,14 +26,14 @@ export class BankController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
       const result = await this.bankService.create(data)
-      return ResponseHandler.sendResponse(result, res)
+      return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
     }
   }
 
   @Patch()
-  public async updateCreditCard(
+  public async updateBank(
     @Body() data: UpdateBankDto,
     @Res() res: Response
   ): Promise<Response<number>> {
@@ -57,7 +57,7 @@ export class BankController {
   }
 
   @Delete('/:id')
-  public async deleteUser(
+  public async deleteBank(
     @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<boolean>> {
@@ -69,14 +69,14 @@ export class BankController {
     }
   }
 
-  @Get()
-  public async getCompanies(
+  @Get('/:id')
+  public async getBank(
     @Param('/:id') id: string,
     @Res() res: Response
   ): Promise<Response<Bank>> {
     try {
       const result = await this.bankService.getAllById(id)
-      return ResponseHandler.sendCreatedResponse(result, res)
+      return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
     }

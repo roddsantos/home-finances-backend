@@ -25,7 +25,7 @@ export class CompanyController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
       const result = await this.companyService.create(data)
-      return ResponseHandler.sendResponse(result, res)
+      return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
     }
@@ -62,14 +62,14 @@ export class CompanyController {
     }
   }
 
-  @Get()
+  @Get('/:id')
   public async getCompanies(
     @Param('/:id') id: string,
     @Res() res: Response
   ): Promise<Response<Company>> {
     try {
       const result = await this.companyService.getAllById(id)
-      return ResponseHandler.sendCreatedResponse(result, res)
+      return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
     }
