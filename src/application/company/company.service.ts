@@ -15,8 +15,14 @@ export class CompanyService {
 
   async create(createCompanyDto: CreateCompanyDto) {
     try {
-      const res = await this.companyRepository.create(createCompanyDto)
-      return res.id
+      const { name, userId } = createCompanyDto
+      const comp = await this.companyRepository.findOne({
+        where: { name, userId }
+      })
+      if (comp === null) {
+        const res = await this.companyRepository.create(createCompanyDto)
+        return res.id
+      } else ErrorHandler.CONFLICT_MESSAGE('Error creating company')
     } catch (error) {
       return ErrorHandler.handle(error)
     }

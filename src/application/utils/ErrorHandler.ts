@@ -2,6 +2,9 @@ import { HttpException, HttpStatus } from '@nestjs/common'
 import { Response } from 'express'
 
 export abstract class ErrorHandler {
+  static type: any
+  static entityReferenceError: any
+
   public static handle(error: HttpException) {
     try {
       throw error
@@ -20,5 +23,9 @@ export abstract class ErrorHandler {
     } catch (error) {
       return res.status(error.status).json({ message: error.message })
     }
+  }
+
+  public static CONFLICT_MESSAGE(message: string) {
+    throw new HttpException(message, HttpStatus.CONFLICT)
   }
 }

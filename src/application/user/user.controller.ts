@@ -22,6 +22,7 @@ export class UserController {
     @Res() res: Response
   ): Promise<Response<User>> {
     try {
+      if (username === '') ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing username')
       const result = await this.userService.getOne(username)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
