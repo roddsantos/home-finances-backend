@@ -107,7 +107,7 @@ export class BillService {
     try {
       const { typeBillId, ...rest } = data
       const res = await this.billService.find({
-        relations: ['creditCard', 'company', 'bank', 'typeBill'],
+        relations: ['creditCard', 'company', 'bank1', 'bank2', 'typeBill'],
         ...rest,
         take,
         skip: take * page,
