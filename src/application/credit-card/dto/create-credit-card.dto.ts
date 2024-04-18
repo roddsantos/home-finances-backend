@@ -4,7 +4,7 @@ export class CreateCreditCardDto {
   color: string
   userId: string
   limit: number
-  month: string
+  month: number
   year: number
   isClosed: boolean
 }

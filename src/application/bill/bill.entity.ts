@@ -15,7 +15,7 @@ import {
 } from 'typeorm'
 
 const tableOptions: EntityOptions = {
-  name: 'creditcards'
+  name: 'bills'
 }
 
 @Entity(tableOptions)

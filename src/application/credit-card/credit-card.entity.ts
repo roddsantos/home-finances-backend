@@ -42,7 +42,7 @@ export class CreditCard {
   @Column({
     nullable: false
   })
-  public month: string
+  public month: number
 
   @Column({
     nullable: false

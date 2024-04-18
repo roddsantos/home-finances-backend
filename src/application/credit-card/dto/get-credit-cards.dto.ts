@@ -1,6 +1,6 @@
 export class GetCreditCardDto {
   year?: number
-  month?: string
+  month?: number
   isClosed?: boolean
   userId: string
 }
