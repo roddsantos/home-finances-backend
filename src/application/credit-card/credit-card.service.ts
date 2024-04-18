@@ -16,8 +16,13 @@ export class CreditCardService {
 
   async create(createCreditCard: CreateCreditCardDto) {
     try {
-      const res = await this.creditCardRepository.create(createCreditCard)
-      return res.id
+      const cc = await this.creditCardRepository.findOne({
+        where: { name: createCreditCard.name, userId: createCreditCard.userId }
+      })
+      if (cc === null) {
+        const res = this.creditCardRepository.save(createCreditCard)
+        return res
+      } else ErrorHandler.CONFLICT_MESSAGE('This credit card already exists')
     } catch (error) {
       return ErrorHandler.handle(error)
     }

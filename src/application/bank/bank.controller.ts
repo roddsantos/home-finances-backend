@@ -17,11 +17,10 @@ export class BankController {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (
-        !data.name ||
+        data.name == '' ||
         data.description === '' ||
         data.color === '' ||
-        data.userId === '' ||
-        data.savings < 0
+        data.userId === ''
       ) {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }

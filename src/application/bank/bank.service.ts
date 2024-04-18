@@ -15,8 +15,13 @@ export class BankService {
 
   async create(createBankDto: CreateBankDto) {
     try {
-      const res = await this.bankRepository.create(createBankDto)
-      return res.id
+      const bank = await this.bankRepository.findOne({
+        where: { name: createBankDto.name, userId: createBankDto.userId }
+      })
+      if (bank === null) {
+        const res = await this.bankRepository.save(createBankDto)
+        return res
+      } else ErrorHandler.CONFLICT_MESSAGE('This bank already exists')
     } catch (error) {
       return ErrorHandler.handle(error)
     }

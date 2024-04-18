@@ -21,7 +21,7 @@ export class CompanyService {
       if (comp === null) {
         const res = this.companyRepository.save(createCompanyDto)
         return res
-      } else ErrorHandler.CONFLICT_MESSAGE('Error creating company')
+      } else ErrorHandler.CONFLICT_MESSAGE('This company already exists')
     } catch (error) {
       return ErrorHandler.handle(error)
     }
