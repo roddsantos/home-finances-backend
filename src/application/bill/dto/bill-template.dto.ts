@@ -10,7 +10,7 @@ export class CreateBillTemplateDto {
   typeBillId: string
   total: number
   userId: string
-  month: string
+  month: number
   year: number
   settled: boolean
 }

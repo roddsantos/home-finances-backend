@@ -29,18 +29,14 @@ export class BillController {
       data.description === '' ||
       data.typeBillId === '' ||
       data.year < 0 ||
-      data.month === '' ||
+      data.month < 0 ||
       data.userId === ''
     )
   }
 
   verifyUpdateTemplate(data: Pick<AllUpdateBillProps, keyof UpdateBillTemplateDto>) {
     return (
-      data.id ||
-      data.name ||
-      data.month === '' ||
-      data.description === '' ||
-      data.year < 0
+      data.id || data.name || data.month < 0 || data.description === '' || data.year < 0
     )
   }
 

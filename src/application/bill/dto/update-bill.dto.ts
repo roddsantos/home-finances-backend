@@ -3,7 +3,7 @@ export class UpdateBillTemplateDto {
   name: string
   description: string
   total: number
-  month: string
+  month: number
   year: number
   settled: boolean
 }
