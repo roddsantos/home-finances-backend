@@ -2,7 +2,7 @@ export class GetCreditCardDto {
   year?: number
   month?: number
   isClosed?: boolean
-  page: number
-  limit: number
+  page: string
+  limit: string
   userId: string
 }
