@@ -48,10 +48,17 @@ export class CreditCardService {
     }
   }
 
-  async getAllById(userId: string, filters: Omit<GetCreditCardDto, 'userId'>) {
+  async getAllById(
+    userId: string,
+    page: number,
+    take: number,
+    filters: Omit<GetCreditCardDto, 'userId' | 'page' | 'limit'>
+  ) {
     try {
       const res = await this.creditCardRepository.find({
-        where: { ...filters, userId }
+        where: { ...filters, userId },
+        take,
+        skip: take * page - take
       })
       return res
     } catch (error) {

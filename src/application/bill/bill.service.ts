@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { Bill } from './bill.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import {
@@ -7,7 +7,12 @@ import {
   UpdateBillCreditCard
 } from './dto/update-bill.dto'
 import { GetBillsDto } from './dto/get-bills.dto'
-import { BillBank, BillCompany, BillCreditCard } from './dto/bill-template.dto'
+import {
+  BillBank,
+  BillCompany,
+  BillCreditCard,
+  BillService2
+} from './dto/bill-template.dto'
 import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 
@@ -29,7 +34,7 @@ export class BillService {
 
   async createCompanyBill(createCompanyBillDto: BillCompany) {
     try {
-      const res = await this.billService.create(createCompanyBillDto)
+      const res = await this.billService.save(createCompanyBillDto)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -38,7 +43,16 @@ export class BillService {
 
   async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
     try {
-      const res = await this.billService.create(createCreditCardBillDto)
+      const res = await this.billService.save(createCreditCardBillDto)
+      return res
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
+
+  async createServiceBill(createServiceBillDto: BillService2) {
+    try {
+      const res = await this.billService.save(createServiceBillDto)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -103,13 +117,13 @@ export class BillService {
       const { typeBillId, ...rest } = data
       const res = await this.billService.find({
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'typeBill'],
-        ...rest,
         take,
-        skip: take * page,
-        where: { userId, typeBillId }
+        skip: take * page - take,
+        where: { ...rest, userId, typeBillId }
       })
       return res
     } catch (error) {
+      Logger.log('here 2', error)
       return ErrorHandler.handle(error)
     }
   }

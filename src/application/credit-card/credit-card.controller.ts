@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res
+} from '@nestjs/common'
 import { CreditCardService } from './credit-card.service'
 import { CreateCreditCardDto } from './dto/create-credit-card.dto'
 import { Response } from 'express'
@@ -67,12 +77,12 @@ export class CreditCardController {
 
   @Get()
   public async getCC(
-    @Param() data: GetCreditCardDto,
+    @Query() data: GetCreditCardDto,
     @Res() res: Response
   ): Promise<Response<CreditCard>> {
     try {
-      const { userId, ...rest } = data
-      const result = await this.creditCardService.getAllById(userId, rest)
+      const { page, limit, userId, ...rest } = data
+      const result = await this.creditCardService.getAllById(userId, page, limit, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

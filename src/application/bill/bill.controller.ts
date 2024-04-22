@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Res } from '@nestjs/common'
+import { Body, Controller, Get, Logger, Patch, Post, Query, Res } from '@nestjs/common'
 import { BillService } from './bill.service'
 import { Response } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
@@ -7,6 +7,7 @@ import {
   BillBank,
   BillCompany,
   BillCreditCard,
+  BillService2,
   CreateBillTemplateDto
 } from './dto/bill-template.dto'
 import { ResponseHandler } from '../utils/ResponseHandler'
@@ -25,7 +26,7 @@ export class BillController {
 
   verifyCreateTemplate(data: Pick<AllBillProps, keyof CreateBillTemplateDto>) {
     return (
-      data.name ||
+      data.name === '' ||
       data.description === '' ||
       data.typeBillId === '' ||
       data.year < 0 ||
@@ -45,7 +46,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || data.bank1Id)
+      if (this.verifyCreateTemplate(data) || !data.bank1Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.billService.createTransactionBill(data)
@@ -60,7 +61,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || data.creditCardId)
+      if (this.verifyCreateTemplate(data) || !data.creditCardId)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.billService.createCreditCardBill(data)
@@ -75,10 +76,25 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || data.companyId || Boolean(data.due))
+      if (this.verifyCreateTemplate(data) || !data.companyId || Boolean(data.due))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.billService.createCompanyBill(data)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Post('/service')
+  public async createService(@Body() data: BillService2, @Res() res: Response) {
+    try {
+      if (!Boolean(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (this.verifyCreateTemplate(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+
+      const result = await this.billService.createServiceBill(data)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -134,14 +150,15 @@ export class BillController {
   }
 
   @Get()
-  public async getFilteredBills(@Body() filters: GetBillsDto, @Res() res: Response) {
+  public async getFilteredBills(@Res() res: Response, @Query() filters: GetBillsDto) {
     try {
-      if (Boolean(filters.page) || Boolean(filters.limit))
+      if (!Boolean(filters.page) || !Boolean(filters.limit) || !Boolean(filters.userId))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       const { page, limit, userId, ...rest } = filters
       const result = await this.billService.getBills(userId, page, limit, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
+      Logger.log('ERR', error)
       return ErrorHandler.errorResponse(res, error)
     }
   }

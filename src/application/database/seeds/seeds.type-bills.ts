@@ -1,26 +1,27 @@
 export const TYPE_BILLS = [
   {
     name: 'Pix',
-    description: 'Transação entre bancos',
+    description: 'Transaction between banks',
     icon: 'account_balance',
     referTo: 'betweenBanks'
   },
   {
-    name: 'Parcelamento',
-    description: 'Dívida parcelada',
-    icon: 'filter_3',
-    referTo: 'installmentDebt'
+    name: 'Credit card',
+    description: 'Default credit card usage',
+    icon: 'credit_card',
+    referTo: 'creditCard'
   },
   {
-    name: 'Compra',
-    description: 'Compra feita em alguma empresa',
+    name: 'Buying',
+    description: 'Normal/installment purchase in some company',
     icon: 'local_mall',
-    referTo: 'billCompany'
+    referTo: 'company'
   },
   {
-    name: 'Movimentação de Reserva Bancária',
-    description: 'Retirada/adição de fundos na conta bancária referente',
-    icon: 'savings',
-    referTo: 'referToBank'
+    name: 'Service',
+    description:
+      'Every-month purchases (such as eletricity, internet, water service, etc.)',
+    icon: 'electrical_services',
+    referTo: 'service'
   }
 ]

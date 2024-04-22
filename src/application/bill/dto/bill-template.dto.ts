@@ -1,7 +1,8 @@
 import {
   CreateBankTransactionDto,
   CreateCompanyBillDto,
-  CreateCreditCardBillDto
+  CreateCreditCardBillDto,
+  CreateServiceBillDto
 } from './bill-creation.dto'
 
 export class CreateBillTemplateDto {
@@ -25,3 +26,5 @@ export type BillBank = CreateBillTemplateDto & CreateBankTransactionDto
 export type BillCompany = CreateBillTemplateDto & CreateCompanyBillDto
 
 export type BillCreditCard = CreateBillTemplateDto & CreateCreditCardBillDto
+
+export type BillService2 = CreateBillTemplateDto & Partial<CreateServiceBillDto>
