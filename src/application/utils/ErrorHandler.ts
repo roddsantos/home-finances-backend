@@ -28,4 +28,8 @@ export abstract class ErrorHandler {
   public static CONFLICT_MESSAGE(message: string) {
     throw new HttpException(message, HttpStatus.CONFLICT)
   }
+
+  public static NOT_FOUND_MESSAGE(message: string) {
+    throw new HttpException(message, HttpStatus.NOT_FOUND)
+  }
 }

@@ -15,16 +15,35 @@ import {
 } from './dto/bill-template.dto'
 import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
+import { Bank } from '../bank/bank.entity'
+import { BankService } from '../bank/bank.service'
 
 @Injectable()
 export class BillService {
   constructor(
     @InjectRepository(Bill)
-    private readonly billService: Repository<Bill>
+    private readonly billService: Repository<Bill>,
+    private readonly bankService: BankService
   ) {}
 
   async createTransactionBill(createTransactionBillDto: BillBank) {
     try {
+      const { total, bank1Id, bank2Id } = createTransactionBillDto
+      const bank1 = await this.bankService.getOneById(bank1Id)
+      if (bank2Id && bank1) {
+        const bank2 = await this.bankService.getOneById(bank2Id)
+        const newBank1Value: Bank = { ...bank1, savings: bank1.savings - total }
+        if (bank2) {
+          const newBank2Value: Bank = { ...bank2, savings: bank2.savings + total }
+          await this.bankService.update(bank1Id, newBank1Value)
+          await this.bankService.update(bank2Id, newBank2Value)
+        }
+      } else {
+        if (bank1) {
+          const newBank1Value: Bank = { ...bank1, savings: bank1.savings + total }
+          await this.bankService.update(bank1Id, newBank1Value)
+        } else ErrorHandler.NOT_FOUND_MESSAGE('Bank not found')
+      }
       const res = await this.billService.save(createTransactionBillDto)
       return res
     } catch (error) {
