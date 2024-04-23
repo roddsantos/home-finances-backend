@@ -39,6 +39,11 @@ export class Bill {
   public total: number
 
   @Column({
+    nullable: true
+  })
+  public totalParcel: number
+
+  @Column({
     nullable: false
   })
   public settled: boolean
@@ -47,6 +52,11 @@ export class Bill {
     nullable: true
   })
   public parcels: number
+
+  @Column({
+    nullable: true
+  })
+  public parcel: number
 
   @Column({
     nullable: true

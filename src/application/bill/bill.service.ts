@@ -17,35 +17,59 @@ import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
+import { CreditCardService } from '../credit-card/credit-card.service'
+import { CreditCard } from '../credit-card/credit-card.entity'
 
 @Injectable()
 export class BillService {
   constructor(
     @InjectRepository(Bill)
     private readonly billService: Repository<Bill>,
-    private readonly bankService: BankService
+    private readonly bankService: BankService,
+    private readonly ccService: CreditCardService
   ) {}
+
+  parcelBills(bill: BillCreditCard) {
+    const bills: BillCreditCard[] = []
+    for (let i = 0; i < bill.parcels; i++) {
+      let date = new Date(bill.due)
+      date = new Date(date.setMonth(date.getMonth() + 1))
+      bills.push({
+        ...bill,
+        parcel: i,
+        totalParcel:
+          parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
+          (i === bill.parcels - 1 ? bill.delta : 0),
+        due: date,
+        month: date.getMonth(),
+        year: date.getFullYear()
+      })
+    }
+    return bills
+  }
 
   async createTransactionBill(createTransactionBillDto: BillBank) {
     try {
       const { total, bank1Id, bank2Id } = createTransactionBillDto
       const bank1 = await this.bankService.getOneById(bank1Id)
-      if (bank2Id && bank1) {
-        const bank2 = await this.bankService.getOneById(bank2Id)
-        const newBank1Value: Bank = { ...bank1, savings: bank1.savings - total }
-        if (bank2) {
-          const newBank2Value: Bank = { ...bank2, savings: bank2.savings + total }
-          await this.bankService.update(bank1Id, newBank1Value)
-          await this.bankService.update(bank2Id, newBank2Value)
-        }
-      } else {
-        if (bank1) {
+      if (bank1) {
+        if (bank2Id) {
+          const newBank1Value: Bank = { ...bank1, savings: bank1.savings - total }
+          const bank2 = await this.bankService.getOneById(bank2Id)
+          if (bank2) {
+            const newBank2Value: Bank = { ...bank2, savings: bank2.savings + total }
+            await this.bankService.update(bank1Id, newBank1Value)
+            await this.bankService.update(bank2Id, newBank2Value)
+            const res = await this.billService.save(createTransactionBillDto)
+            return res
+          } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 2 not found')
+        } else {
           const newBank1Value: Bank = { ...bank1, savings: bank1.savings + total }
           await this.bankService.update(bank1Id, newBank1Value)
-        } else ErrorHandler.NOT_FOUND_MESSAGE('Bank not found')
-      }
-      const res = await this.billService.save(createTransactionBillDto)
-      return res
+          const res = await this.billService.save(createTransactionBillDto)
+          return res
+        }
+      } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
     } catch (error) {
       return ErrorHandler.handle(error)
     }
@@ -62,8 +86,19 @@ export class BillService {
 
   async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
     try {
-      const res = await this.billService.save(createCreditCardBillDto)
-      return res
+      const { creditCardId, total, taxes, delta } = createCreditCardBillDto
+      const cc = await this.ccService.getOneById(creditCardId)
+      if (cc) {
+        const bills = this.parcelBills(createCreditCardBillDto)
+        const newCcObject: CreditCard = { ...cc, limit: cc.limit + total + taxes + delta }
+        await this.ccService.update(creditCardId, newCcObject)
+        Promise.all(
+          bills.map((b) => {
+            const res = this.billService.save(b)
+            return res
+          })
+        )
+      }
     } catch (error) {
       return ErrorHandler.handle(error)
     }

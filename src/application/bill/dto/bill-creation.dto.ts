@@ -6,6 +6,11 @@ export class CreateBankTransactionDto {
 export class CreateCreditCardBillDto {
   creditCardId: string
   companyId?: string
+  parcels: number
+  parcel?: number
+  totalParcel?: number
+  delta?: number
+  taxes?: number
 }
 
 export class CreateCompanyBillDto {

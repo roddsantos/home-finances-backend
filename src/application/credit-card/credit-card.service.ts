@@ -30,9 +30,7 @@ export class CreditCardService {
 
   async update(id: string, data: Omit<UpdateCreditCardDto, 'id'>) {
     try {
-      const res = await this.creditCardRepository.update(data, {
-        id
-      })
+      const res = await this.creditCardRepository.update({ id }, data)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -59,6 +57,17 @@ export class CreditCardService {
         where: { ...filters, userId },
         take,
         skip: take * page - take
+      })
+      return res
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
+
+  async getOneById(id: string) {
+    try {
+      const res = await this.creditCardRepository.findOne({
+        where: { id }
       })
       return res
     } catch (error) {
