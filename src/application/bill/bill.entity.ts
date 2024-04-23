@@ -66,7 +66,7 @@ export class Bill {
   @Column({
     nullable: false
   })
-  public month: string
+  public month: number
 
   @Column({
     nullable: true
