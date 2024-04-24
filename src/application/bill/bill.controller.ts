@@ -28,7 +28,7 @@ export class BillController {
     return (
       data.name === '' ||
       data.description === '' ||
-      data.typeBillId === '' ||
+      !data.typeBill ||
       data.year < 0 ||
       data.month < 0 ||
       data.userId === ''
@@ -91,7 +91,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data))
+      if (this.verifyCreateTemplate(data) || (!data.creditCardId && !data.bank1Id))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.billService.createServiceBill(data)

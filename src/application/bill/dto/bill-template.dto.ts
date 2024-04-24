@@ -8,7 +8,10 @@ import {
 export class CreateBillTemplateDto {
   name: string
   description: string
-  typeBillId: string
+  typeBill: {
+    id: string
+    referTo: string
+  }
   total: number
   userId: string
   month: number
@@ -28,4 +31,4 @@ export type BillCompany = CreateBillTemplateDto & CreateCompanyBillDto
 
 export type BillCreditCard = CreateBillTemplateDto & CreateCreditCardBillDto
 
-export type BillService2 = CreateBillTemplateDto & Partial<CreateServiceBillDto>
+export type BillService2 = CreateBillTemplateDto & CreateServiceBillDto
