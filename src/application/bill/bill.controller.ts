@@ -28,10 +28,14 @@ export class BillController {
     return (
       data.name === '' ||
       data.description === '' ||
-      data.typeBillId === '' ||
-      data.year < 0 ||
+      !data.typeBillId ||
+      data.year < 2023 ||
+      data.year > 2090 ||
       data.month < 0 ||
-      data.userId === ''
+      data.month > 11 ||
+      !data.userId ||
+      data.total <= 0 ||
+      !data.due
     )
   }
 
@@ -61,7 +65,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || !data.creditCardId)
+      if (this.verifyCreateTemplate(data) || !data.creditCardId || data.parcels < 0)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.billService.createCreditCardBill(data)
@@ -76,8 +80,12 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || !data.companyId || Boolean(data.due))
+      if (this.verifyCreateTemplate(data) || !data.companyId || !Boolean(data.due))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if ((data.creditCardId && data.bank1Id) || (!data.creditCardId && !data.bank1Id))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
+          'Bank OR credit card need to be presented'
+        )
 
       const result = await this.billService.createCompanyBill(data)
       return ResponseHandler.sendCreatedResponse(result, res)

@@ -17,11 +17,12 @@ export class CreateCreditCardBillDto {
 
 export class CreateCompanyBillDto {
   companyId: string
+  bank1Id?: string
   creditCardId?: string
-  parcels?: number
+  parcels: number
   delta?: number
-  due?: Date
   taxes?: number
+  totalParcel?: number
 }
 
 export class CreateServiceBillDto {
@@ -31,6 +32,5 @@ export class CreateServiceBillDto {
   parcels: number
   totalParcel?: number
   delta?: number
-  due: Date
   taxes?: number
 }

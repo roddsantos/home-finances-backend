@@ -51,7 +51,7 @@ export class BillService {
     return bills
   }
 
-  parcelsServiceBills(bill: BillService2) {
+  parcelsServiceCompanyBills(bill: BillService2 | BillCompany) {
     const bills = [] as BillService2[]
     let month = bill.month
     let year = bill.year
@@ -75,14 +75,20 @@ export class BillService {
 
   async createTransactionBill(createTransactionBillDto: BillBank) {
     try {
-      const { total, bank1Id, bank2Id } = createTransactionBillDto
+      const { total, bank1Id, bank2Id, isPayment } = createTransactionBillDto
       const bank1 = await this.bankService.getOneById(bank1Id)
       if (bank1) {
         if (bank2Id) {
-          const newBank1Value: Bank = { ...bank1, savings: bank1.savings - total }
+          const newBank1Value: Bank = {
+            ...bank1,
+            savings: bank1.savings - total * (isPayment ? -1 : 1)
+          }
           const bank2 = await this.bankService.getOneById(bank2Id)
           if (bank2) {
-            const newBank2Value: Bank = { ...bank2, savings: bank2.savings + total }
+            const newBank2Value: Bank = {
+              ...bank2,
+              savings: bank2.savings + total * (isPayment ? 1 : -1)
+            }
             await this.bankService.update(bank1Id, newBank1Value)
             await this.bankService.update(bank2Id, newBank2Value)
 
@@ -90,7 +96,10 @@ export class BillService {
             return res
           } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 2 not found')
         } else {
-          const newBank1Value: Bank = { ...bank1, savings: bank1.savings + total }
+          const newBank1Value: Bank = {
+            ...bank1,
+            savings: bank1.savings + total * (isPayment ? -1 : 1)
+          }
           await this.bankService.update(bank1Id, newBank1Value)
           const res = await this.billService.save(createTransactionBillDto)
           return res
@@ -103,8 +112,35 @@ export class BillService {
 
   async createCompanyBill(createCompanyBillDto: BillCompany) {
     try {
-      const res = await this.billService.save(createCompanyBillDto)
-      return res
+      const { creditCardId, total, taxes, delta, month, bank1Id } = createCompanyBillDto
+      let data = null
+      if (creditCardId)
+        data = await this.ccService.getOneById(creditCardId, {
+          isClosed: false,
+          month: MoreThanOrEqual(month)
+        })
+      else data = await this.bankService.getOneById(bank1Id)
+
+      const bills = this.parcelsServiceCompanyBills(createCompanyBillDto)
+      if (creditCardId && data) {
+        const newCcObject: CreditCard = {
+          ...data,
+          limit: data.limit + (total + taxes + delta) * -1,
+          invoice: data.invoice + bills[0].totalParcel
+        }
+        await this.ccService.update(creditCardId, newCcObject)
+      } else if (bank1Id && data) {
+        const newBank1Value: Bank = { ...data, savings: data.savings - total }
+        await this.bankService.update(bank1Id, newBank1Value)
+      }
+
+      const allBills = await Promise.all(
+        bills.map((b) => {
+          const res = this.billService.save(b)
+          return res
+        })
+      )
+      return allBills
     } catch (error) {
       return ErrorHandler.handle(error)
     }
@@ -127,13 +163,13 @@ export class BillService {
         }
         await this.ccService.update(creditCardId, newCcObject)
       }
-      const allCcs = await Promise.all(
+      const allBills = await Promise.all(
         bills.map((b) => {
           const res = this.billService.save(b)
           return res
         })
       )
-      return allCcs
+      return allBills
     } catch (error) {
       return ErrorHandler.handle(error)
     }
@@ -150,7 +186,7 @@ export class BillService {
         })
       else data = await this.bankService.getOneById(bank1Id)
 
-      const bills = this.parcelsServiceBills(createServiceBillDto)
+      const bills = this.parcelsServiceCompanyBills(createServiceBillDto)
       if (creditCardId && data) {
         const newCcObject: CreditCard = {
           ...data,
@@ -162,13 +198,13 @@ export class BillService {
         const newBank1Value: Bank = { ...data, savings: data.savings - total }
         await this.bankService.update(bank1Id, newBank1Value)
       }
-      const allCcs = await Promise.all(
+      const allBills = await Promise.all(
         bills.map((b) => {
           const res = this.billService.save(b)
           return res
         })
       )
-      return allCcs
+      return allBills
     } catch (error) {
       console.log('EEROR', error)
       return ErrorHandler.handle(error)
