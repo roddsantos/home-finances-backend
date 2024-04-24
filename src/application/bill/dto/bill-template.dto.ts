@@ -8,10 +8,7 @@ import {
 export class CreateBillTemplateDto {
   name: string
   description: string
-  typeBill: {
-    id: string
-    referTo: string
-  }
+  typeBillId: string
   total: number
   userId: string
   month: number

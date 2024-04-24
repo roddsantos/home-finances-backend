@@ -42,10 +42,8 @@ export class BillService {
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
         month,
-        year,
-        typeBillId: bill.typeBill.id
+        year
       }
-      delete parcelObject.typeBill
       bills.push(parcelObject)
       month = month === 11 ? 0 : month + 1
       year = month === 11 ? year + 1 : year
@@ -66,10 +64,8 @@ export class BillService {
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
         month,
-        year,
-        typeBillId: bill.typeBill.id
+        year
       }
-      delete parcelObject.typeBill
       bills.push(parcelObject)
       month = month === 11 ? 0 : month + 1
       year = month === 11 ? year + 1 : year
@@ -90,13 +86,7 @@ export class BillService {
             await this.bankService.update(bank1Id, newBank1Value)
             await this.bankService.update(bank2Id, newBank2Value)
 
-            const data = {
-              ...createTransactionBillDto,
-              typeBillId: createTransactionBillDto.typeBill.id
-            }
-            delete data.typeBill
-
-            const res = await this.billService.save(data)
+            const res = await this.billService.save(createTransactionBillDto)
             return res
           } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 2 not found')
         } else {
