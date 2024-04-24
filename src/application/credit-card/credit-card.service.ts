@@ -17,7 +17,12 @@ export class CreditCardService {
   async create(createCreditCard: CreateCreditCardDto) {
     try {
       const cc = await this.creditCardRepository.findOne({
-        where: { name: createCreditCard.name, userId: createCreditCard.userId }
+        where: {
+          name: createCreditCard.name,
+          userId: createCreditCard.userId,
+          month: createCreditCard.month,
+          year: createCreditCard.year
+        }
       })
       if (cc === null) {
         const res = this.creditCardRepository.save(createCreditCard)

@@ -1,6 +1,7 @@
 export class CreateBankTransactionDto {
   bank1Id: string
   bank2Id?: string
+  isPayment: string
 }
 
 export class CreateCreditCardBillDto {
@@ -11,6 +12,7 @@ export class CreateCreditCardBillDto {
   totalParcel?: number
   delta?: number
   taxes?: number
+  isRefund: boolean
 }
 
 export class CreateCompanyBillDto {

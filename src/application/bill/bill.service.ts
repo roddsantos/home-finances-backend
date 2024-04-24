@@ -31,18 +31,19 @@ export class BillService {
 
   parcelBills(bill: BillCreditCard) {
     const bills: BillCreditCard[] = []
+    let month = bill.month
+    let year = bill.year
     for (let i = 0; i < bill.parcels; i++) {
-      let date = new Date(bill.due)
-      date = new Date(date.setMonth(date.getMonth() + 1))
+      month = month === 11 ? 0 : month + 1
+      year = month === 11 ? year + 1 : year
       bills.push({
         ...bill,
         parcel: i,
         totalParcel:
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
-        due: date,
-        month: date.getMonth(),
-        year: date.getFullYear()
+        month,
+        year
       })
     }
     return bills
@@ -86,18 +87,23 @@ export class BillService {
 
   async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
     try {
-      const { creditCardId, total, taxes, delta } = createCreditCardBillDto
+      const { creditCardId, total, taxes, delta, isRefund } = createCreditCardBillDto
       const cc = await this.ccService.getOneById(creditCardId)
       if (cc) {
         const bills = this.parcelBills(createCreditCardBillDto)
-        const newCcObject: CreditCard = { ...cc, limit: cc.limit + total + taxes + delta }
+        const newCcObject: CreditCard = {
+          ...cc,
+          limit: cc.limit + (total + taxes + delta) * (isRefund ? 1 : -1),
+          invoice: cc.invoice + bills[0].totalParcel * (isRefund ? -1 : 1)
+        }
         await this.ccService.update(creditCardId, newCcObject)
-        Promise.all(
+        const allCcs = await Promise.all(
           bills.map((b) => {
             const res = this.billService.save(b)
             return res
           })
         )
+        return allCcs
       }
     } catch (error) {
       return ErrorHandler.handle(error)

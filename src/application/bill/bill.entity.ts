@@ -34,12 +34,16 @@ export class Bill {
   public description: string
 
   @Column({
-    nullable: true
+    nullable: true,
+    type: 'float',
+    scale: 2
   })
   public total: number
 
   @Column({
-    nullable: true
+    nullable: true,
+    type: 'float',
+    scale: 2
   })
   public totalParcel: number
 
@@ -59,12 +63,16 @@ export class Bill {
   public parcel: number
 
   @Column({
-    nullable: true
+    nullable: true,
+    type: 'float',
+    scale: 2
   })
   public taxes: number
 
   @Column({
-    nullable: true
+    nullable: true,
+    type: 'float',
+    scale: 2
   })
   public delta: number
 

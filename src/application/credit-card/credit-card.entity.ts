@@ -35,9 +35,18 @@ export class CreditCard {
   public color: string
 
   @Column({
-    nullable: false
+    nullable: false,
+    type: 'float',
+    scale: 2
   })
   public limit: number
+
+  @Column({
+    nullable: false,
+    type: 'float',
+    scale: 2
+  })
+  public invoice: number
 
   @Column({
     nullable: false
