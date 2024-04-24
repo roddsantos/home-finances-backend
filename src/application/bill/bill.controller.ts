@@ -28,7 +28,7 @@ export class BillController {
     return (
       data.name === '' ||
       data.description === '' ||
-      !data.typeBill ||
+      data.typeBillId === '' ||
       data.year < 0 ||
       data.month < 0 ||
       data.userId === ''
