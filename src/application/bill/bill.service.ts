@@ -19,15 +19,19 @@ import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { CreditCard } from '../credit-card/credit-card.entity'
+import { UUID } from '../utils/uuid'
 
 @Injectable()
 export class BillService {
+  private readonly uuid: UUID
   constructor(
     @InjectRepository(Bill)
     private readonly billService: Repository<Bill>,
     private readonly bankService: BankService,
     private readonly ccService: CreditCardService
-  ) {}
+  ) {
+    this.uuid = new UUID()
+  }
 
   parcelsCcBills(bill: BillCreditCard) {
     const bills = [] as BillCreditCard[]
@@ -75,9 +79,9 @@ export class BillService {
 
   async createTransactionBill(createTransactionBillDto: BillBank) {
     try {
-      const { total, bank1Id, bank2Id, isPayment } = createTransactionBillDto
+      const { total, bank1Id, bank2Id, isPayment, settled } = createTransactionBillDto
       const bank1 = await this.bankService.getOneById(bank1Id)
-      if (bank1) {
+      if (bank1 && settled) {
         if (bank2Id) {
           const newBank1Value: Bank = {
             ...bank1,
@@ -104,6 +108,9 @@ export class BillService {
           const res = await this.billService.save(createTransactionBillDto)
           return res
         }
+      } else if (!settled) {
+        const res = await this.billService.save(createTransactionBillDto)
+        return res
       } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -113,6 +120,8 @@ export class BillService {
   async createCompanyBill(createCompanyBillDto: BillCompany) {
     try {
       const { creditCardId, total, taxes, delta, month, bank1Id } = createCompanyBillDto
+      const groupId = this.uuid.v4()
+
       let data = null
       if (creditCardId)
         data = await this.ccService.getOneById(creditCardId, {
@@ -136,7 +145,7 @@ export class BillService {
 
       const allBills = await Promise.all(
         bills.map((b) => {
-          const res = this.billService.save(b)
+          const res = this.billService.save({ ...b, groupId })
           return res
         })
       )
@@ -150,6 +159,8 @@ export class BillService {
     try {
       const { creditCardId, total, taxes, delta, isRefund, month } =
         createCreditCardBillDto
+      const groupId = this.uuid.v4()
+
       const cc = await this.ccService.getOneById(creditCardId, {
         isClosed: false,
         month: MoreThanOrEqual(month)
@@ -165,7 +176,7 @@ export class BillService {
       }
       const allBills = await Promise.all(
         bills.map((b) => {
-          const res = this.billService.save(b)
+          const res = this.billService.save({ ...b, groupId })
           return res
         })
       )
@@ -177,36 +188,41 @@ export class BillService {
 
   async createServiceBill(createServiceBillDto: BillService2) {
     try {
-      const { creditCardId, total, taxes, delta, month, bank1Id } = createServiceBillDto
-      let data = null
-      if (creditCardId)
-        data = await this.ccService.getOneById(creditCardId, {
-          isClosed: false,
-          month: MoreThanOrEqual(month)
-        })
-      else data = await this.bankService.getOneById(bank1Id)
+      const { creditCardId, total, taxes, delta, month, bank1Id, settled } =
+        createServiceBillDto
+      const groupId = this.uuid.v4()
 
+      let data = null
       const bills = this.parcelsServiceCompanyBills(createServiceBillDto)
-      if (creditCardId && data) {
-        const newCcObject: CreditCard = {
-          ...data,
-          limit: data.limit + (total + taxes + delta) * -1,
-          invoice: data.invoice + bills[0].totalParcel
+
+      if (settled) {
+        if (creditCardId)
+          data = await this.ccService.getOneById(creditCardId, {
+            isClosed: false,
+            month: MoreThanOrEqual(month)
+          })
+        else data = await this.bankService.getOneById(bank1Id)
+
+        if (creditCardId && data) {
+          const newCcObject: CreditCard = {
+            ...data,
+            limit: data.limit + (total + taxes + delta) * -1,
+            invoice: data.invoice + bills[0].totalParcel
+          }
+          await this.ccService.update(creditCardId, newCcObject)
+        } else if (bank1Id && data) {
+          const newBank1Value: Bank = { ...data, savings: data.savings - total }
+          await this.bankService.update(bank1Id, newBank1Value)
         }
-        await this.ccService.update(creditCardId, newCcObject)
-      } else if (bank1Id && data) {
-        const newBank1Value: Bank = { ...data, savings: data.savings - total }
-        await this.bankService.update(bank1Id, newBank1Value)
       }
       const allBills = await Promise.all(
         bills.map((b) => {
-          const res = this.billService.save(b)
+          const res = this.billService.save({ ...b, groupId })
           return res
         })
       )
       return allBills
     } catch (error) {
-      console.log('EEROR', error)
       return ErrorHandler.handle(error)
     }
   }

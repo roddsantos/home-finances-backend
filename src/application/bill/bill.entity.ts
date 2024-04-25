@@ -26,58 +26,70 @@ export class Bill {
   @Column({
     nullable: false
   })
+  public groupId: string
+
+  @Column({
+    nullable: false
+  })
   public name: string
 
   @Column({
-    nullable: true
+    nullable: false
   })
   public description: string
 
   @Column({
-    nullable: true,
+    default: 0,
+    nullable: false,
     type: 'float',
     scale: 2
   })
   public total: number
 
   @Column({
-    nullable: true,
+    default: 0,
+    nullable: false,
     type: 'float',
     scale: 2
   })
   public totalParcel: number
 
   @Column({
-    nullable: false
+    nullable: false,
+    default: false
   })
   public settled: boolean
 
   @Column({
-    nullable: true
+    nullable: false,
+    default: 1
   })
   public parcels: number
 
   @Column({
-    nullable: true
+    nullable: false,
+    default: 1
   })
   public parcel: number
 
   @Column({
-    nullable: true,
+    default: 0,
+    nullable: false,
     type: 'float',
     scale: 2
   })
   public taxes: number
 
   @Column({
-    nullable: true,
+    default: 0,
+    nullable: false,
     type: 'float',
     scale: 2
   })
   public delta: number
 
   @Column({
-    nullable: true
+    nullable: false
   })
   public due: Date
 
@@ -87,7 +99,7 @@ export class Bill {
   public month: number
 
   @Column({
-    nullable: true
+    nullable: false
   })
   public year: number
 
