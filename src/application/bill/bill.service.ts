@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { Bill } from './bill.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import {
@@ -6,14 +6,14 @@ import {
   UpdateBillCompany,
   UpdateBillCreditCard
 } from './dto/update-bill.dto'
-import { GetBillsDto } from './dto/get-bills.dto'
+import { FilterDisplay } from './dto/get-bills.dto'
 import {
   BillBank,
   BillCompany,
   BillCreditCard,
   BillService2
 } from './dto/bill-template.dto'
-import { MoreThanOrEqual, Repository } from 'typeorm'
+import { Between, In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
@@ -275,23 +275,95 @@ export class BillService {
     }
   }
 
-  async getBills(
-    userId: string,
-    page: number,
-    take: number,
-    data: Omit<GetBillsDto, 'limit' | 'page' | 'userId'>
-  ) {
+  async getBills(userId: string, page: number, take: number, data: any) {
     try {
-      const { typeBillId, ...rest } = data
+      let parsedFilter: FilterDisplay[] = []
+      const filterObject: any = {
+        months: [],
+        min: null,
+        max: null,
+        years: [],
+        typeBillId: [],
+        bankId: [],
+        companyId: [],
+        creditCardId: [],
+        status: 'all'
+      }
+      if (data.length > 0) {
+        parsedFilter = JSON.parse(data) as FilterDisplay[]
+        parsedFilter.forEach((d) => {
+          switch (d.identifier) {
+            case 'month':
+              filterObject.months!.push(d.id as number)
+              break
+            case 'year':
+              filterObject.years!.push(d.id as number)
+              break
+            case 'min':
+              filterObject.min! = d.id as number
+              break
+            case 'max':
+              filterObject.max! = d.id as number
+              break
+            case 'status':
+              filterObject.status = d.id as string
+              break
+            case 'typebill':
+              filterObject.typeBillId.push(d.id)
+              break
+            case 'company':
+              filterObject.companyId.push(d.id)
+              break
+            case 'creditcard':
+              filterObject.creditCardId.push(d.id)
+              break
+            case 'bank':
+              filterObject.bankId.push(d.id)
+              break
+            case 'status':
+              filterObject.status = d.id as string
+              break
+            default:
+              break
+          }
+        })
+      }
+      const finalFilter: any = {}
+      // set months
+      if (filterObject.months.length > 0) finalFilter.month = In([...filterObject.months])
+      // set years
+      if (filterObject.years.length > 0) finalFilter.year = In([...filterObject.years])
+      // met min and max total values
+      if (filterObject.min && filterObject.max)
+        finalFilter.total = Between(filterObject.min, filterObject.max)
+      else if (filterObject.min) finalFilter.total = MoreThanOrEqual(filterObject.min)
+      else if (filterObject.max) finalFilter.total = LessThanOrEqual(filterObject.max)
+      // set type bills ids
+      if (filterObject.typeBillId.length > 0)
+        finalFilter.typeBillId = In([...filterObject.typeBillId])
+      // set banks ids
+      if (filterObject.bankId.length > 0) {
+        finalFilter.bank1Id = In([...filterObject.bankId])
+        finalFilter.bank2Id = In([...filterObject.bankId])
+      }
+      // set companies ids
+      if (filterObject.companyId.length > 0)
+        finalFilter.companyId = In([...filterObject.companyId])
+      // set credit cards ids
+      if (filterObject.creditCardId.length > 0)
+        finalFilter.creditCardId = In([...filterObject.creditCardId])
+      // set status
+      if (filterObject.status !== 'all')
+        finalFilter.settled = filterObject.status === 'settled'
+
       const res = await this.billService.find({
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'typeBill'],
         take,
         skip: take * page - take,
-        where: { ...rest, userId, typeBillId }
+        where: [{ ...finalFilter, userId }]
       })
       return res
     } catch (error) {
-      Logger.log('here 2', error)
       return ErrorHandler.handle(error)
     }
   }

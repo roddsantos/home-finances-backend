@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Patch, Post, Query, Res } from '@nestjs/common'
+import { Body, Controller, Get, Patch, Post, Query, Res } from '@nestjs/common'
 import { BillService } from './bill.service'
 import { Response } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
@@ -162,11 +162,11 @@ export class BillController {
     try {
       if (!Boolean(filters.page) || !Boolean(filters.limit) || !Boolean(filters.userId))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const { page, limit, userId, ...rest } = filters
-      const result = await this.billService.getBills(userId, page, limit, rest)
+      const { page, limit, userId, data } = filters
+
+      const result = await this.billService.getBills(userId, page, limit, data)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      Logger.log('ERR', error)
       return ErrorHandler.errorResponse(res, error)
     }
   }
