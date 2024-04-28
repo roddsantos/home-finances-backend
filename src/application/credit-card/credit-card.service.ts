@@ -17,7 +17,12 @@ export class CreditCardService {
   async create(createCreditCard: CreateCreditCardDto) {
     try {
       const cc = await this.creditCardRepository.findOne({
-        where: { name: createCreditCard.name, userId: createCreditCard.userId }
+        where: {
+          name: createCreditCard.name,
+          userId: createCreditCard.userId,
+          month: createCreditCard.month,
+          year: createCreditCard.year
+        }
       })
       if (cc === null) {
         const res = this.creditCardRepository.save(createCreditCard)
@@ -30,9 +35,7 @@ export class CreditCardService {
 
   async update(id: string, data: Omit<UpdateCreditCardDto, 'id'>) {
     try {
-      const res = await this.creditCardRepository.update(data, {
-        id
-      })
+      const res = await this.creditCardRepository.update({ id }, data)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -59,6 +62,17 @@ export class CreditCardService {
         where: { ...filters, userId },
         take,
         skip: take * page - take
+      })
+      return res
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
+
+  async getOneById(id: string, options?: any) {
+    try {
+      const res = await this.creditCardRepository.findOne({
+        where: { id, ...options }
       })
       return res
     } catch (error) {

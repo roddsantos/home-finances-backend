@@ -8,6 +8,6 @@ import { TypeOrmModule } from '@nestjs/typeorm'
   imports: [TypeOrmModule.forFeature([Bank])],
   controllers: [BankController],
   providers: [BankService],
-  exports: [TypeOrmModule]
+  exports: [TypeOrmModule, BankService]
 })
 export class BankModule {}

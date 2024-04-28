@@ -35,7 +35,9 @@ export class Bank {
   public color: string
 
   @Column({
-    nullable: false
+    nullable: false,
+    type: 'float',
+    scale: 2
   })
   public savings: number
 

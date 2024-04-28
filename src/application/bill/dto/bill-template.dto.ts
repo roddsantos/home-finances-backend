@@ -14,6 +14,7 @@ export class CreateBillTemplateDto {
   month: number
   year: number
   settled: boolean
+  due: Date
 }
 
 export type AllBillProps = CreateBillTemplateDto &
@@ -27,4 +28,4 @@ export type BillCompany = CreateBillTemplateDto & CreateCompanyBillDto
 
 export type BillCreditCard = CreateBillTemplateDto & CreateCreditCardBillDto
 
-export type BillService2 = CreateBillTemplateDto & Partial<CreateServiceBillDto>
+export type BillService2 = CreateBillTemplateDto & CreateServiceBillDto

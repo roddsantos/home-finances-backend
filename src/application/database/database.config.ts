@@ -19,5 +19,6 @@ export const dataBaseConfig: TypeOrmModuleOptions = {
   port: parseInt(process.env.DB_PORT) || 3306,
   synchronize: false,
   autoLoadEntities: true,
-  entities: [User, Bank, Bill, Company, CreditCard, TypeBill]
+  entities: [User, Bank, Bill, Company, CreditCard, TypeBill],
+  multipleStatements: true
 }

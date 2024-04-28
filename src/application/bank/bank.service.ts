@@ -29,9 +29,7 @@ export class BankService {
 
   async update(id: string, data: Omit<UpdateBankDto, 'id'>) {
     try {
-      const res = await this.bankRepository.update(data, {
-        id
-      })
+      const res = await this.bankRepository.update({ id }, data)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -51,6 +49,17 @@ export class BankService {
     try {
       const res = await this.bankRepository.find({
         where: { userId }
+      })
+      return res
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
+
+  async getOneById(id: string) {
+    try {
+      const res = await this.bankRepository.findOne({
+        where: { id }
       })
       return res
     } catch (error) {
