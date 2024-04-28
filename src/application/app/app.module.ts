@@ -6,7 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { BankModule } from '../bank/bank.module'
 import { BillModule } from '../bill/bill.module'
 import { CompanyModule } from '../company/company.module'
-import { TypeBillModule } from '../type-bill/type-bill.module'
+import { CategoryModule } from '../category/category.module'
 import { CreditCardModule } from '../credit-card/credit-card.module'
 import { UserModule } from '../user/user.module'
 import { SeedingService } from '../database/seeds/seeds.service'
@@ -18,7 +18,7 @@ import { SeedingService } from '../database/seeds/seeds.service'
     BillModule,
     CompanyModule,
     CreditCardModule,
-    TypeBillModule,
+    CategoryModule,
     UserModule
   ],
   controllers: [AppController],

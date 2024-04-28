@@ -1,6 +1,6 @@
 import { User } from '../user/user.entity'
 import { Company } from '../company/company.entity'
-import { TypeBill } from '../type-bill/type-bill.entity'
+import { Category } from '../category/category.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
 import { Bank } from '../bank/bank.entity'
 import {
@@ -103,6 +103,11 @@ export class Bill {
   })
   public year: number
 
+  @Column({
+    nullable: false
+  })
+  public type: string
+
   @ManyToOne(() => Company)
   public company: Company
 
@@ -111,13 +116,13 @@ export class Bill {
   })
   public companyId: string
 
-  @ManyToOne(() => TypeBill)
-  public typeBill: TypeBill
+  @ManyToOne(() => Category)
+  public category: Category
 
   @Column({
     nullable: false
   })
-  public typeBillId: string
+  public categoryId: string
 
   @ManyToOne(() => Bank)
   public bank1: Bank
