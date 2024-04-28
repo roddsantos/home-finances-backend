@@ -356,13 +356,16 @@ export class BillService {
       if (filterObject.status !== 'all')
         finalFilter.settled = filterObject.status === 'settled'
 
-      const res = await this.billService.find({
+      const [result, total] = await this.billService.findAndCount({
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'typeBill'],
         take,
         skip: take * page - take,
         where: [{ ...finalFilter, userId }]
       })
-      return res
+      return {
+        count: total,
+        data: result
+      }
     } catch (error) {
       return ErrorHandler.handle(error)
     }
