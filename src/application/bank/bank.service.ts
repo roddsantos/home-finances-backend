@@ -59,7 +59,8 @@ export class BankService {
   async getOneById(id: string) {
     try {
       const res = await this.bankRepository.findOne({
-        where: { id }
+        where: { id },
+        order: { updatedAt: 'DESC' }
       })
       return res
     } catch (error) {
