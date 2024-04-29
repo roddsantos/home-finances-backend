@@ -360,7 +360,8 @@ export class BillService {
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'typeBill'],
         take,
         skip: take * page - take,
-        where: [{ ...finalFilter, userId }]
+        where: [{ ...finalFilter, userId }],
+        order: { updatedAt: 'DESC' }
       })
       return {
         count: total,

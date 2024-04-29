@@ -50,7 +50,8 @@ export class CompanyService {
   async getAllById(userId: string) {
     try {
       const res = await this.companyRepository.find({
-        where: { userId }
+        where: { userId },
+        order: { updatedAt: 'DESC' }
       })
       return res
     } catch (error) {
