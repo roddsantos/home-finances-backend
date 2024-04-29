@@ -79,9 +79,9 @@ export class BillController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (this.verifyCreateTemplate(data) || !data.companyId || !Boolean(data.due))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if ((data.creditCardId && data.bank1Id) || (!data.creditCardId && !data.bank1Id))
+      if (data.creditCardId && data.bank1Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
-          'Bank OR credit card need to be presented'
+          "Bank and credit card can't be present together"
         )
 
       const result = await this.billService.createCompanyCreditBill(data)

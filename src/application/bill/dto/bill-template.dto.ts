@@ -12,8 +12,8 @@ export class CreateBillTemplateDto {
   total: number
   userId: string
   settled: boolean
-  due: Date
-  paid: Date
+  due: string
+  paid: string
 }
 
 export type AllBillProps = CreateBillTemplateDto &

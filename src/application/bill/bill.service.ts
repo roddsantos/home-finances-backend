@@ -35,44 +35,42 @@ export class BillService {
 
   parcelsCcBills(bill: BillCreditCard) {
     const bills = [] as BillCreditCard[]
-    let month = bill.paid.getMonth()
-    let year = bill.paid.getFullYear()
+    let month = new Date(bill.due).getMonth()
 
     for (let i = 0; i < bill.parcels; i++) {
+      const newDate = new Date(new Date(bill.due).setMonth(month + 1))
       const parcelObject = {
         ...bill,
         parcel: i,
         totalParcel:
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
-        month,
-        year
+        paid: newDate.toISOString(),
+        due: newDate.toISOString()
       }
       bills.push(parcelObject)
-      month = month === 11 ? 0 : month + 1
-      year = month === 11 ? year + 1 : year
+      month = month + 1
     }
     return bills
   }
 
   parcelsCompanyCreditBills(bill: BillService2 | BillCompany) {
     const bills = [] as BillService2[]
-    let month = bill.due.getMonth()
-    let year = bill.due.getFullYear()
+    let month = new Date(bill.due).getMonth()
 
     for (let i = 0; i < bill.parcels; i++) {
+      const newDate = new Date(new Date(bill.due).setMonth(month + 1))
       const parcelObject = {
         ...bill,
         parcel: i,
         totalParcel:
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
-        month,
-        year
+        paid: null,
+        due: newDate.toISOString()
       }
       bills.push(parcelObject)
-      month = month === 11 ? 0 : month + 1
-      year = month === 11 ? year + 1 : year
+      month = month + 1
     }
     return bills
   }
@@ -137,24 +135,27 @@ export class BillService {
 
   async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
     try {
-      const { creditCardId, total, taxes, delta, isRefund, paid } =
+      const { creditCardId, total, taxes, delta, isRefund, paid, settled } =
         createCreditCardBillDto
-      const month = paid.getMonth()
+      const month = new Date(paid).getMonth()
       const groupId = this.uuid.v4()
 
-      const cc = await this.ccService.getOneById(creditCardId, {
-        isClosed: false,
-        month: MoreThanOrEqual(month)
-      })
       const bills = this.parcelsCcBills(createCreditCardBillDto)
-      if (cc) {
-        const newCcObject: CreditCard = {
-          ...cc,
-          limit: cc.limit + (total + taxes + delta) * (isRefund ? 1 : -1),
-          invoice: cc.invoice + bills[0].totalParcel * (isRefund ? -1 : 1)
+      if (settled) {
+        const cc = await this.ccService.getOneById(creditCardId, {
+          isClosed: false,
+          month: MoreThanOrEqual(month)
+        })
+        if (cc) {
+          const newCcObject: CreditCard = {
+            ...cc,
+            limit: cc.limit + (total + taxes + delta) * (isRefund ? 1 : -1),
+            invoice: cc.invoice + bills[0].totalParcel * (isRefund ? -1 : 1)
+          }
+          await this.ccService.update(creditCardId, newCcObject)
         }
-        await this.ccService.update(creditCardId, newCcObject)
       }
+
       const allBills = await Promise.all(
         bills.map((b) => {
           const res = this.billService.save({ ...b, groupId })
