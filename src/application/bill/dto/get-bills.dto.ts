@@ -14,13 +14,14 @@ export class GetBillsDto {
 export type AvailableFilters =
   | 'month'
   | 'year'
-  | 'typebill'
+  | 'category'
   | 'company'
   | 'creditcard'
   | 'bank'
   | 'min'
   | 'max'
   | 'status'
+  | 'type'
 
 export type FilterDisplay = {
   id: string | number

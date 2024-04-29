@@ -8,13 +8,12 @@ import {
 export class CreateBillTemplateDto {
   name: string
   description: string
-  typeBillId: string
+  categoryId: string
   total: number
   userId: string
-  month: number
-  year: number
   settled: boolean
   due: Date
+  paid: Date
 }
 
 export type AllBillProps = CreateBillTemplateDto &

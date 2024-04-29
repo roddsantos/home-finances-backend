@@ -7,7 +7,6 @@ import {
   BillBank,
   BillCompany,
   BillCreditCard,
-  BillService2,
   CreateBillTemplateDto
 } from './dto/bill-template.dto'
 import { ResponseHandler } from '../utils/ResponseHandler'
@@ -26,13 +25,9 @@ export class BillController {
 
   verifyCreateTemplate(data: Pick<AllBillProps, keyof CreateBillTemplateDto>) {
     return (
-      data.name === '' ||
-      data.description === '' ||
-      !data.typeBillId ||
-      data.year < 2023 ||
-      data.year > 2090 ||
-      data.month < 0 ||
-      data.month > 11 ||
+      !data.name ||
+      !data.description ||
+      !data.categoryId ||
       !data.userId ||
       data.total <= 0 ||
       !data.due
@@ -52,6 +47,8 @@ export class BillController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (this.verifyCreateTemplate(data) || !data.bank1Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (data.bank1Id === data.bank2Id)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Banks cant be the same')
 
       const result = await this.billService.createTransactionBill(data)
       return ResponseHandler.sendCreatedResponse(result, res)
@@ -87,22 +84,7 @@ export class BillController {
           'Bank OR credit card need to be presented'
         )
 
-      const result = await this.billService.createCompanyBill(data)
-      return ResponseHandler.sendCreatedResponse(result, res)
-    } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
-    }
-  }
-
-  @Post('/service')
-  public async createService(@Body() data: BillService2, @Res() res: Response) {
-    try {
-      if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || (!data.creditCardId && !data.bank1Id))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-
-      const result = await this.billService.createServiceBill(data)
+      const result = await this.billService.createCompanyCreditBill(data)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

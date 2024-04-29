@@ -94,14 +94,9 @@ export class Bill {
   public due: Date
 
   @Column({
-    nullable: false
+    nullable: true
   })
-  public month: number
-
-  @Column({
-    nullable: false
-  })
-  public year: number
+  public paid: Date
 
   @Column({
     nullable: false

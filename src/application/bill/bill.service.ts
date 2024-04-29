@@ -35,8 +35,8 @@ export class BillService {
 
   parcelsCcBills(bill: BillCreditCard) {
     const bills = [] as BillCreditCard[]
-    let month = bill.month
-    let year = bill.year
+    let month = bill.paid.getMonth()
+    let year = bill.paid.getFullYear()
 
     for (let i = 0; i < bill.parcels; i++) {
       const parcelObject = {
@@ -55,10 +55,10 @@ export class BillService {
     return bills
   }
 
-  parcelsServiceCompanyBills(bill: BillService2 | BillCompany) {
+  parcelsCompanyCreditBills(bill: BillService2 | BillCompany) {
     const bills = [] as BillService2[]
-    let month = bill.month
-    let year = bill.year
+    let month = bill.due.getMonth()
+    let year = bill.due.getFullYear()
 
     for (let i = 0; i < bill.parcels; i++) {
       const parcelObject = {
@@ -83,12 +83,12 @@ export class BillService {
       const bank1 = await this.bankService.getOneById(bank1Id)
       if (bank1 && settled) {
         if (bank2Id) {
-          const newBank1Value: Bank = {
-            ...bank1,
-            savings: bank1.savings - total * (isPayment ? -1 : 1)
-          }
           const bank2 = await this.bankService.getOneById(bank2Id)
           if (bank2) {
+            const newBank1Value: Bank = {
+              ...bank1,
+              savings: bank1.savings + total * (isPayment ? -1 : 1)
+            }
             const newBank2Value: Bank = {
               ...bank2,
               savings: bank2.savings + total * (isPayment ? 1 : -1)
@@ -117,31 +117,11 @@ export class BillService {
     }
   }
 
-  async createCompanyBill(createCompanyBillDto: BillCompany) {
+  async createCompanyCreditBill(createCompanyBillDto: BillCompany) {
     try {
-      const { creditCardId, total, taxes, delta, month, bank1Id } = createCompanyBillDto
       const groupId = this.uuid.v4()
 
-      let data = null
-      if (creditCardId)
-        data = await this.ccService.getOneById(creditCardId, {
-          isClosed: false,
-          month: MoreThanOrEqual(month)
-        })
-      else data = await this.bankService.getOneById(bank1Id)
-
-      const bills = this.parcelsServiceCompanyBills(createCompanyBillDto)
-      if (creditCardId && data) {
-        const newCcObject: CreditCard = {
-          ...data,
-          limit: data.limit + (total + taxes + delta) * -1,
-          invoice: data.invoice + bills[0].totalParcel
-        }
-        await this.ccService.update(creditCardId, newCcObject)
-      } else if (bank1Id && data) {
-        const newBank1Value: Bank = { ...data, savings: data.savings - total }
-        await this.bankService.update(bank1Id, newBank1Value)
-      }
+      const bills = this.parcelsCompanyCreditBills(createCompanyBillDto)
 
       const allBills = await Promise.all(
         bills.map((b) => {
@@ -157,8 +137,9 @@ export class BillService {
 
   async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
     try {
-      const { creditCardId, total, taxes, delta, isRefund, month } =
+      const { creditCardId, total, taxes, delta, isRefund, paid } =
         createCreditCardBillDto
+      const month = paid.getMonth()
       const groupId = this.uuid.v4()
 
       const cc = await this.ccService.getOneById(creditCardId, {
@@ -173,47 +154,6 @@ export class BillService {
           invoice: cc.invoice + bills[0].totalParcel * (isRefund ? -1 : 1)
         }
         await this.ccService.update(creditCardId, newCcObject)
-      }
-      const allBills = await Promise.all(
-        bills.map((b) => {
-          const res = this.billService.save({ ...b, groupId })
-          return res
-        })
-      )
-      return allBills
-    } catch (error) {
-      return ErrorHandler.handle(error)
-    }
-  }
-
-  async createServiceBill(createServiceBillDto: BillService2) {
-    try {
-      const { creditCardId, total, taxes, delta, month, bank1Id, settled } =
-        createServiceBillDto
-      const groupId = this.uuid.v4()
-
-      let data = null
-      const bills = this.parcelsServiceCompanyBills(createServiceBillDto)
-
-      if (settled) {
-        if (creditCardId)
-          data = await this.ccService.getOneById(creditCardId, {
-            isClosed: false,
-            month: MoreThanOrEqual(month)
-          })
-        else data = await this.bankService.getOneById(bank1Id)
-
-        if (creditCardId && data) {
-          const newCcObject: CreditCard = {
-            ...data,
-            limit: data.limit + (total + taxes + delta) * -1,
-            invoice: data.invoice + bills[0].totalParcel
-          }
-          await this.ccService.update(creditCardId, newCcObject)
-        } else if (bank1Id && data) {
-          const newBank1Value: Bank = { ...data, savings: data.savings - total }
-          await this.bankService.update(bank1Id, newBank1Value)
-        }
       }
       const allBills = await Promise.all(
         bills.map((b) => {
@@ -283,11 +223,12 @@ export class BillService {
         min: null,
         max: null,
         years: [],
-        typeBillId: [],
+        categoryId: [],
         bankId: [],
         companyId: [],
         creditCardId: [],
-        status: 'all'
+        status: 'all',
+        type: []
       }
       if (data.length > 0) {
         parsedFilter = JSON.parse(data) as FilterDisplay[]
@@ -308,8 +249,8 @@ export class BillService {
             case 'status':
               filterObject.status = d.id as string
               break
-            case 'typebill':
-              filterObject.typeBillId.push(d.id)
+            case 'category':
+              filterObject.categoryId.push(d.id)
               break
             case 'company':
               filterObject.companyId.push(d.id)
@@ -322,6 +263,9 @@ export class BillService {
               break
             case 'status':
               filterObject.status = d.id as string
+              break
+            case 'type':
+              filterObject.type.push(d.id)
               break
             default:
               break
@@ -339,8 +283,8 @@ export class BillService {
       else if (filterObject.min) finalFilter.total = MoreThanOrEqual(filterObject.min)
       else if (filterObject.max) finalFilter.total = LessThanOrEqual(filterObject.max)
       // set type bills ids
-      if (filterObject.typeBillId.length > 0)
-        finalFilter.typeBillId = In([...filterObject.typeBillId])
+      if (filterObject.categoryId.length > 0)
+        finalFilter.categoryId = In([...filterObject.categoryId])
       // set banks ids
       if (filterObject.bankId.length > 0) {
         finalFilter.bank1Id = In([...filterObject.bankId])
@@ -355,12 +299,15 @@ export class BillService {
       // set status
       if (filterObject.status !== 'all')
         finalFilter.settled = filterObject.status === 'settled'
+      // set type of payments
+      if (filterObject.type.length > 0) finalFilter.type = In([...filterObject.type])
 
       const [result, total] = await this.billService.findAndCount({
-        relations: ['creditCard', 'company', 'bank1', 'bank2', 'typeBill'],
+        relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
         take,
         skip: take * page - take,
-        where: [{ ...finalFilter, userId }]
+        where: [{ ...finalFilter, userId }],
+        order: { updatedAt: 'DESC' }
       })
       return {
         count: total,

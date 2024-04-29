@@ -1,6 +1,7 @@
 export class CreateBankTransactionDto {
   bank1Id: string
   bank2Id?: string
+  companyId?: string
   isPayment: string
 }
 
