@@ -13,7 +13,7 @@ import {
   BillCreditCard,
   BillService2
 } from './dto/bill-template.dto'
-import { Between, In, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm'
+import { Between, In, LessThanOrEqual, MoreThanOrEqual, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
@@ -38,7 +38,8 @@ export class BillService {
     let month = new Date(bill.due).getMonth()
 
     for (let i = 0; i < bill.parcels; i++) {
-      const newDate = new Date(new Date(bill.due).setMonth(month + 1))
+      month = month + 1
+      const newDate = new Date(new Date(bill.due).setMonth(month))
       const parcelObject = {
         ...bill,
         parcel: i,
@@ -49,7 +50,6 @@ export class BillService {
         due: newDate.toISOString()
       }
       bills.push(parcelObject)
-      month = month + 1
     }
     return bills
   }
@@ -59,7 +59,8 @@ export class BillService {
     let month = new Date(bill.due).getMonth()
 
     for (let i = 0; i < bill.parcels; i++) {
-      const newDate = new Date(new Date(bill.due).setMonth(month + 1))
+      month = month + 1
+      const newDate = new Date(new Date(bill.due).setMonth(month))
       const parcelObject = {
         ...bill,
         parcel: i,
@@ -70,7 +71,6 @@ export class BillService {
         due: newDate.toISOString()
       }
       bills.push(parcelObject)
-      month = month + 1
     }
     return bills
   }
@@ -275,9 +275,23 @@ export class BillService {
       }
       const finalFilter: any = {}
       // set months
-      if (filterObject.months.length > 0) finalFilter.month = In([...filterObject.months])
+      if (filterObject.months.length > 0) {
+        const dates: Array<Date[]> = []
+        filterObject.years.forEach((y) =>
+          filterObject.months.forEach((m) => {
+            dates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
+          })
+        )
+        finalFilter.due = Or(...dates.map((d) => Between(d[0], d[1])))
+      }
       // set years
-      if (filterObject.years.length > 0) finalFilter.year = In([...filterObject.years])
+      if (filterObject.years.length > 0) {
+        const dates: Array<Date[]> = []
+        filterObject.years.forEach((y) =>
+          dates.push([new Date(y, 0, 1), new Date(y, 11, 31)])
+        )
+        finalFilter.due = Or(...dates.map((d) => Between(d[0], d[1])))
+      }
       // met min and max total values
       if (filterObject.min && filterObject.max)
         finalFilter.total = Between(filterObject.min, filterObject.max)
