@@ -285,7 +285,7 @@ export class BillService {
         finalFilter.due = Or(...dates.map((d) => Between(d[0], d[1])))
       }
       // set years
-      if (filterObject.years.length > 0) {
+      if (filterObject.years.length > 0 && filterObject.months.length === 0) {
         const dates: Array<Date[]> = []
         filterObject.years.forEach((y) =>
           dates.push([new Date(y, 0, 1), new Date(y, 11, 31)])
