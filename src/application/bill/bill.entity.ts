@@ -135,8 +135,18 @@ export class Bill {
   })
   public bank2Id: string
 
+  @Column({
+    nullable: true
+  })
+  isPayment: boolean
+
   @ManyToOne(() => CreditCard)
   public creditCard: CreditCard
+
+  @Column({
+    nullable: true
+  })
+  isRefund: boolean
 
   @Column({
     nullable: true

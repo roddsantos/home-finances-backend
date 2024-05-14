@@ -171,7 +171,7 @@ export class BillService {
   async updateTransactionBill(
     id: string,
     bank1Id: string,
-    data: Omit<UpdateBillBank, 'id' | 'bank1'>
+    data: Omit<UpdateBillBank, 'id' | 'bank1Id'>
   ) {
     try {
       const res = await this.billService.update(data, {
@@ -233,6 +233,7 @@ export class BillService {
       }
       if (data.length > 0) {
         parsedFilter = JSON.parse(data) as FilterDisplay[]
+        console.log('OK', parsedFilter)
         parsedFilter.forEach((d) => {
           switch (d.identifier) {
             case 'month':
