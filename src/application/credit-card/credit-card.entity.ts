@@ -44,7 +44,8 @@ export class CreditCard {
   @Column({
     nullable: false,
     type: 'float',
-    scale: 2
+    scale: 2,
+    default: 0
   })
   public invoice: number
 

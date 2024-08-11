@@ -38,7 +38,6 @@ export class BillService {
     let month = new Date(bill.due).getMonth()
 
     for (let i = 0; i < bill.parcels; i++) {
-      month = month + 1
       const newDate = new Date(new Date(bill.due).setMonth(month))
       const parcelObject = {
         ...bill,
@@ -50,6 +49,7 @@ export class BillService {
         due: newDate.toISOString()
       }
       bills.push(parcelObject)
+      month = month + 1
     }
     return bills
   }
@@ -200,17 +200,84 @@ export class BillService {
     }
   }
 
-  async updateCreditCardBill(
-    id: string,
-    creditCardId: string,
-    data: Omit<UpdateBillCreditCard, 'creditCard' | 'id'>
-  ) {
+  async updateCreditCardBill(id: string, data: Omit<UpdateBillCreditCard, 'id'>) {
+    const {
+      total,
+      taxes,
+      delta,
+      isRefund,
+      groupId,
+      parcel,
+      parcels,
+      totalParcel,
+      creditCardId,
+      due,
+      settled
+    } = data
+
     try {
-      const res = await this.billService.update(data, {
-        id,
-        creditCardId
+      const allBillsRelated = await this.billService.find({
+        where: {
+          groupId
+        }
       })
-      return res
+      if (allBillsRelated.length === 0)
+        throw ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+      const firstBill = allBillsRelated[0]
+
+      let month = new Date(due).getMonth()
+      const allPromises = await Promise.all(
+        allBillsRelated.map((abr, i) => {
+          const newDate = new Date(new Date(due).setMonth(month))
+          const updateData = this.billService.update(abr.id, {
+            ...data,
+            parcel: abr.parcel,
+            totalParcel:
+              parseFloat(((total + taxes) / parcels).toFixed(2)) +
+              (i === parcels - 1 ? delta : 0),
+            paid: newDate.toISOString(),
+            due: newDate.toISOString()
+          })
+          month = month + 1
+          return updateData
+        })
+      )
+
+      if (
+        (firstBill.total !== total ||
+          firstBill.taxes !== taxes ||
+          firstBill.delta !== delta) &&
+        parcel > 0
+      )
+        throw ErrorHandler.NOT_ACCEPTABLE(
+          "Can't change bill value after first one is processed"
+        )
+
+      if (allPromises.length !== allBillsRelated.length)
+        throw ErrorHandler.SOME_PROMISE_NOT_COMPLETED_MESSAGE(
+          'One or more bills were not updated'
+        )
+
+      if (settled && !firstBill.settled) {
+        const cc = await this.ccService.getOneById(creditCardId, {
+          isClosed: false
+        })
+        if (cc) {
+          const valueForLimit =
+            parcel > 0
+              ? total - (parcel * total + taxes + (parcels === parcel - 1 ? delta : 0))
+              : total + taxes + delta
+          const newCcObject: CreditCard = {
+            ...cc,
+            limit: cc.limit + valueForLimit * (isRefund ? 1 : -1),
+            invoice: cc.invoice + totalParcel * (isRefund ? -1 : 1)
+          }
+          await this.ccService.update(creditCardId, newCcObject)
+        }
+      }
+      return {
+        affected: allBillsRelated.map((abr) => abr.id)
+      }
     } catch (error) {
       return ErrorHandler.handle(error)
     }
@@ -233,7 +300,6 @@ export class BillService {
       }
       if (data.length > 0) {
         parsedFilter = JSON.parse(data) as FilterDisplay[]
-        console.log('OK', parsedFilter)
         parsedFilter.forEach((d) => {
           switch (d.identifier) {
             case 'month':
@@ -323,7 +389,7 @@ export class BillService {
         take,
         skip: take * page - take,
         where: [{ ...finalFilter, userId }],
-        order: { updatedAt: 'DESC' }
+        order: { due: 'ASC' }
       })
       return {
         count: total,

@@ -32,4 +32,12 @@ export abstract class ErrorHandler {
   public static NOT_FOUND_MESSAGE(message: string) {
     throw new HttpException(message, HttpStatus.NOT_FOUND)
   }
+
+  public static SOME_PROMISE_NOT_COMPLETED_MESSAGE(message: string) {
+    throw new HttpException(message, HttpStatus.SOME_PROMISE_NOT_COMPLETED)
+  }
+
+  public static NOT_ACCEPTABLE(message: string) {
+    throw new HttpException(message, HttpStatus.NOT_ACCEPTABLE)
+  }
 }

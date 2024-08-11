@@ -10,6 +10,7 @@ export class UpdateBillTemplateDto {
   due: Date
   paid: Date
   type: PaymentTypes
+  groupId: string
 }
 
 export class UpdateBankTransactionDto {
@@ -19,8 +20,14 @@ export class UpdateBankTransactionDto {
 }
 
 export class UpdateCreditCardBillDto {
-  creditCard: string
-  isRefund?: boolean
+  creditCardId: string
+  companyId?: string
+  parcels?: number
+  parcel?: number
+  totalParcel?: number
+  delta?: number
+  taxes?: number
+  isRefund: boolean
 }
 
 export class UpdateCompanyBillDto {
