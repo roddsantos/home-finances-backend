@@ -216,6 +216,7 @@ export class BillService {
     } = data
 
     try {
+      if (!groupId) throw ErrorHandler.NOT_FOUND_MESSAGE('Group id not found')
       const allBillsRelated = await this.billService.find({
         where: {
           groupId
