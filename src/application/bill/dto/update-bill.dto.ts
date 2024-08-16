@@ -15,6 +15,7 @@ export class UpdateBillTemplateDto {
 
 export class UpdateBankTransactionDto {
   bank1Id: string
+  bank2Id?: string
   companyId?: string
   isPayment?: boolean
 }

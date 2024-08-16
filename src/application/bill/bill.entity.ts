@@ -24,7 +24,8 @@ export class Bill {
   public id: string
 
   @Column({
-    nullable: false
+    nullable: true,
+    default: null
   })
   public groupId: string
 
