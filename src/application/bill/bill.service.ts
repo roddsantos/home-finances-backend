@@ -168,16 +168,32 @@ export class BillService {
     }
   }
 
-  async updateTransactionBill(
-    id: string,
-    bank1Id: string,
-    data: Omit<UpdateBillBank, 'id' | 'bank1Id'>
-  ) {
+  async updateTransactionBill(id: string, data: Omit<UpdateBillBank, 'id'>) {
     try {
-      const res = await this.billService.update(data, {
-        id,
-        bank1Id
-      })
+      const { settled, bank1Id, bank2Id, total, isPayment } = data
+      const bank1 = await this.bankService.getOneById(bank1Id)
+      if (!bank1) ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
+      if (bank1 && settled) {
+        const newBank1Value: Bank = {
+          ...bank1,
+          id: bank1Id,
+          savings: bank1.savings + total * (isPayment ? -1 : 1)
+        }
+        if (bank2Id) {
+          const bank2 = await this.bankService.getOneById(bank2Id)
+          if (!bank2) ErrorHandler.NOT_FOUND_MESSAGE('Bank 2 not found')
+          if (bank2 && settled) {
+            const newBank2Value: Bank = {
+              ...bank2,
+              id: bank2Id,
+              savings: bank2.savings + total * (isPayment ? 1 : -1)
+            }
+            await this.bankService.update(bank2Id, newBank2Value)
+          }
+        }
+        await this.bankService.update(bank1Id, newBank1Value)
+      }
+      const res = await this.billService.update(id, data)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -216,6 +232,7 @@ export class BillService {
     } = data
 
     try {
+      if (!groupId) throw ErrorHandler.NOT_FOUND_MESSAGE('Group id not found')
       const allBillsRelated = await this.billService.find({
         where: {
           groupId

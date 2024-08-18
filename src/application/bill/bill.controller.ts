@@ -97,8 +97,8 @@ export class BillController {
       if (this.verifyUpdateTemplate(data) || data.bank1Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
-      const { bank1Id, id, ...rest } = data
-      const result = await this.billService.updateTransactionBill(id, bank1Id, rest)
+      const { id, ...rest } = data
+      const result = await this.billService.updateTransactionBill(id, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

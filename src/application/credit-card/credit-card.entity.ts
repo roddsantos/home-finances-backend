@@ -50,6 +50,12 @@ export class CreditCard {
   public invoice: number
 
   @Column({
+    nullable: false,
+    default: 1
+  })
+  public day: number
+
+  @Column({
     nullable: false
   })
   public month: number
