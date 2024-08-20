@@ -34,7 +34,7 @@ $ npm start
 
 Database
 
-To create the database, be sure to install the docker desktop app. After that, run the following command:
+To create the database, be sure to install the docker desktop app. After that, run the following command (outside the project root folder):
 
 ```bash
 $ docker run --name home-finances-db -e MYSQL_ROOT_PASSWORD=homefinances -p 3306:3306 -v /etc/docker/home-finances-db:/etc/mysql/conf.d -v home-finances-db-data:/var/lib/mysql -d mysql
