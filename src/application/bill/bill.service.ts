@@ -193,7 +193,7 @@ export class BillService {
         }
         await this.bankService.update(bank1Id, newBank1Value)
       }
-      const res = await this.billService.update(id, data)
+      const res = await this.billService.update(id, { ...data })
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -415,5 +415,11 @@ export class BillService {
     } catch (error) {
       return ErrorHandler.handle(error)
     }
+  }
+
+  async getBillById(id: string) {
+    const bill = await this.billService.findOneBy({ id })
+    if (bill) return bill
+    else ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
   }
 }
