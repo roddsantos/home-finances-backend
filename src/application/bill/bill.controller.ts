@@ -126,7 +126,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (!this.verifyUpdateTemplate(data) || data.company || Boolean(data.due))
+      if (!this.verifyUpdateTemplate(data) || !data.company || !Boolean(data.due))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const { company, id, ...rest } = data
