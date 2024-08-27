@@ -35,9 +35,7 @@ export class BillController {
   }
 
   verifyUpdateTemplate(data: Pick<AllUpdateBillProps, keyof UpdateBillTemplateDto>) {
-    return (
-      data.id || data.name || data.month < 0 || data.description === '' || data.year < 0
-    )
+    return !data.id || !data.name || data.description === ''
   }
 
   @Post('/transaction')
@@ -96,11 +94,11 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyUpdateTemplate(data) || data.bank1)
+      if (this.verifyUpdateTemplate(data) || !data.bank1Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
-      const { bank1, id, ...rest } = data
-      const result = await this.billService.updateTransactionBill(id, bank1, rest)
+      const { id, ...rest } = data
+      const result = await this.billService.updateTransactionBill(id, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -112,11 +110,11 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyUpdateTemplate(data) || data.creditCard)
+      if (this.verifyUpdateTemplate(data) || !data.creditCardId)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
-      const { creditCard, id, ...rest } = data
-      const result = await this.billService.updateCreditCardBill(id, creditCard, rest)
+      const { id, ...rest } = data
+      const result = await this.billService.updateCreditCardBill(id, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -128,7 +126,7 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyUpdateTemplate(data) || data.company || Boolean(data.due))
+      if (!this.verifyUpdateTemplate(data) || !data.company || !Boolean(data.due))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const { company, id, ...rest } = data

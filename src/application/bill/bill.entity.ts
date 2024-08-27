@@ -24,7 +24,8 @@ export class Bill {
   public id: string
 
   @Column({
-    nullable: false
+    nullable: true,
+    default: null
   })
   public groupId: string
 
@@ -68,7 +69,7 @@ export class Bill {
 
   @Column({
     nullable: false,
-    default: 1
+    default: 0
   })
   public parcel: number
 
@@ -135,8 +136,18 @@ export class Bill {
   })
   public bank2Id: string
 
+  @Column({
+    nullable: true
+  })
+  isPayment: boolean
+
   @ManyToOne(() => CreditCard)
   public creditCard: CreditCard
+
+  @Column({
+    nullable: true
+  })
+  isRefund: boolean
 
   @Column({
     nullable: true

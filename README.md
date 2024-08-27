@@ -20,12 +20,24 @@ DB_PASSWORD=<database password (if used)>
 NODE_ENV=development
 ```
 
-After this step do the next in the terminal (in the project root): 
+After this step do the next in the terminal (in the project root):
+
 ```bash
 $ npm install
 ```
 
 And finally, you can run the server:
+
 ```bash
 $ npm start
 ```
+
+Database
+
+To create the database, be sure to install the docker desktop app. After that, run the following command (outside the project root folder):
+
+```bash
+$ docker run --name home-finances-db -e MYSQL_ROOT_PASSWORD=homefinances -p 3306:3306 -v /etc/docker/home-finances-db:/etc/mysql/conf.d -v home-finances-db-data:/var/lib/mysql -d mysql
+```
+
+Then, change the flag synchronize to true in the file src/application/database/database.config.ts, and run the app. After that, change again to false.

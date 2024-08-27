@@ -1,16 +1,38 @@
 version: '3.7'
 
+networks:
+  homefinances:
+
 services:
+  db:
+    image: mysql:latest
+    container_name: home-finances-db
+    ports:
+      - 3306:3306
+    expose:
+      - '3306'
+    networks:
+      - homefinances
+    volumes:
+      - .:/etc/docker/home-finances-db:/etc/mysql/conf.d
+      - .:/home-finances-db-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=homefinances
   dev:
-    container_name: homepay-nest
-    image: homepay-nest:1.0.0
+    container_name: home-finances-dev
+    image: home-finances-dev:1.0.0
+    ports:
+      - 4002:4002
+    env_file:
+      - /.env
     build:
       context: .
       dockerfile: ./Dockerfile
-    command: npm run start:debug
-    ports:
-      - 4001:4001
+    depends_on:
+      - db
+    networks:
+      - homefinances
     volumes:
-      - .:/usr/src/app
+      - .:/user/src/app
       - /usr/src/app/node_modules
     restart: unless-stopped

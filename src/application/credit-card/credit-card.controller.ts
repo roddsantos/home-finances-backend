@@ -27,7 +27,14 @@ export class CreditCardController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (!data.year || data.month < 0 || data.month > 11 || data.name === '') {
+      if (
+        !data.year ||
+        data.month < 0 ||
+        data.month > 11 ||
+        data.name === '' ||
+        data.day <= 0 ||
+        data.day >= 29
+      ) {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
       const result = await this.creditCardService.create(data)
@@ -50,7 +57,9 @@ export class CreditCardController {
         data.month < 0 ||
         data.month > 11 ||
         data.name === '' ||
-        data.id === ''
+        data.id === '' ||
+        data.day <= 0 ||
+        data.day >= 29
       )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 

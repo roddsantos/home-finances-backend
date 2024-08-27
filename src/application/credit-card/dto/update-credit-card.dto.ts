@@ -4,6 +4,7 @@ export class UpdateCreditCardDto {
   description?: string
   color: string
   limit: number
+  day: number
   month: number
   year: number
   isClosed: boolean
