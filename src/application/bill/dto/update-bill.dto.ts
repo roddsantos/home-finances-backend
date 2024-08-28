@@ -32,8 +32,15 @@ export class UpdateCreditCardBillDto {
 }
 
 export class UpdateCompanyBillDto {
-  company: string
+  companyId: string
+  parcels: number
+  bank1Id?: string
+  creditCardId?: string
+  totalParcel?: number
   due: Date
+  delta?: number
+  taxes?: number
+  isRefund: boolean
 }
 
 export type AllUpdateBillProps = UpdateBillTemplateDto &

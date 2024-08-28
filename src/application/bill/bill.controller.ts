@@ -126,11 +126,15 @@ export class BillController {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (!this.verifyUpdateTemplate(data) || !data.company || !Boolean(data.due))
+      if (this.verifyUpdateTemplate(data) || !data.companyId || !Boolean(data.due))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      if (data.paid && !data.settled)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
+          'Missing Required Fields: settled needs to be checked when setting a paid date'
+        )
 
-      const { company, id, ...rest } = data
-      const result = await this.billService.updateCompanyBill(id, company, rest)
+      const { id, ...rest } = data
+      const result = await this.billService.updateCompanyBill(id, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
