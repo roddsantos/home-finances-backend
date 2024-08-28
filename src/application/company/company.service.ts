@@ -58,4 +58,15 @@ export class CompanyService {
       return ErrorHandler.handle(error)
     }
   }
+
+  async getOneById(id: string) {
+    try {
+      const res = await this.companyRepository.findOne({
+        where: { id }
+      })
+      return res
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
 }

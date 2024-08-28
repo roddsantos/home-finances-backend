@@ -200,15 +200,42 @@ export class BillService {
     }
   }
 
-  async updateCompanyBill(
-    id: string,
-    companyId: string,
-    data: Omit<UpdateBillCompany, 'company' | 'id'>
-  ) {
+  async updateCompanyBill(id: string, data: Omit<UpdateBillCompany, 'id'>) {
     try {
-      const res = await this.billService.update(data, {
-        id,
-        companyId
+      const { bank1Id, creditCardId, settled, totalParcel, parcels, total, paid } = data
+      if (settled) {
+        if (bank1Id) {
+          const bank = await this.bankService.getOneById(bank1Id)
+          if (!bank) ErrorHandler.NOT_FOUND_MESSAGE('Bank not found')
+          else {
+            const newBankValue: Bank = {
+              ...bank,
+              id: bank1Id,
+              savings: bank.savings - (parcels > 1 ? totalParcel : total)
+            }
+            await this.bankService.update(bank1Id, newBankValue)
+          }
+        } else if (creditCardId) {
+          const cc = await this.ccService.getOneById(creditCardId)
+          if (!cc) ErrorHandler.NOT_FOUND_MESSAGE('Credit card not found')
+          else {
+            const calculatedValue = parcels > 1 ? totalParcel : total
+            const newCcObject: CreditCard = {
+              ...cc,
+              limit: cc.limit - calculatedValue,
+              invoice: cc.invoice + calculatedValue
+            }
+            await this.ccService.update(creditCardId, newCcObject)
+          }
+        } else
+          ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
+            'Neither credit card nor bank were found'
+          )
+      }
+
+      const res = await this.billService.update(id, {
+        ...data,
+        paid: paid ? paid : new Date()
       })
       return res
     } catch (error) {
