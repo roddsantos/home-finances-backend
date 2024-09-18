@@ -45,7 +45,7 @@ export class BillService {
         totalParcel:
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
-        paid: newDate.toISOString(),
+        paid: bill.paid && i === 0 ? new Date(bill.paid).toISOString() : null,
         due: newDate.toISOString()
       }
       bills.push(parcelObject)
@@ -379,6 +379,12 @@ export class BillService {
             case 'type':
               filterObject.type.push(d.id)
               break
+            case 'date1':
+              filterObject.date1 = d.id
+              break
+            case 'date2':
+              filterObject.date2 = d.id
+              break
             default:
               break
           }
@@ -394,6 +400,18 @@ export class BillService {
           })
         )
         finalFilter.due = Or(...dates.map((d) => Between(d[0], d[1])))
+      }
+      if (filterObject.date1 && filterObject.date2) {
+        finalFilter.due = Between(
+          new Date(filterObject.date1),
+          new Date(filterObject.date2)
+        )
+      }
+      if (filterObject.date1 && !filterObject.date2) {
+        finalFilter.due = MoreThanOrEqual(new Date(filterObject.date1))
+      }
+      if (filterObject.date2 && !filterObject.date1) {
+        finalFilter.due = LessThanOrEqual(new Date(filterObject.date2))
       }
       // set years
       if (filterObject.years.length > 0 && filterObject.months.length === 0) {

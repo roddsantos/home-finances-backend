@@ -22,6 +22,8 @@ export type AvailableFilters =
   | 'max'
   | 'status'
   | 'type'
+  | 'date1'
+  | 'date2'
 
 export type FilterDisplay = {
   id: string | number
