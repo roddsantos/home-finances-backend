@@ -33,7 +33,10 @@ export class CreditCardController {
         data.month > 11 ||
         data.name === '' ||
         data.day <= 0 ||
-        data.day >= 29
+        data.due <= 0 ||
+        data.day >= 29 ||
+        data.due >= 29 ||
+        !data.flag
       ) {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
@@ -59,7 +62,10 @@ export class CreditCardController {
         data.name === '' ||
         data.id === '' ||
         data.day <= 0 ||
-        data.day >= 29
+        data.due <= 0 ||
+        data.day >= 29 ||
+        data.due >= 29 ||
+        !data.flag
       )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 

@@ -135,16 +135,14 @@ export class BillService {
 
   async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
     try {
-      const { creditCardId, total, taxes, delta, isRefund, paid, settled } =
+      const { creditCardId, total, taxes, delta, isRefund, settled } =
         createCreditCardBillDto
-      const month = new Date(paid).getMonth()
       const groupId = this.uuid.v4()
 
       const bills = this.parcelsCcBills(createCreditCardBillDto)
       if (settled) {
         const cc = await this.ccService.getOneById(creditCardId, {
-          isClosed: false,
-          month: MoreThanOrEqual(month)
+          isClosed: false
         })
         if (cc) {
           const newCcObject: CreditCard = {
@@ -153,7 +151,7 @@ export class BillService {
             invoice: cc.invoice + bills[0].totalParcel * (isRefund ? -1 : 1)
           }
           await this.ccService.update(creditCardId, newCcObject)
-        }
+        } else throw ErrorHandler.CONFLICT_MESSAGE("This card can't be used")
       }
 
       const allBills = await Promise.all(
@@ -445,6 +443,7 @@ export class BillService {
         finalFilter.settled = filterObject.status === 'settled'
       // set type of payments
       if (filterObject.type.length > 0) finalFilter.type = In([...filterObject.type])
+      console.log('FILTERS', finalFilter)
 
       const [result, total] = await this.billService.findAndCount({
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
