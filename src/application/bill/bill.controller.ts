@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Query, Res } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query, Res } from '@nestjs/common'
 import { BillService } from './bill.service'
 import { Response } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
@@ -149,6 +149,16 @@ export class BillController {
       const { page, limit, userId, data } = filters
 
       const result = await this.billService.getBills(userId, page, limit, data)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Get('/home/:id')
+  public async getHomeInfo(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const result = await this.billService.getBillsDetails(id)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

@@ -12,6 +12,7 @@ export class GetBillsDto {
 }
 
 export type AvailableFilters =
+  | 'name'
   | 'month'
   | 'year'
   | 'category'

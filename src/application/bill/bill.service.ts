@@ -13,7 +13,15 @@ import {
   BillCreditCard,
   BillService2
 } from './dto/bill-template.dto'
-import { Between, In, LessThanOrEqual, MoreThanOrEqual, Or, Repository } from 'typeorm'
+import {
+  Between,
+  In,
+  LessThanOrEqual,
+  Like,
+  MoreThanOrEqual,
+  Or,
+  Repository
+} from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
@@ -38,15 +46,16 @@ export class BillService {
     let month = new Date(bill.due).getMonth()
 
     for (let i = 0; i < bill.parcels; i++) {
-      const newDate = new Date(new Date(bill.due).setMonth(month))
+      const newDateDue = new Date(new Date(bill.due).setMonth(month))
+      const newDatePaid = bill.paid ? new Date(new Date(bill.paid).setMonth(month)) : null
       const parcelObject = {
         ...bill,
         parcel: i,
         totalParcel:
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
-        paid: bill.paid && i === 0 ? new Date(bill.paid).toISOString() : null,
-        due: newDate.toISOString()
+        paid: bill.paid ? newDatePaid.toISOString() : null,
+        due: newDateDue.toISOString()
       }
       bills.push(parcelObject)
       month = month + 1
@@ -94,7 +103,10 @@ export class BillService {
             await this.bankService.update(bank1Id, newBank1Value)
             await this.bankService.update(bank2Id, newBank2Value)
 
-            const res = await this.billService.save(createTransactionBillDto)
+            const res = await this.billService.save({
+              ...createTransactionBillDto,
+              totalParcel: total
+            })
             return res
           } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 2 not found')
         } else {
@@ -103,11 +115,17 @@ export class BillService {
             savings: bank1.savings + total * (isPayment ? -1 : 1)
           }
           await this.bankService.update(bank1Id, newBank1Value)
-          const res = await this.billService.save(createTransactionBillDto)
+          const res = await this.billService.save({
+            ...createTransactionBillDto,
+            totalParcel: total
+          })
           return res
         }
       } else if (!settled) {
-        const res = await this.billService.save(createTransactionBillDto)
+        const res = await this.billService.save({
+          ...createTransactionBillDto,
+          totalParcel: total
+        })
         return res
       } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
     } catch (error) {
@@ -329,6 +347,7 @@ export class BillService {
     try {
       let parsedFilter: FilterDisplay[] = []
       const filterObject: any = {
+        name: '',
         months: [],
         min: null,
         max: null,
@@ -344,6 +363,9 @@ export class BillService {
         parsedFilter = JSON.parse(data) as FilterDisplay[]
         parsedFilter.forEach((d) => {
           switch (d.identifier) {
+            case 'name':
+              filterObject.name = d.id as string
+              break
             case 'month':
               filterObject.months!.push(d.id as number)
               break
@@ -389,6 +411,8 @@ export class BillService {
         })
       }
       const finalFilter: any = {}
+      // set name
+      if (filterObject.name) finalFilter.name = Like(`%${filterObject.name}%`)
       // set months
       if (filterObject.months.length > 0) {
         const dates: Array<Date[]> = []
@@ -421,9 +445,11 @@ export class BillService {
       }
       // met min and max total values
       if (filterObject.min && filterObject.max)
-        finalFilter.total = Between(filterObject.min, filterObject.max)
-      else if (filterObject.min) finalFilter.total = MoreThanOrEqual(filterObject.min)
-      else if (filterObject.max) finalFilter.total = LessThanOrEqual(filterObject.max)
+        finalFilter.totalParcel = Between(filterObject.min, filterObject.max)
+      else if (filterObject.min)
+        finalFilter.totalParcel = MoreThanOrEqual(filterObject.min)
+      else if (filterObject.max)
+        finalFilter.totalParcel = LessThanOrEqual(filterObject.max)
       // set type bills ids
       if (filterObject.categoryId.length > 0)
         finalFilter.categoryId = In([...filterObject.categoryId])
@@ -443,7 +469,6 @@ export class BillService {
         finalFilter.settled = filterObject.status === 'settled'
       // set type of payments
       if (filterObject.type.length > 0) finalFilter.type = In([...filterObject.type])
-      console.log('FILTERS', finalFilter)
 
       const [result, total] = await this.billService.findAndCount({
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
@@ -465,5 +490,36 @@ export class BillService {
     const bill = await this.billService.findOneBy({ id })
     if (bill) return bill
     else ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+  }
+
+  async getBillsDetails(userId: string) {
+    try {
+      const filterObject = {
+        months: [new Date().getMonth()],
+        years: [new Date().getFullYear()]
+      }
+      const dates: Array<Date[]> = []
+      filterObject.years.forEach((y) =>
+        filterObject.months.forEach((m) => {
+          dates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
+        })
+      )
+      const countSpent = await this.billService.count({
+        where: {
+          due: Or(...dates.map((d) => Between(d[0], d[1]))),
+          userId
+        }
+      })
+      const totalSpent = await this.billService.sum('totalParcel', {
+        due: Or(...dates.map((d) => Between(d[0], d[1]))),
+        userId
+      })
+      return {
+        countSpent,
+        monthSpent: totalSpent
+      }
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
   }
 }

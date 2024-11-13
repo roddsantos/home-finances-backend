@@ -47,8 +47,7 @@ export class CategoryController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (this.verifyData(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const { id, ...rest } = data
-      const result = await this.categoryService.update(id, rest)
+      const result = await this.categoryService.update(data)
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
