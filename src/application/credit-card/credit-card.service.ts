@@ -73,4 +73,37 @@ export class CreditCardService {
       return ErrorHandler.handle(error)
     }
   }
+
+  async getCreditCardValues(userId: string) {
+    try {
+      const filterObject = {
+        months: [new Date().getMonth()],
+        years: [new Date().getFullYear()]
+      }
+      const dates: Array<Date[]> = []
+      filterObject.years.forEach((y) =>
+        filterObject.months.forEach((m) => {
+          dates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
+        })
+      )
+      const total = await this.creditCardRepository.sum('invoice', {
+        userId,
+        month: new Date().getMonth(),
+        year: new Date().getFullYear()
+      })
+      const count = await this.creditCardRepository.count({
+        where: {
+          userId,
+          month: new Date().getMonth(),
+          year: new Date().getFullYear()
+        }
+      })
+      return {
+        total,
+        count
+      }
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
 }

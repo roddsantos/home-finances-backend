@@ -103,4 +103,15 @@ export class CreditCardController {
       return ErrorHandler.errorResponse(res, error)
     }
   }
+
+  @Get('/invoice/:id')
+  public async getInvoice(@Param('id') id: string, @Res() res: Response) {
+    try {
+      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
+      const result = await this.creditCardService.getCreditCardValues(id)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 }

@@ -494,29 +494,44 @@ export class BillService {
 
   async getBillsDetails(userId: string) {
     try {
-      const filterObject = {
+      const thisDate = {
         months: [new Date().getMonth()],
         years: [new Date().getFullYear()]
       }
-      const dates: Array<Date[]> = []
-      filterObject.years.forEach((y) =>
-        filterObject.months.forEach((m) => {
-          dates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
+      const lastDate = {
+        months: [new Date().getMonth() === 0 ? 11 : new Date().getMonth() - 1],
+        years: [new Date().getFullYear() - (new Date().getMonth() === 0 ? 1 : 0)]
+      }
+      const thisDates: Array<Date[]> = []
+      const lastDates: Array<Date[]> = []
+      thisDate.years.forEach((y) =>
+        thisDate.months.forEach((m) => {
+          thisDates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
+        })
+      )
+      lastDate.years.forEach((y) =>
+        lastDate.months.forEach((m) => {
+          lastDates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
         })
       )
       const count = await this.billService.count({
         where: {
-          due: Or(...dates.map((d) => Between(d[0], d[1]))),
+          due: Or(...thisDates.map((d) => Between(d[0], d[1]))),
           userId
         }
       })
+      const lastTotal = await this.billService.sum('totalParcel', {
+        due: Or(...lastDates.map((d) => Between(d[0], d[1]))),
+        userId
+      })
       const total = await this.billService.sum('totalParcel', {
-        due: Or(...dates.map((d) => Between(d[0], d[1]))),
+        due: Or(...thisDates.map((d) => Between(d[0], d[1]))),
         userId
       })
       return {
         total,
-        count
+        count,
+        delta: parseFloat((lastTotal / total - 1).toFixed(4))
       }
     } catch (error) {
       return ErrorHandler.handle(error)
