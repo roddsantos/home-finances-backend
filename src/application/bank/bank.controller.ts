@@ -6,6 +6,7 @@ import { Response } from 'express'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { UpdateBankDto } from './dto/update-bank.dto'
 import { Bank } from './bank.entity'
+import { SumAndCountType } from '../types/general'
 
 @Controller('bank')
 export class BankController {
@@ -70,11 +71,25 @@ export class BankController {
 
   @Get('/:id')
   public async getBank(
-    @Param('/:id') id: string,
+    @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<Bank>> {
     try {
       const result = await this.bankService.getAllById(id)
+      return ResponseHandler.sendResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Get('/savings/:id')
+  public async getSavings(
+    @Param('id') id: string,
+    @Res() res: Response
+  ): Promise<Response<SumAndCountType> | void> {
+    try {
+      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
+      const result = await this.bankService.getSavingsTotal(id)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

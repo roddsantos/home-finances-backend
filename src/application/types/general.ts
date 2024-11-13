@@ -13,3 +13,8 @@ export interface ErrorResponse {
 }
 
 export type PromiseResult<T> = SuccessResponse<T> | ErrorResponse
+
+export type SumAndCountType = {
+  total: number
+  count: number
+}

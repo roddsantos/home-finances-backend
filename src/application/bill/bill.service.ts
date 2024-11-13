@@ -504,19 +504,19 @@ export class BillService {
           dates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
         })
       )
-      const countSpent = await this.billService.count({
+      const count = await this.billService.count({
         where: {
           due: Or(...dates.map((d) => Between(d[0], d[1]))),
           userId
         }
       })
-      const totalSpent = await this.billService.sum('totalParcel', {
+      const total = await this.billService.sum('totalParcel', {
         due: Or(...dates.map((d) => Between(d[0], d[1]))),
         userId
       })
       return {
-        countSpent,
-        monthSpent: totalSpent
+        total,
+        count
       }
     } catch (error) {
       return ErrorHandler.handle(error)
