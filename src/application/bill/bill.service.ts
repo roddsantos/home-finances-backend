@@ -537,4 +537,33 @@ export class BillService {
       return ErrorHandler.handle(error)
     }
   }
+
+  async getLastFiveBills(userId: string) {
+    try {
+      const thisDate = {
+        months: [new Date().getMonth()],
+        years: [new Date().getFullYear()]
+      }
+      const thisDates: Array<Date[]> = []
+      thisDate.years.forEach((y) =>
+        thisDate.months.forEach((m) => {
+          thisDates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
+        })
+      )
+      const bills = await this.billService.find({
+        relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
+        where: {
+          due: Or(...thisDates.map((d) => Between(d[0], d[1]))),
+          userId
+        },
+        take: 5,
+        order: { due: 'ASC' }
+      })
+      return {
+        bills
+      }
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
 }

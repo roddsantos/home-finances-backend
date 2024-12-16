@@ -158,7 +158,19 @@ export class BillController {
   @Get('/home/:id')
   public async getHomeInfo(@Param('id') id: string, @Res() res: Response) {
     try {
+      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
       const result = await this.billService.getBillsDetails(id)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Get('/recents/:id')
+  public async getRecentBills(@Param('id') id: string, @Res() res: Response) {
+    try {
+      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
+      const result = await this.billService.getLastFiveBills(id)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

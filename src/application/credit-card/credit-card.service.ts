@@ -99,7 +99,7 @@ export class CreditCardService {
         }
       })
       return {
-        total,
+        total: total || 0,
         count
       }
     } catch (error) {
