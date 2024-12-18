@@ -22,22 +22,27 @@ import { CreditCard } from './credit-card.entity'
 export class CreditCardController {
   constructor(private readonly creditCardService: CreditCardService) {}
 
+  hasMissingCreditCardData(data: Partial<CreateCreditCardDto>) {
+    let flag = false
+    if (data.year) flag = flag || data.year < new Date().getFullYear()
+    if (data.month) flag = flag || data.month > 11 || data.month < 0
+    if (data.name) flag = flag || data.name === ''
+    if (data.limit) flag = flag || data.limit <= 0
+    if (data.day) flag = flag || data.day <= 0 || data.day >= 29
+    if (data.due) flag = flag || data.due <= 0 || data.due >= 29
+    if (data.flag) flag = flag || data.flag === ''
+    return flag
+  }
+
   @Post()
-  public async createCC(@Body() data: CreateCreditCardDto, @Res() res: Response) {
+  public async createCreditCard(
+    @Body() data: CreateCreditCardDto,
+    @Res() res: Response
+  ): Promise<Response> {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (
-        !data.year ||
-        data.month < 0 ||
-        data.month > 11 ||
-        data.name === '' ||
-        data.day <= 0 ||
-        data.due <= 0 ||
-        data.day >= 29 ||
-        data.due >= 29 ||
-        !data.flag
-      ) {
+      if (this.hasMissingCreditCardData(data)) {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
       const result = await this.creditCardService.create(data)
@@ -48,25 +53,14 @@ export class CreditCardController {
   }
 
   @Patch()
-  public async updateCC(
-    @Body() data: UpdateCreditCardDto,
+  public async updateCreditCard(
+    @Body() data: Partial<UpdateCreditCardDto>,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (
-        !data.year ||
-        data.month < 0 ||
-        data.month > 11 ||
-        data.name === '' ||
-        data.id === '' ||
-        data.day <= 0 ||
-        data.due <= 0 ||
-        data.day >= 29 ||
-        data.due >= 29 ||
-        !data.flag
-      )
+      if (this.hasMissingCreditCardData(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const { id, ...rest } = data
@@ -78,7 +72,7 @@ export class CreditCardController {
   }
 
   @Delete('/:id')
-  public async deleteCC(
+  public async deleteCreditCard(
     @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<boolean>> {
@@ -91,7 +85,7 @@ export class CreditCardController {
   }
 
   @Get()
-  public async getCC(
+  public async getCreditCard(
     @Query() data: GetCreditCardDto,
     @Res() res: Response
   ): Promise<Response<CreditCard>> {

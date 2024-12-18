@@ -10,6 +10,7 @@ import { CategoryModule } from '../category/category.module'
 import { CreditCardModule } from '../credit-card/credit-card.module'
 import { UserModule } from '../user/user.module'
 import { SeedingService } from '../database/seeds/seeds.service'
+import { DashboardModule } from '../dashboard/dashboard.module'
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { SeedingService } from '../database/seeds/seeds.service'
     CompanyModule,
     CreditCardModule,
     CategoryModule,
+    DashboardModule,
     UserModule
   ],
   controllers: [AppController],

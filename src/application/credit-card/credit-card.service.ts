@@ -24,16 +24,15 @@ export class CreditCardService {
           year: createCreditCard.year
         }
       })
-      if (cc === null) {
-        const res = this.creditCardRepository.save(createCreditCard)
-        return res
-      } else ErrorHandler.CONFLICT_MESSAGE('This credit card already exists')
+      if (cc) ErrorHandler.CONFLICT_MESSAGE('This credit card already exists')
+      const res = this.creditCardRepository.save(createCreditCard)
+      return res
     } catch (error) {
       return ErrorHandler.handle(error)
     }
   }
 
-  async update(id: string, data: Omit<UpdateCreditCardDto, 'id'>) {
+  async update(id: string, data: Partial<Omit<UpdateCreditCardDto, 'id'>>) {
     try {
       const res = await this.creditCardRepository.update({ id }, data)
       return res

@@ -1,0 +1,20 @@
+export const CreatedCreditCardData = {
+  id: '0b44c4e8-bb56-4ad5-aebe-7f427886eca4',
+  name: 'Credit Card Test',
+  description: 'Credit Card Test Description',
+  color: '#000000',
+  flag: 'mastercard',
+  userId: '123',
+  limit: 1000,
+  limitLeft: 1000,
+  invoice: 0,
+  day: 10,
+  due: 14,
+  month: new Date().getMonth(),
+  year: new Date().getFullYear(),
+  isClosed: false,
+  user: null,
+  createdAt: '',
+  updatedAt: '',
+  deletedAt: ''
+}
