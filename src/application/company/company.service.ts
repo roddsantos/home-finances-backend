@@ -27,11 +27,10 @@ export class CompanyService {
     }
   }
 
-  async update(id: string, data: Omit<UpdateCompanyDto, 'id'>) {
+  async update(data: UpdateCompanyDto) {
     try {
-      const res = await this.companyRepository.update(data, {
-        id
-      })
+      const { id, ...rest } = data
+      const res = await this.companyRepository.update({ id }, rest)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)

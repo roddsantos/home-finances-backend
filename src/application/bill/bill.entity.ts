@@ -69,7 +69,7 @@ export class Bill {
 
   @Column({
     nullable: false,
-    default: 0
+    default: 1
   })
   public parcel: number
 

@@ -20,5 +20,6 @@ export const dataBaseConfig: TypeOrmModuleOptions = {
   synchronize: false,
   autoLoadEntities: true,
   entities: [User, Bank, Bill, Company, CreditCard, Category],
-  multipleStatements: true
+  multipleStatements: true,
+  timezone: 'UTC-4'
 }

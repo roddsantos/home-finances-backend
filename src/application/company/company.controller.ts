@@ -32,17 +32,16 @@ export class CompanyController {
   }
 
   @Patch()
-  public async updateCreditCard(
+  public async updateCompany(
     @Body() data: UpdateCompanyDto,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (data.name === '' || data.description === '' || data.color === '' || data.id)
+      if (data.name === '' || data.description === '' || data.color === '' || !data.id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const { id, ...rest } = data
-      const result = await this.companyService.update(id, rest)
+      const result = await this.companyService.update(data)
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -50,7 +49,7 @@ export class CompanyController {
   }
 
   @Delete('/:id')
-  public async deleteUser(
+  public async deleteCompany(
     @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<boolean>> {

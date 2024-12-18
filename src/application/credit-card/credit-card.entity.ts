@@ -35,11 +35,25 @@ export class CreditCard {
   public color: string
 
   @Column({
+    nullable: false
+  })
+  public flag: string
+
+  @Column({
     nullable: false,
     type: 'float',
-    scale: 2
+    scale: 2,
+    default: 0
   })
   public limit: number
+
+  @Column({
+    nullable: false,
+    type: 'float',
+    scale: 2,
+    default: 0
+  })
+  public limitLeft: number
 
   @Column({
     nullable: false,
@@ -54,6 +68,12 @@ export class CreditCard {
     default: 1
   })
   public day: number
+
+  @Column({
+    nullable: false,
+    default: 1
+  })
+  public due: number
 
   @Column({
     nullable: false

@@ -27,11 +27,10 @@ export class CategoryService {
     }
   }
 
-  async update(id: string, data: Omit<UpdateCategoryDto, 'id'>) {
+  async update(data: UpdateCategoryDto) {
     try {
-      const res = await this.categoryRepository.update(data, {
-        id
-      })
+      const { id, ...rest } = data
+      const res = await this.categoryRepository.update({ id }, rest)
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
