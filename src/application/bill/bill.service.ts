@@ -557,7 +557,7 @@ export class BillService {
           userId
         },
         take: 5,
-        order: { due: 'ASC' }
+        order: { updatedAt: 'DESC' }
       })
       return {
         bills

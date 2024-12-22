@@ -34,7 +34,7 @@ export abstract class ErrorHandler {
   }
 
   public static SOME_PROMISE_NOT_COMPLETED_MESSAGE(message: string) {
-    throw new HttpException(message, HttpStatus.SOME_PROMISE_NOT_COMPLETED)
+    throw new HttpException(message, HttpStatus.I_AM_A_TEAPOT)
   }
 
   public static NOT_ACCEPTABLE(message: string) {

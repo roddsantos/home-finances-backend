@@ -4,35 +4,36 @@ networks:
   homefinances:
 
 services:
-  db:
+  mysql:
     image: mysql:latest
-    container_name: home-finances-db
+    container_name: home-finances-mysql
+    env_file: ./.env
     ports:
       - 3306:3306
-    expose:
-      - '3306'
     networks:
       - homefinances
     volumes:
-      - .:/etc/docker/home-finances-db:/etc/mysql/conf.d
-      - .:/home-finances-db-data:/var/lib/mysql
+      - /etc/docker/home-finances-db:/etc/mysql/conf.d
+      - /home-finances-db-data:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD=homefinances
+      - MYSQL_ROOT_HOST='%'
+    restart: unless-stopped
+
   dev:
+    depends_on:
+      - mysql
     container_name: home-finances-dev
-    image: home-finances-dev:1.0.0
+    env_file: ./.env
     ports:
       - 4002:4002
-    env_file:
-      - /.env
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    depends_on:
-      - db
+    build: ./
+    environment:
+      - DB_HOST=$DB_HOST
+      - DB_USERNAME=$DB_USERNAME
+      - DB_PASSWORD=$DB_PASSWORD
+      - DB_DATABASE=$DB_DATABASE
+      - DB_PORT=$DB_PORT
     networks:
       - homefinances
-    volumes:
-      - .:/user/src/app
-      - /usr/src/app/node_modules
     restart: unless-stopped

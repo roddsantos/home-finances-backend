@@ -35,7 +35,7 @@ export class CreditCardService {
   async update(id: string, data: Partial<Omit<UpdateCreditCardDto, 'id'>>) {
     try {
       const res = await this.creditCardRepository.update({ id }, data)
-      return res
+      return { ...res, id }
     } catch (error) {
       return ErrorHandler.handle(error)
     }
