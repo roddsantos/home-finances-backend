@@ -24,10 +24,17 @@ export class UserService {
 
   async update(updateUserDto: UpdateUserDto) {
     try {
-      const res = await this.userRepository.update(updateUserDto, {
-        id: updateUserDto.id
+      const { id, ...rest } = updateUserDto
+      const res = await this.userRepository.update(rest, {
+        id
       })
-      return res
+      return {
+        ...res,
+        user: {
+          ...rest,
+          id
+        }
+      }
     } catch (error) {
       return ErrorHandler.handle(error)
     }

@@ -18,4 +18,34 @@ export class DashboardController {
       return ErrorHandler.errorResponse(res, error)
     }
   }
+
+  @Get('/bills')
+  public async getMonthBills(@Query() data: any, @Res() res: Response) {
+    try {
+      const result = await this.dashboardService.getBills(data.userId)
+      return ResponseHandler.sendResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Get('/savings')
+  public async getSavingsInfo(@Query() data: any, @Res() res: Response) {
+    try {
+      const result = await this.dashboardService.getSavings(data.userId)
+      return ResponseHandler.sendResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Get('/credit-cards')
+  public async getCreditCards(@Query() data: any, @Res() res: Response) {
+    try {
+      const result = await this.dashboardService.getCreditCards(data.userId)
+      return ResponseHandler.sendResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 }

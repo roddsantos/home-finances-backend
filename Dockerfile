@@ -1,16 +1,13 @@
 # Base image
 FROM node:18
 
-WORKDIR /usr/src/app
+WORKDIR /home-finances-backend
 COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npm run build 
+CMD npm start 
 
-CMD ["npm", "run", "start:dev"]
-
-EXPOSE 4002
 
 
 # FROM node:alpine

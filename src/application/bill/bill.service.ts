@@ -494,44 +494,77 @@ export class BillService {
 
   async getBillsDetails(userId: string) {
     try {
-      const thisDate = {
-        months: [new Date().getMonth()],
-        years: [new Date().getFullYear()]
+      const thisMonthDates = {
+        firstDay: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+        lastDay: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
       }
-      const lastDate = {
-        months: [new Date().getMonth() === 0 ? 11 : new Date().getMonth() - 1],
-        years: [new Date().getFullYear() - (new Date().getMonth() === 0 ? 1 : 0)]
+      const lastMonthDates = {
+        firstDay: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
+        lastDay: new Date(new Date().getFullYear(), new Date().getMonth(), 0)
       }
-      const thisDates: Array<Date[]> = []
-      const lastDates: Array<Date[]> = []
-      thisDate.years.forEach((y) =>
-        thisDate.months.forEach((m) => {
-          thisDates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
-        })
-      )
-      lastDate.years.forEach((y) =>
-        lastDate.months.forEach((m) => {
-          lastDates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
-        })
-      )
       const count = await this.billService.count({
-        where: {
-          due: Or(...thisDates.map((d) => Between(d[0], d[1]))),
-          userId
+        where: [
+          {
+            userId,
+            due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
+            type: 'companyCredit'
+          },
+          {
+            userId,
+            due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
+            type: 'creditCard',
+            isRefund: false
+          },
+          {
+            userId,
+            due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
+            type: 'money',
+            isPayment: true
+          }
+        ]
+      })
+      const lastTotal = await this.billService.sum('totalParcel', [
+        {
+          userId,
+          due: Between(lastMonthDates.firstDay, lastMonthDates.lastDay),
+          type: 'companyCredit'
+        },
+        {
+          userId,
+          due: Between(lastMonthDates.firstDay, lastMonthDates.lastDay),
+          type: 'creditCard',
+          isRefund: false
+        },
+        {
+          userId,
+          due: Between(lastMonthDates.firstDay, lastMonthDates.lastDay),
+          type: 'money',
+          isPayment: true
         }
-      })
-      const lastTotal = await this.billService.sum('totalParcel', {
-        due: Or(...lastDates.map((d) => Between(d[0], d[1]))),
-        userId
-      })
-      const total = await this.billService.sum('totalParcel', {
-        due: Or(...thisDates.map((d) => Between(d[0], d[1]))),
-        userId
-      })
+      ])
+      const total = await this.billService.sum('totalParcel', [
+        {
+          userId,
+          due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
+          type: 'companyCredit'
+        },
+        {
+          userId,
+          due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
+          type: 'creditCard',
+          isRefund: false
+        },
+        {
+          userId,
+          due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
+          type: 'money',
+          isPayment: true
+        }
+      ])
       return {
         total,
         count,
-        delta: parseFloat((lastTotal / total - 1).toFixed(4))
+        delta: Boolean(lastTotal) ? 0 : parseFloat((total / lastTotal - 1).toFixed(4))
       }
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -557,7 +590,7 @@ export class BillService {
           userId
         },
         take: 5,
-        order: { due: 'ASC' }
+        order: { updatedAt: 'DESC' }
       })
       return {
         bills
