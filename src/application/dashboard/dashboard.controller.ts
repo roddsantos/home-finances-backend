@@ -38,4 +38,14 @@ export class DashboardController {
       return ErrorHandler.errorResponse(res, error)
     }
   }
+
+  @Get('/credit-cards')
+  public async getCreditCards(@Query() data: any, @Res() res: Response) {
+    try {
+      const result = await this.dashboardService.getCreditCards(data.userId)
+      return ResponseHandler.sendResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 }

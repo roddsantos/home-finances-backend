@@ -9,7 +9,7 @@ services:
     container_name: home-finances-mysql
     env_file: ./.env
     ports:
-      - 3306:3306
+      - 3307:3306
     networks:
       - homefinances
     volumes:

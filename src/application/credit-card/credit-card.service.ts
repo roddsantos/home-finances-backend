@@ -25,7 +25,10 @@ export class CreditCardService {
         }
       })
       if (cc) ErrorHandler.CONFLICT_MESSAGE('This credit card already exists')
-      const res = this.creditCardRepository.save(createCreditCard)
+      const res = this.creditCardRepository.save({
+        ...createCreditCard,
+        limitLeft: createCreditCard.limit
+      })
       return res
     } catch (error) {
       return ErrorHandler.handle(error)

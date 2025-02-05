@@ -6,9 +6,9 @@ This project is the backend of the Home Finances project
 This project uses the Javascript programming language, with the framework NestJS
 For the database, this project uses MySQL
 
-You can use this project locally, using a locally MySQL Workbench, or you can use with an AWS ECS for the server, and use an AWS Relational Database Service (RDS) for connection, but this is optional
+You can use this project locally, using a locally MySQL Workbench, use it with Docker, or you can use with an AWS ECS for the server, and use an AWS Relational Database Service (RDS) for connection
 
-After cloning, you need to create a .env file in the project root, with the following info:
+After cloning, you need to create a .env file in the project root, with the following info (if you're using AWS for the database and serving, use the RDS URL in DB_HOST):
 
 ```bash
 PORT=<port number where the application will connect to the server>
@@ -20,19 +20,27 @@ DB_PASSWORD=<database password (if used)>
 NODE_ENV=development
 ```
 
-After this step do the next in the terminal (in the project root):
+If you're using a Docker container, change the flag 'synchronize' to true in the file src/application/database/database.config.ts, use this command:
+
+```bash
+docker-compose up
+```
+
+...and after that, change again to false (and you can ignore all the steps ahead).
+
+For developing purposes, do the following commands (in the project root):
 
 ```bash
 $ npm install
 ```
 
-And finally, you can run the server:
+And run the server:
 
 ```bash
 $ npm start
 ```
 
-Database
+Database (if you are using npm command)
 
 To create the database, be sure to install the docker desktop app. After that, run the following command (outside the project root folder):
 
