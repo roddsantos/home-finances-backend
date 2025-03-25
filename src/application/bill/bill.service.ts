@@ -216,18 +216,26 @@ export class BillService {
     }
   }
 
-  async updateCompanyBill(id: string, data: Omit<UpdateBillCompany, 'id'>) {
+  async updateCompanyBill(id: string, data: Partial<Omit<UpdateBillCompany, 'id'>>) {
     try {
-      const { bank1Id, creditCardId, settled, totalParcel, parcels, total, paid } = data
-      if (settled) {
+      const isQuickSettle = id && data.settled && !data.companyId
+      const bill = await this.billService.findOneBy({
+        id
+      })
+      if (!bill) ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+      const { bank1Id, creditCardId, totalParcel, parcels, total, paid } = bill
+      if (data.settled) {
         if (bank1Id) {
           const bank = await this.bankService.getOneById(bank1Id)
           if (!bank) ErrorHandler.NOT_FOUND_MESSAGE('Bank not found')
           else {
+            const savings = isQuickSettle
+              ? bank.savings - (parcels > 1 ? totalParcel : total)
+              : bank.savings - (data.parcels > 1 ? data.totalParcel : data.total)
             const newBankValue: Bank = {
               ...bank,
               id: bank1Id,
-              savings: bank.savings - (parcels > 1 ? totalParcel : total)
+              savings
             }
             await this.bankService.update(bank1Id, newBankValue)
           }
@@ -235,7 +243,13 @@ export class BillService {
           const cc = await this.ccService.getOneById(creditCardId)
           if (!cc) ErrorHandler.NOT_FOUND_MESSAGE('Credit card not found')
           else {
-            const calculatedValue = parcels > 1 ? totalParcel : total
+            const calculatedValue = isQuickSettle
+              ? parcels > 1
+                ? totalParcel
+                : total
+              : data.parcels > 1
+                ? data.totalParcel
+                : data.total
             const newCcObject: CreditCard = {
               ...cc,
               limit: cc.limit - calculatedValue,
@@ -502,65 +516,32 @@ export class BillService {
         firstDay: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
         lastDay: new Date(new Date().getFullYear(), new Date().getMonth(), 0)
       }
+      const filter = (thisMonth: boolean) => [
+        {
+          userId,
+          due: Between(
+            thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
+            thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
+          ),
+          isPayment: true,
+          bank2Id: null,
+          isRefund: null
+        },
+        {
+          userId,
+          due: Between(
+            thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
+            thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
+          ),
+          type: 'creditCard',
+          isRefund: false
+        }
+      ]
       const count = await this.billService.count({
-        where: [
-          {
-            userId,
-            due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
-            type: 'companyCredit'
-          },
-          {
-            userId,
-            due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
-            type: 'creditCard',
-            isRefund: false
-          },
-          {
-            userId,
-            due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
-            type: 'money',
-            isPayment: true
-          }
-        ]
+        where: filter(true)
       })
-      const lastTotal = await this.billService.sum('totalParcel', [
-        {
-          userId,
-          due: Between(lastMonthDates.firstDay, lastMonthDates.lastDay),
-          type: 'companyCredit'
-        },
-        {
-          userId,
-          due: Between(lastMonthDates.firstDay, lastMonthDates.lastDay),
-          type: 'creditCard',
-          isRefund: false
-        },
-        {
-          userId,
-          due: Between(lastMonthDates.firstDay, lastMonthDates.lastDay),
-          type: 'money',
-          isPayment: true
-        }
-      ])
-      const total = await this.billService.sum('totalParcel', [
-        {
-          userId,
-          due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
-          type: 'companyCredit'
-        },
-        {
-          userId,
-          due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
-          type: 'creditCard',
-          isRefund: false
-        },
-        {
-          userId,
-          due: Between(thisMonthDates.firstDay, thisMonthDates.lastDay),
-          type: 'money',
-          isPayment: true
-        }
-      ])
+      const lastTotal = await this.billService.sum('totalParcel', filter(false))
+      const total = await this.billService.sum('totalParcel', filter(true))
       return {
         total,
         count,

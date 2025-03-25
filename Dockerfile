@@ -1,12 +1,14 @@
 # Base image
-FROM node:18
+FROM node:22.13.1
 
-WORKDIR /home-finances-backend
+WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
+EXPOSE 4002
+
 COPY . .
-CMD npm start 
+CMD npm run start
 
 
 

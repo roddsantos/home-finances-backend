@@ -139,7 +139,7 @@ export class Bill {
   @Column({
     nullable: true
   })
-  isPayment: boolean
+  isPayment: boolean | null
 
   @ManyToOne(() => CreditCard)
   public creditCard: CreditCard
@@ -147,7 +147,7 @@ export class Bill {
   @Column({
     nullable: true
   })
-  isRefund: boolean
+  isRefund: boolean | null
 
   @Column({
     nullable: true
