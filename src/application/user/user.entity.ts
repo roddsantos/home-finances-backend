@@ -33,6 +33,11 @@ export class User {
   })
   public username: string
 
+  @Column({
+    nullable: false
+  })
+  public password: string
+
   @CreateDateColumn() public createdAt: Date
 
   @UpdateDateColumn() public updatedAt: Date

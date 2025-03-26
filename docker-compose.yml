@@ -7,27 +7,32 @@ services:
   mysql:
     image: mysql:latest
     container_name: home-finances-mysql
-    env_file: ./.env
+    command: --default-authentication-plugin=mysql_native_password
     ports:
-      - 3307:3306
+      - 3306:3306
     networks:
       - homefinances
-    volumes:
-      - /etc/docker/home-finances-db:/etc/mysql/conf.d
-      - /home-finances-db-data:/var/lib/mysql
+    stdin_open: true
+    tty: true
+    # volumes:
+    #   - /etc/docker/home-finances-db:/etc/mysql/conf.d
+    #   - /home-finances-db-data:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=homefinances
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=homefinances
       - MYSQL_ROOT_HOST='%'
     restart: unless-stopped
+    volumes:
+      - mysql-data:/var/lib/mysql
 
   dev:
+    build: ./
+    container_name: home-finances-backend
     depends_on:
       - mysql
-    container_name: home-finances-dev
     env_file: ./.env
     ports:
       - 4002:4002
-    build: ./
     environment:
       - DB_HOST=$DB_HOST
       - DB_USERNAME=$DB_USERNAME
@@ -37,3 +42,9 @@ services:
     networks:
       - homefinances
     restart: unless-stopped
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  mysql-data:

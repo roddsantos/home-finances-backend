@@ -14,8 +14,7 @@ import {
   AllUpdateBillProps,
   UpdateBillBank,
   UpdateBillCompany,
-  UpdateBillCreditCard,
-  UpdateBillTemplateDto
+  UpdateBillCreditCard
 } from './dto/update-bill.dto'
 import { GetBillsDto } from './dto/get-bills.dto'
 
@@ -34,8 +33,8 @@ export class BillController {
     )
   }
 
-  verifyUpdateTemplate(data: Pick<AllUpdateBillProps, keyof UpdateBillTemplateDto>) {
-    return !data.id || !data.name || data.description === ''
+  verifyUpdateTemplate(data: Partial<AllUpdateBillProps>) {
+    return !data.id
   }
 
   @Post('/transaction')
@@ -122,11 +121,12 @@ export class BillController {
   }
 
   @Patch('/company')
-  public async updateCompany(@Body() data: UpdateBillCompany, @Res() res: Response) {
+  public async updateCompany(
+    @Body() data: Partial<UpdateBillCompany>,
+    @Res() res: Response
+  ) {
     try {
-      if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyUpdateTemplate(data) || !data.companyId || !Boolean(data.due))
+      if (!Boolean(data) || this.verifyUpdateTemplate(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (data.paid && !data.settled)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
