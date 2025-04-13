@@ -34,7 +34,8 @@ export class User {
   public username: string
 
   @Column({
-    nullable: false
+    nullable: false,
+    default: ''
   })
   public password: string
 
