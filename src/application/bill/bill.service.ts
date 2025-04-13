@@ -16,8 +16,10 @@ import {
 import {
   Between,
   In,
+  LessThan,
   LessThanOrEqual,
   Like,
+  MoreThan,
   MoreThanOrEqual,
   Or,
   Repository
@@ -232,7 +234,7 @@ export class BillService {
           ? bill.totalParcel + (data.taxes - bill.taxes) + newDelta
           : bill.totalParcel
 
-      const { bank1Id, creditCardId, totalParcel, parcels, total, paid } = bill
+      const { bank1Id, creditCardId, totalParcel, parcels, total } = bill
       if (data.settled) {
         if (bank1Id) {
           const bank = await this.bankService.getOneById(bank1Id)
@@ -274,7 +276,7 @@ export class BillService {
 
       const res = await this.billService.update(id, {
         ...data,
-        paid: data.settled ? paid || new Date() : null,
+        paid: data.settled ? data.paid || new Date() : null,
         totalParcel: newTotalParcel
       })
       return res
@@ -526,36 +528,60 @@ export class BillService {
         firstDay: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
         lastDay: new Date(new Date().getFullYear(), new Date().getMonth(), 0)
       }
-      const filter = (thisMonth: boolean) => [
-        {
-          userId,
-          due: Between(
-            thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
-            thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
-          ),
-          isPayment: true,
-          bank2Id: null,
-          isRefund: null
-        },
-        {
-          userId,
-          due: Between(
-            thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
-            thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
-          ),
-          type: 'creditCard',
-          isRefund: false
-        }
-      ]
-      const count = await this.billService.count({
+      const filter = (thisMonth: boolean) => {
+        return [
+          {
+            userId,
+            due: Between(
+              thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
+              thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
+            ),
+            isPayment: true,
+            bank2Id: null,
+            isRefund: false
+          },
+          {
+            userId,
+            due: Between(
+              thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
+              thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
+            ),
+            type: 'creditCard',
+            isRefund: false
+          },
+          {
+            userId,
+            due: Or(
+              LessThan(thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay),
+              MoreThan(thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay)
+            ),
+            paid: Between(
+              thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
+              thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
+            ),
+            isPayment: true,
+            bank2Id: null,
+            isRefund: false
+          }
+        ]
+      }
+
+      const bills = await this.billService.find({
         where: filter(true)
       })
+      const count = bills.length
       const lastTotal = await this.billService.sum('totalParcel', filter(false))
-      const total = await this.billService.sum('totalParcel', filter(true))
+      const total = bills.reduce((prev, curr) => prev + curr.totalParcel, 0)
+      const settled = bills.reduce(
+        (prev, curr) => prev + (curr.settled ? curr.totalParcel : 0),
+        0
+      )
+
       return {
         total,
         count,
-        delta: Boolean(lastTotal) ? 0 : parseFloat((total / lastTotal - 1).toFixed(4))
+        delta: Boolean(lastTotal) ? parseFloat((total / lastTotal - 1).toFixed(4)) : 0,
+        settled
       }
     } catch (error) {
       return ErrorHandler.handle(error)
