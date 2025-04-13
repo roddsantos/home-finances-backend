@@ -76,6 +76,8 @@ export class BillService {
         totalParcel:
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
+        taxes: parseFloat((bill.taxes / bill.parcels).toFixed(2)),
+        delta: i === bill.parcels - 1 ? bill.delta : 0,
         paid: null,
         due: newDate.toISOString()
       }
@@ -217,12 +219,19 @@ export class BillService {
   }
 
   async updateCompanyBill(id: string, data: Partial<Omit<UpdateBillCompany, 'id'>>) {
+    const isQuickSettle = id && data.settled && !data.companyId
     try {
-      const isQuickSettle = id && data.settled && !data.companyId
       const bill = await this.billService.findOneBy({
         id
       })
       if (!bill) ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+
+      const newDelta = bill.parcel === bill.parcels - 1 ? data.delta - bill.delta : 0
+      const newTotalParcel =
+        data.taxes !== undefined
+          ? bill.totalParcel + (data.taxes - bill.taxes) + newDelta
+          : bill.totalParcel
+
       const { bank1Id, creditCardId, totalParcel, parcels, total, paid } = bill
       if (data.settled) {
         if (bank1Id) {
@@ -230,8 +239,8 @@ export class BillService {
           if (!bank) ErrorHandler.NOT_FOUND_MESSAGE('Bank not found')
           else {
             const savings = isQuickSettle
-              ? bank.savings - (parcels > 1 ? totalParcel : total)
-              : bank.savings - (data.parcels > 1 ? data.totalParcel : data.total)
+              ? bank.savings - (parcels > 1 ? newTotalParcel : total)
+              : bank.savings - newTotalParcel
             const newBankValue: Bank = {
               ...bank,
               id: bank1Id,
@@ -265,7 +274,8 @@ export class BillService {
 
       const res = await this.billService.update(id, {
         ...data,
-        paid: paid ? paid : new Date()
+        paid: data.settled ? paid || new Date() : null,
+        totalParcel: newTotalParcel
       })
       return res
     } catch (error) {

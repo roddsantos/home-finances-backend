@@ -137,7 +137,8 @@ export class Bill {
   public bank2Id: string
 
   @Column({
-    nullable: true
+    nullable: false,
+    default: true
   })
   isPayment: boolean | null
 
@@ -145,7 +146,8 @@ export class Bill {
   public creditCard: CreditCard
 
   @Column({
-    nullable: true
+    nullable: false,
+    default: false
   })
   isRefund: boolean | null
 
