@@ -11,6 +11,7 @@ import { CreditCardModule } from '../credit-card/credit-card.module'
 import { UserModule } from '../user/user.module'
 import { SeedingService } from '../database/seeds/seeds.service'
 import { DashboardModule } from '../dashboard/dashboard.module'
+import { HomeModule } from '../home/home.module'
 
 @Module({
   imports: [
@@ -21,7 +22,8 @@ import { DashboardModule } from '../dashboard/dashboard.module'
     CreditCardModule,
     CategoryModule,
     DashboardModule,
-    UserModule
+    UserModule,
+    HomeModule
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService]
