@@ -17,7 +17,7 @@ export class HomeController {
   public async getExpensesInfo(@Param('id') id: string, @Res() res: Response) {
     try {
       if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
-      const result = await this.billService.getBillsDetails(id)
+      const result = await this.homeService.getBillsDetails(id)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -32,6 +32,20 @@ export class HomeController {
     try {
       if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
       const result = await this.homeService.getSavingsTotal(id)
+      return ResponseHandler.sendResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Get('/invoices/:id')
+  public async getInvoicesInfo(
+    @Param('id') id: string,
+    @Res() res: Response
+  ): Promise<Response<SumAndCountType> | void> {
+    try {
+      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
+      const result = await this.homeService.getCreditCardValues(id)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

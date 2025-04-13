@@ -16,10 +16,8 @@ import {
 import {
   Between,
   In,
-  LessThan,
   LessThanOrEqual,
   Like,
-  MoreThan,
   MoreThanOrEqual,
   Or,
   Repository
@@ -516,76 +514,6 @@ export class BillService {
     const bill = await this.billService.findOneBy({ id })
     if (bill) return bill
     else ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
-  }
-
-  async getBillsDetails(userId: string) {
-    try {
-      const thisMonthDates = {
-        firstDay: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-        lastDay: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
-      }
-      const lastMonthDates = {
-        firstDay: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
-        lastDay: new Date(new Date().getFullYear(), new Date().getMonth(), 0)
-      }
-      const filter = (thisMonth: boolean) => {
-        return [
-          {
-            userId,
-            due: Between(
-              thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
-              thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
-            ),
-            isPayment: true,
-            bank2Id: null,
-            isRefund: false
-          },
-          {
-            userId,
-            due: Between(
-              thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
-              thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
-            ),
-            type: 'creditCard',
-            isRefund: false
-          },
-          {
-            userId,
-            due: Or(
-              LessThan(thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay),
-              MoreThan(thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay)
-            ),
-            paid: Between(
-              thisMonth ? thisMonthDates.firstDay : lastMonthDates.firstDay,
-              thisMonth ? thisMonthDates.lastDay : lastMonthDates.lastDay
-            ),
-            isPayment: true,
-            bank2Id: null,
-            isRefund: false
-          }
-        ]
-      }
-
-      const bills = await this.billService.find({
-        where: filter(true)
-      })
-      const count = bills.length
-      const lastTotal = await this.billService.sum('totalParcel', filter(false))
-      const total = bills.reduce((prev, curr) => prev + curr.totalParcel, 0)
-      const settled = bills.reduce(
-        (prev, curr) => prev + (curr.settled ? curr.totalParcel : 0),
-        0
-      )
-
-      return {
-        total,
-        count,
-        delta: Boolean(lastTotal) ? parseFloat((total / lastTotal - 1).toFixed(4)) : 0,
-        settled
-      }
-    } catch (error) {
-      return ErrorHandler.handle(error)
-    }
   }
 
   async getLastFiveBills(userId: string) {

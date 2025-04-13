@@ -4,6 +4,7 @@ import { Bank } from '../bank/bank.entity'
 import { Between, LessThan, MoreThan, Or, Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Bill } from '../bill/bill.entity'
+import { CreditCard } from '../credit-card/credit-card.entity'
 
 @Injectable()
 export class HomeService {
@@ -11,7 +12,9 @@ export class HomeService {
     @InjectRepository(Bank)
     private readonly bankRepository: Repository<Bank>,
     @InjectRepository(Bill)
-    private readonly billRepository: Repository<Bill>
+    private readonly billRepository: Repository<Bill>,
+    @InjectRepository(CreditCard)
+    private readonly creditCardRepository: Repository<CreditCard>
   ) {}
 
   thisMonthDates = {
@@ -118,6 +121,35 @@ export class HomeService {
         count,
         delta: Boolean(lastTotal) ? parseFloat((total / lastTotal - 1).toFixed(4)) : 0,
         settled
+      }
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
+
+  async getCreditCardValues(userId: string) {
+    try {
+      const filterObject = {
+        months: [new Date().getMonth()],
+        years: [new Date().getFullYear()]
+      }
+      const dates: Array<Date[]> = []
+      filterObject.years.forEach((y) =>
+        filterObject.months.forEach((m) => {
+          dates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
+        })
+      )
+      const openedCards = await this.creditCardRepository.find({
+        where: {
+          userId,
+          isClosed: false
+        }
+      })
+      const total = openedCards.reduce((prev, curr) => prev + curr.invoice, 0)
+      const count = openedCards.length
+      return {
+        total: total || 0,
+        count
       }
     } catch (error) {
       return ErrorHandler.handle(error)

@@ -67,23 +67,4 @@ export class BankService {
       return ErrorHandler.handle(error)
     }
   }
-
-  async getSavingsTotal(userId: string) {
-    try {
-      const total = await this.bankRepository.sum('savings', {
-        userId
-      })
-      const count = await this.bankRepository.count({
-        where: {
-          userId
-        }
-      })
-      return {
-        total,
-        count
-      }
-    } catch (error) {
-      return ErrorHandler.handle(error)
-    }
-  }
 }
