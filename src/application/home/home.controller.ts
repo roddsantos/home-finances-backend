@@ -51,4 +51,15 @@ export class HomeController {
       return ErrorHandler.errorResponse(res, error)
     }
   }
+
+  @Get('/recents/:id')
+  public async getRecentBills(@Param('id') id: string, @Res() res: Response) {
+    try {
+      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
+      const result = await this.homeService.getLastFiveBills(id)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 }

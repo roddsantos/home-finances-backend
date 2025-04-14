@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
-import { Between, LessThan, MoreThan, Or, Repository } from 'typeorm'
+import { Between, LessThan, Like, MoreThan, Or, Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Bill } from '../bill/bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
@@ -150,6 +150,32 @@ export class HomeService {
       return {
         total: total || 0,
         count
+      }
+    } catch (error) {
+      return ErrorHandler.handle(error)
+    }
+  }
+
+  async getLastFiveBills(userId: string) {
+    try {
+      const bills = await this.billRepository.find({
+        relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
+        where: [
+          {
+            userId,
+            type: Or(Like('companyCredit'), Like('creditCard')),
+            parcel: 0
+          },
+          {
+            userId,
+            type: 'money'
+          }
+        ],
+        take: 5,
+        order: { updatedAt: 'DESC' }
+      })
+      return {
+        bills
       }
     } catch (error) {
       return ErrorHandler.handle(error)
