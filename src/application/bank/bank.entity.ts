@@ -37,6 +37,7 @@ export class Bank {
   @Column({
     nullable: false,
     type: 'float',
+    default: 0,
     scale: 2
   })
   public savings: number
