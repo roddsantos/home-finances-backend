@@ -191,8 +191,8 @@ export class BillService {
       const { settled, bank1Id, bank2Id, total, isPayment } = data
       const bank1 = await this.bankService.getOneById(bank1Id)
       if (!bank1) ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
-      if (bank1 && settled) {
-        const newBank1Value: Bank = {
+      if (settled) {
+        const newBank1Object: Bank = {
           ...bank1,
           id: bank1Id,
           savings: bank1.savings + total * (isPayment ? -1 : 1)
@@ -200,16 +200,14 @@ export class BillService {
         if (bank2Id) {
           const bank2 = await this.bankService.getOneById(bank2Id)
           if (!bank2) ErrorHandler.NOT_FOUND_MESSAGE('Bank 2 not found')
-          if (bank2 && settled) {
-            const newBank2Value: Bank = {
-              ...bank2,
-              id: bank2Id,
-              savings: bank2.savings + total * (isPayment ? 1 : -1)
-            }
-            await this.bankService.update(bank2Id, newBank2Value)
+          const newBank2Object: Bank = {
+            ...bank2,
+            id: bank2Id,
+            savings: bank2.savings + total * (isPayment ? 1 : -1)
           }
+          await this.bankService.update(bank2Id, newBank2Object)
         }
-        await this.bankService.update(bank1Id, newBank1Value)
+        await this.bankService.update(bank1Id, newBank1Object)
       }
       const res = await this.billService.update(id, { ...data })
       return res

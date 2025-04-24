@@ -64,7 +64,7 @@ export class BankService {
       })
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      throw error
     }
   }
 }
