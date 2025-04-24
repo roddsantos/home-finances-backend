@@ -33,27 +33,33 @@ export class HomeService {
    */
   async getSavingsTotal(userId: string) {
     try {
-      const toReceive = await this.billRepository.sum('total', [
-        {
-          userId,
-          due: Between(this.thisMonthDates.firstDay, this.thisMonthDates.lastDay),
-          isPayment: false,
-          bank2Id: null,
-          isRefund: false,
-          settled: false
-        }
-      ])
-      const total = await this.bankRepository.sum('savings', {
-        userId
-      })
-      const count = await this.bankRepository.count({
+      const userBanks = await this.bankRepository.find({
         where: {
           userId
         }
       })
+      const moneyBills = await this.billRepository.find({
+        where: [
+          {
+            userId,
+            due: Between(this.thisMonthDates.firstDay, this.thisMonthDates.lastDay),
+            type: 'money',
+            bank2Id: null,
+            isPayment: false
+          }
+        ]
+      })
+      const toReceive = moneyBills.reduce(
+        (prev, curr) => prev + (!curr.settled ? curr.total : 0),
+        0
+      )
+      const income = moneyBills.reduce((acc, bill) => acc + bill.total, 0)
+      const total = userBanks.reduce((acc, bank) => acc + bank.savings, 0)
+      const count = userBanks.length
       return {
         total,
         toReceive,
+        income,
         count
       }
     } catch (error) {
