@@ -18,3 +18,5 @@ export type SumAndCountType = {
   total: number
   count: number
 }
+
+export type MonthlySavingsTypes = 'start'

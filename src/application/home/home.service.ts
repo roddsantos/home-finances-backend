@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
-import { Between, LessThan, Like, MoreThan, Or, Repository } from 'typeorm'
+import { Between, IsNull, LessThan, Like, MoreThan, Or, Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Bill } from '../bill/bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
@@ -78,7 +78,7 @@ export class HomeService {
               thisMonth ? this.thisMonthDates.lastDay : this.lastMonthDates.lastDay
             ),
             isPayment: true,
-            bank2Id: null,
+            bank2Id: IsNull(),
             isRefund: false
           },
           {
@@ -105,7 +105,7 @@ export class HomeService {
               thisMonth ? this.thisMonthDates.lastDay : this.lastMonthDates.lastDay
             ),
             isPayment: true,
-            bank2Id: null,
+            bank2Id: IsNull(),
             isRefund: false
           }
         ]
@@ -125,7 +125,9 @@ export class HomeService {
       return {
         total,
         count,
-        delta: Boolean(lastTotal) ? parseFloat((total / lastTotal - 1).toFixed(4)) : 0,
+        delta: Boolean(lastTotal)
+          ? parseFloat((total / lastTotal - 1).toFixed(4)) * 100
+          : 0,
         settled
       }
     } catch (error) {
