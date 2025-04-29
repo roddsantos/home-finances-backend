@@ -1,7 +1,6 @@
 import {
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
   EntityOptions,
   ManyToOne,
@@ -52,6 +51,4 @@ export class Savings {
   @CreateDateColumn() public createdAt: Date
 
   @UpdateDateColumn() public updatedAt: Date
-
-  @DeleteDateColumn() public deletedAt: Date
 }

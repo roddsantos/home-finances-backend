@@ -1,20 +1,18 @@
 import { Injectable } from '@nestjs/common'
-import { BankService } from '../bank/bank.service'
-import { NewMonthlySavingDto, UpdateMonthlySavingDto } from './monthly-savings.dto'
+import { NewSavingDto, UpdateSavingDto } from './savings.dto'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Savings } from './monthly-savings.entity'
+import { Savings } from './savings.entity'
 import { Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
 
 @Injectable()
-export class MonthlySavingsService {
+export class SavingsService {
   constructor(
     @InjectRepository(Savings)
-    private readonly savingRepository: Repository<Savings>,
-    private readonly bankService: BankService
+    private readonly savingRepository: Repository<Savings>
   ) {}
 
-  async create(newMonthlySavingDto: NewMonthlySavingDto) {
+  async create(newMonthlySavingDto: NewSavingDto) {
     const { type, bankId, month, year } = newMonthlySavingDto
 
     try {
@@ -38,7 +36,7 @@ export class MonthlySavingsService {
     }
   }
 
-  async update(id: string, data: Omit<UpdateMonthlySavingDto, 'id'>) {
+  async update(id: string, data: Omit<UpdateSavingDto, 'id'>) {
     try {
       const res = await this.savingRepository.update({ id }, data)
       return res
@@ -71,6 +69,18 @@ export class MonthlySavingsService {
     try {
       const res = await this.savingRepository.findOne({
         where: { id },
+        order: { updatedAt: 'DESC' }
+      })
+      return res
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async getOneByBankId(bankId: string) {
+    try {
+      const res = await this.savingRepository.findOne({
+        where: { bankId },
         order: { updatedAt: 'DESC' }
       })
       return res
