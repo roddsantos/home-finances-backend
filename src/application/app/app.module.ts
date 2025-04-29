@@ -12,6 +12,7 @@ import { UserModule } from '../user/user.module'
 import { SeedingService } from '../database/seeds/seeds.service'
 import { DashboardModule } from '../dashboard/dashboard.module'
 import { HomeModule } from '../home/home.module'
+import { SavingsModule } from '../monthly-savings/savings.module'
 
 @Module({
   imports: [
@@ -23,7 +24,8 @@ import { HomeModule } from '../home/home.module'
     CategoryModule,
     DashboardModule,
     UserModule,
-    HomeModule
+    HomeModule,
+    SavingsModule
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService]

@@ -7,6 +7,7 @@ import { Category } from '../category/category.entity'
 import { TypeOrmModuleOptions } from '@nestjs/typeorm'
 import * as dotenv from 'dotenv'
 import { resolve } from 'path'
+import { Savings } from '../monthly-savings/savings.entity'
 
 dotenv.config({ path: resolve(__dirname, '../../../.env') })
 
@@ -19,7 +20,7 @@ export const dataBaseConfig: TypeOrmModuleOptions = {
   port: parseInt(process.env.DB_PORT) || 3306,
   synchronize: false,
   autoLoadEntities: true,
-  entities: [User, Bank, Bill, Company, CreditCard, Category],
+  entities: [User, Bank, Bill, Company, CreditCard, Category, Savings],
   multipleStatements: true,
   timezone: 'UTC-4'
 }

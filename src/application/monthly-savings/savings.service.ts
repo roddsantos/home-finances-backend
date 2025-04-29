@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { BankService } from '../bank/bank.service'
 import { NewSavingDto, UpdateSavingDto } from './savings.dto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Savings } from './savings.entity'
@@ -10,8 +9,7 @@ import { ErrorHandler } from '../utils/ErrorHandler'
 export class SavingsService {
   constructor(
     @InjectRepository(Savings)
-    private readonly savingRepository: Repository<Savings>,
-    private readonly bankService: BankService
+    private readonly savingRepository: Repository<Savings>
   ) {}
 
   async create(newMonthlySavingDto: NewSavingDto) {
