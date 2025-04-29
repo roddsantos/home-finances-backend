@@ -40,4 +40,8 @@ export abstract class ErrorHandler {
   public static NOT_ACCEPTABLE(message: string) {
     throw new HttpException(message, HttpStatus.NOT_ACCEPTABLE)
   }
+
+  public static BAD_REQUEST(message: string) {
+    throw new HttpException(message, HttpStatus.BAD_REQUEST)
+  }
 }
