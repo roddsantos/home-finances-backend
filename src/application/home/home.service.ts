@@ -5,6 +5,7 @@ import { Between, IsNull, LessThan, Like, MoreThan, Or, Repository } from 'typeo
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Bill } from '../bill/bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
+import { SavingsService } from '../savings/savings.service'
 
 @Injectable()
 export class HomeService {
@@ -14,7 +15,8 @@ export class HomeService {
     @InjectRepository(Bill)
     private readonly billRepository: Repository<Bill>,
     @InjectRepository(CreditCard)
-    private readonly creditCardRepository: Repository<CreditCard>
+    private readonly creditCardRepository: Repository<CreditCard>,
+    private readonly savingsService: SavingsService
   ) {}
 
   thisMonthDates = {
@@ -38,6 +40,9 @@ export class HomeService {
           userId
         }
       })
+      const savings = await Promise.all(
+        userBanks.map((bank) => this.savingsService.getOneByBankId(bank.id))
+      )
       const moneyBills = await this.billRepository.find({
         where: [
           {
@@ -49,13 +54,20 @@ export class HomeService {
           }
         ]
       })
+
+      const monthlySavings = savings.reduce(
+        (acc, saving) => acc + (saving?.total || 0),
+        0
+      )
       const toReceive = moneyBills.reduce(
         (prev, curr) => prev + (!curr.settled ? curr.total : 0),
         0
       )
-      const income = moneyBills.reduce((acc, bill) => acc + bill.total, 0)
+      const income =
+        moneyBills.reduce((acc, bill) => acc + bill.total, 0) + monthlySavings
       const total = userBanks.reduce((acc, bank) => acc + bank.savings, 0)
       const count = userBanks.length
+
       return {
         total,
         toReceive,

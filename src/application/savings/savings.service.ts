@@ -25,9 +25,7 @@ export class SavingsService {
         }
       })
       if (saving)
-        ErrorHandler.CONFLICT_MESSAGE(
-          'A monthly saving with these parameters already exists'
-        )
+        ErrorHandler.CONFLICT_MESSAGE('A saving with these parameters already exists')
 
       const res = await this.savingRepository.save(newMonthlySavingDto)
       return res
@@ -54,12 +52,16 @@ export class SavingsService {
     }
   }
 
-  async getAllByBankId(bankId: string) {
+  async getAllByBankId(bankId: string, pages: number) {
     try {
-      const res = await this.savingRepository.find({
-        where: { bankId }
+      const [data, total] = await this.savingRepository.findAndCount({
+        where: { bankId },
+        take: pages * 4
       })
-      return res
+      return {
+        count: total,
+        data
+      }
     } catch (error) {
       return ErrorHandler.handle(error)
     }
@@ -80,7 +82,7 @@ export class SavingsService {
   async getOneByBankId(bankId: string) {
     try {
       const res = await this.savingRepository.findOne({
-        where: { bankId },
+        where: { bankId, month: new Date().getMonth(), year: new Date().getFullYear() },
         order: { updatedAt: 'DESC' }
       })
       return res

@@ -7,7 +7,7 @@ import { Category } from '../category/category.entity'
 import { TypeOrmModuleOptions } from '@nestjs/typeorm'
 import * as dotenv from 'dotenv'
 import { resolve } from 'path'
-import { Savings } from '../monthly-savings/savings.entity'
+import { Savings } from '../savings/savings.entity'
 
 dotenv.config({ path: resolve(__dirname, '../../../.env') })
 

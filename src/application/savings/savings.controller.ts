@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res
+} from '@nestjs/common'
 import { SavingsService } from './savings.service'
 import { NewSavingDto, UpdateSavingDto } from './savings.dto'
 import { Response } from 'express'
@@ -54,6 +64,20 @@ export class SavingsController {
     try {
       await this.savingsService.delete(id)
       return ResponseHandler.sendNoContentResponse(res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Get('/all')
+  public async getSavingsByBank(
+    @Res() res: Response,
+    @Query() query: any
+  ): Promise<Response<Savings[]>> {
+    try {
+      const { bankId, page } = query
+      const result = await this.savingsService.getAllByBankId(bankId, page)
+      return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
     }
