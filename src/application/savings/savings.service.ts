@@ -52,12 +52,16 @@ export class SavingsService {
     }
   }
 
-  async getAllByBankId(bankId: string) {
+  async getAllByBankId(bankId: string, pages: number) {
     try {
-      const res = await this.savingRepository.find({
-        where: { bankId }
+      const [data, total] = await this.savingRepository.findAndCount({
+        where: { bankId },
+        take: pages * 4
       })
-      return res
+      return {
+        count: total,
+        data
+      }
     } catch (error) {
       return ErrorHandler.handle(error)
     }
