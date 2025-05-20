@@ -13,10 +13,19 @@ import { SeedingService } from '../database/seeds/seeds.service'
 import { DashboardModule } from '../dashboard/dashboard.module'
 import { HomeModule } from '../home/home.module'
 import { SavingsModule } from '../savings/savings.module'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import typeorm from '../database/typeorm'
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({ ...dataBaseConfig }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [typeorm]
+    }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => configService.get('typeorm')
+    }),
     BankModule,
     BillModule,
     CompanyModule,

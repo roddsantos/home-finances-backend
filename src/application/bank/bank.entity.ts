@@ -42,6 +42,12 @@ export class Bank {
   })
   public savings: number
 
+  @Column({
+    nullable: false,
+    default: false
+  })
+  public isPiggyBank: boolean
+
   @ManyToOne(() => User)
   public user: User
 
