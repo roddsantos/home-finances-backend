@@ -13,16 +13,20 @@ export abstract class ErrorHandler {
     }
   }
 
-  public static UNPROCESSABLE_ENTITY_MESSAGE(message: string) {
-    throw new HttpException(message, HttpStatus.UNPROCESSABLE_ENTITY)
-  }
-
   public static errorResponse(res: Response, error: HttpException) {
     try {
       throw error
     } catch (error) {
       return res.status(error.status).json({ message: error.message })
     }
+  }
+
+  public static UNPROCESSABLE_ENTITY_MESSAGE(message: string) {
+    throw new HttpException(message, HttpStatus.UNPROCESSABLE_ENTITY)
+  }
+
+  public static INTERNAL_SERVER_ERROR(message: string) {
+    throw new HttpException(message, HttpStatus.INTERNAL_SERVER_ERROR)
   }
 
   public static CONFLICT_MESSAGE(message: string) {

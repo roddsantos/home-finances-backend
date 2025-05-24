@@ -497,7 +497,7 @@ export class BillService {
         take,
         skip: take * page - take,
         where: [{ ...finalFilter, userId }],
-        order: { due: 'ASC' }
+        order: { paid: 'ASC', due: 'ASC' }
       })
       return {
         count: total,

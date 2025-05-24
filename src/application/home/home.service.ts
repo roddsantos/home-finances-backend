@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
-import { Between, IsNull, LessThan, Like, MoreThan, Or, Repository } from 'typeorm'
+import { IsNull, LessThan, Like, MoreThan, Or, Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Bill } from '../bill/bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
 import { SavingsService } from '../savings/savings.service'
+import { getMonthBetweenOperator } from '../utils/operators'
+import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
 
 @Injectable()
 export class HomeService {
@@ -19,103 +21,87 @@ export class HomeService {
     private readonly savingsService: SavingsService
   ) {}
 
-  thisMonthDates = {
-    firstDay: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    lastDay: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
-  }
-  lastMonthDates = {
-    firstDay: new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),
-    lastDay: new Date(new Date().getFullYear(), new Date().getMonth(), 0)
-  }
-
   /**
    * service to get the total saving from all the user's banks
    * @param userId id of the user
    * @returns total - total of savings; count - number of banks
    */
-  async getSavingsTotal(userId: string) {
+  async getSavingsTotal(userId: string, month?: number, year?: number) {
+    const monthRef = month || new Date().getMonth()
+    const yearRef = year || new Date().getFullYear()
+
     try {
-      const userBanks = await this.bankRepository.find({
-        where: {
-          userId
-        }
-      })
+      const userBanks = await this.bankRepository.find({ where: { userId } })
+      const piggyBanks = userBanks.filter((pb) => pb.isPiggyBank)
+      const savingsPiggyBanks = piggyBanks.reduce(
+        (acc, pb) => acc + (pb?.savings || 0),
+        0
+      )
+
       const savings = await Promise.all(
         userBanks.map((bank) => this.savingsService.getOneByBankId(bank.id))
       )
-      const moneyBills = await this.billRepository.find({
-        where: [
-          {
-            userId,
-            due: Between(this.thisMonthDates.firstDay, this.thisMonthDates.lastDay),
-            type: 'money',
-            bank2Id: null,
-            isPayment: false
-          }
-        ]
-      })
-
       const monthlySavings = savings.reduce(
         (acc, saving) => acc + (saving?.total || 0),
         0
       )
-      const toReceive = moneyBills.reduce(
+
+      const moneyBills = await this.billRepository.find({
+        where: [
+          {
+            userId,
+            due: getMonthBetweenOperator(monthRef, yearRef),
+            type: 'money',
+            bank2Id: IsNull(),
+            isPayment: false
+          }
+        ]
+      })
+      const moneyToReceive = moneyBills.reduce(
         (prev, curr) => prev + (!curr.settled ? curr.total : 0),
         0
       )
-      const income =
-        moneyBills.reduce((acc, bill) => acc + bill.total, 0) + monthlySavings
-      const total = userBanks.reduce((acc, bank) => acc + bank.savings, 0)
-      const count = userBanks.length
+
+      const moneyIncome =
+        moneyBills.reduce((acc, bill) => acc + bill.total, 0) +
+        monthlySavings -
+        savingsPiggyBanks
+      const totalSavings =
+        userBanks.reduce((acc, bank) => acc + bank.savings, 0) - savingsPiggyBanks
+      const totalBanks = userBanks.length - piggyBanks.length
 
       return {
-        total,
-        toReceive,
-        income,
-        count
+        totalSavings,
+        moneyToReceive,
+        moneyIncome,
+        totalBanks
       }
     } catch (error) {
-      return ErrorHandler.handle(error)
+      return ErrorHandler.INTERNAL_SERVER_ERROR('Unable to get savings')
     }
   }
 
-  async getBillsDetails(userId: string) {
+  async getBillsDetails(userId: string, month: number, year: number) {
     try {
-      const filter = (thisMonth: boolean) => {
+      const filter = (m: number, y: number) => {
         return [
           {
             userId,
-            due: Between(
-              thisMonth ? this.thisMonthDates.firstDay : this.lastMonthDates.firstDay,
-              thisMonth ? this.thisMonthDates.lastDay : this.lastMonthDates.lastDay
-            ),
+            due: getMonthBetweenOperator(m, y),
             isPayment: true,
             bank2Id: IsNull(),
             isRefund: false
           },
           {
             userId,
-            due: Between(
-              thisMonth ? this.thisMonthDates.firstDay : this.lastMonthDates.firstDay,
-              thisMonth ? this.thisMonthDates.lastDay : this.lastMonthDates.lastDay
-            ),
+            due: getMonthBetweenOperator(m, y),
             type: 'creditCard',
             isRefund: false
           },
           {
             userId,
-            due: Or(
-              LessThan(
-                thisMonth ? this.thisMonthDates.firstDay : this.lastMonthDates.firstDay
-              ),
-              MoreThan(
-                thisMonth ? this.thisMonthDates.lastDay : this.lastMonthDates.lastDay
-              )
-            ),
-            paid: Between(
-              thisMonth ? this.thisMonthDates.firstDay : this.lastMonthDates.firstDay,
-              thisMonth ? this.thisMonthDates.lastDay : this.lastMonthDates.lastDay
-            ),
+            due: Or(LessThan(firstDayOfMonth(m, y)), MoreThan(lastDayOfMonth(m, y))),
+            paid: getMonthBetweenOperator(m, y),
             isPayment: true,
             bank2Id: IsNull(),
             isRefund: false
@@ -124,23 +110,26 @@ export class HomeService {
       }
 
       const bills = await this.billRepository.find({
-        where: filter(true)
+        where: filter(month, year)
       })
-      const count = bills.length
-      const lastTotal = await this.billRepository.sum('totalParcel', filter(false))
-      const total = bills.reduce((prev, curr) => prev + curr.totalParcel, 0)
-      const settled = bills.reduce(
+      const numberOfBills = bills.length
+      const sumOfBillsLastMonth = await this.billRepository.sum(
+        'totalParcel',
+        filter(month - 1, year)
+      )
+      const sumOfBills = bills.reduce((prev, curr) => prev + curr.totalParcel, 0)
+      const paidBills = bills.reduce(
         (prev, curr) => prev + (curr.settled ? curr.totalParcel : 0),
         0
       )
 
       return {
-        total,
-        count,
-        delta: Boolean(lastTotal)
-          ? parseFloat((total / lastTotal - 1).toFixed(4)) * 100
+        sumOfBills,
+        numberOfBills,
+        delta: Boolean(sumOfBillsLastMonth)
+          ? parseFloat((sumOfBills / sumOfBillsLastMonth - 1).toFixed(4)) * 100
           : 0,
-        settled
+        paidBills
       }
     } catch (error) {
       return ErrorHandler.handle(error)
