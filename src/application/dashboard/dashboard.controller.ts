@@ -9,10 +9,19 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('/months')
-  public async getMonthSpan(@Query() data: any, @Res() res: Response) {
+  public async billProgression(@Query() query: any, @Res() res: Response) {
+    const { span, userId, month, year } = query
+    if (!userId) ErrorHandler.BAD_REQUEST('dashboard/months - No userId found')
+    const monthSpan = span || 5
+    const monthRef = month || new Date().getMonth()
+    const yearRef = year || new Date().getFullYear()
     try {
-      const monthSpan = data.monthSpan || 5
-      const result = await this.dashboardService.getMonthSpan(monthSpan, data.userId)
+      const result = await this.dashboardService.getBillProgression(
+        userId,
+        monthSpan,
+        monthRef,
+        yearRef
+      )
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

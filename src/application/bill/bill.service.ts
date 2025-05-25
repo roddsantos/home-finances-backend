@@ -16,8 +16,11 @@ import {
 import {
   Between,
   In,
+  IsNull,
+  LessThan,
   LessThanOrEqual,
   Like,
+  MoreThan,
   MoreThanOrEqual,
   Or,
   Repository
@@ -28,13 +31,15 @@ import { BankService } from '../bank/bank.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { CreditCard } from '../credit-card/credit-card.entity'
 import { UUID } from '../utils/uuid'
+import { getMonthBetweenOperator } from '../utils/operators'
+import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
 
 @Injectable()
 export class BillService {
   private readonly uuid: UUID
   constructor(
     @InjectRepository(Bill)
-    private readonly billService: Repository<Bill>,
+    private readonly billRepository: Repository<Bill>,
     private readonly bankService: BankService,
     private readonly ccService: CreditCardService
   ) {
@@ -105,7 +110,7 @@ export class BillService {
             await this.bankService.update(bank1Id, newBank1Value)
             await this.bankService.update(bank2Id, newBank2Value)
 
-            const res = await this.billService.save({
+            const res = await this.billRepository.save({
               ...createTransactionBillDto,
               totalParcel: total
             })
@@ -117,14 +122,14 @@ export class BillService {
             savings: bank1.savings + total * (isPayment ? -1 : 1)
           }
           await this.bankService.update(bank1Id, newBank1Value)
-          const res = await this.billService.save({
+          const res = await this.billRepository.save({
             ...createTransactionBillDto,
             totalParcel: total
           })
           return res
         }
       } else if (!settled) {
-        const res = await this.billService.save({
+        const res = await this.billRepository.save({
           ...createTransactionBillDto,
           totalParcel: total
         })
@@ -143,7 +148,7 @@ export class BillService {
 
       const allBills = await Promise.all(
         bills.map((b) => {
-          const res = this.billService.save({ ...b, groupId })
+          const res = this.billRepository.save({ ...b, groupId })
           return res
         })
       )
@@ -176,7 +181,7 @@ export class BillService {
 
       const allBills = await Promise.all(
         bills.map((b) => {
-          const res = this.billService.save({ ...b, groupId })
+          const res = this.billRepository.save({ ...b, groupId })
           return res
         })
       )
@@ -209,7 +214,7 @@ export class BillService {
         }
         await this.bankService.update(bank1Id, newBank1Object)
       }
-      const res = await this.billService.update(id, { ...data })
+      const res = await this.billRepository.update(id, { ...data })
       return res
     } catch (error) {
       return ErrorHandler.handle(error)
@@ -219,7 +224,7 @@ export class BillService {
   async updateCompanyBill(id: string, data: Partial<Omit<UpdateBillCompany, 'id'>>) {
     const isQuickSettle = id && data.settled && !data.companyId
     try {
-      const bill = await this.billService.findOneBy({
+      const bill = await this.billRepository.findOneBy({
         id
       })
       if (!bill) ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
@@ -270,7 +275,7 @@ export class BillService {
           )
       }
 
-      const res = await this.billService.update(id, {
+      const res = await this.billRepository.update(id, {
         ...data,
         paid: data.settled ? data.paid || new Date() : null,
         totalParcel: newTotalParcel
@@ -298,7 +303,7 @@ export class BillService {
 
     try {
       if (!groupId) throw ErrorHandler.NOT_FOUND_MESSAGE('Group id not found')
-      const allBillsRelated = await this.billService.find({
+      const allBillsRelated = await this.billRepository.find({
         where: {
           groupId
         }
@@ -311,7 +316,7 @@ export class BillService {
       const allPromises = await Promise.all(
         allBillsRelated.map((abr, i) => {
           const newDate = new Date(new Date(due).setMonth(month))
-          const updateData = this.billService.update(abr.id, {
+          const updateData = this.billRepository.update(abr.id, {
             ...data,
             parcel: abr.parcel,
             totalParcel:
@@ -492,7 +497,7 @@ export class BillService {
       // set type of payments
       if (filterObject.type.length > 0) finalFilter.type = In([...filterObject.type])
 
-      const [result, total] = await this.billService.findAndCount({
+      const [result, total] = await this.billRepository.findAndCount({
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
         take,
         skip: take * page - take,
@@ -509,8 +514,45 @@ export class BillService {
   }
 
   async getBillById(id: string) {
-    const bill = await this.billService.findOneBy({ id })
+    const bill = await this.billRepository.findOneBy({ id })
     if (bill) return bill
     else ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+  }
+
+  async getPaidBillsByMonth(userId: string, month: number, year: number) {
+    try {
+      const bills = await this.billRepository.find({
+        where: [
+          {
+            userId,
+            due: getMonthBetweenOperator(month, year),
+            isPayment: true,
+            bank2Id: IsNull(),
+            isRefund: false
+          },
+          {
+            userId,
+            due: getMonthBetweenOperator(month, year),
+            type: 'creditCard',
+            isRefund: false
+          },
+          {
+            userId,
+            due: Or(
+              LessThan(firstDayOfMonth(month, year)),
+              MoreThan(lastDayOfMonth(month, year))
+            ),
+            paid: getMonthBetweenOperator(month, year),
+            isPayment: true,
+            bank2Id: IsNull(),
+            isRefund: false
+          }
+        ]
+      })
+
+      return bills
+    } catch (error) {
+      return ErrorHandler.INTERNAL_SERVER_ERROR(error)
+    }
   }
 }

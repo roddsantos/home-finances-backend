@@ -4,56 +4,39 @@ import { ErrorHandler } from '../utils/ErrorHandler'
 import { Injectable } from '@nestjs/common'
 import { Bill } from '../bill/bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
+import { BillService } from '../bill/bill.service'
 
 @Injectable()
 export class DashboardService {
   constructor(
     @InjectRepository(Bill)
     private readonly billRepository: Repository<Bill>,
+    private readonly billService: BillService,
     @InjectRepository(CreditCard)
     private readonly creditCardRepository: Repository<CreditCard>
   ) {}
 
-  async getMonthSpan(months: number, userId: string) {
-    const dateSpans: Date[][] = []
-    for (let i = 0; i < months; i++) {
-      const actualMonth = new Date().getMonth() - i
-      const actualYear =
-        actualMonth < 0 ? new Date().getFullYear() - 1 : new Date().getFullYear()
-      dateSpans.push([
-        new Date(actualYear, actualMonth, 1),
-        new Date(actualYear, actualMonth + 1, 0)
-      ])
+  async getBillProgression(
+    userId: string,
+    monthSpan: number,
+    month: number,
+    year: number
+  ) {
+    const actualMonthAndYear: number[][] = []
+    for (let i = 0; i < monthSpan; i++) {
+      const actualMonth = new Date(year, month - i, 1).getMonth()
+      const actualYear = new Date(year, month - i, 1).getFullYear()
+      actualMonthAndYear.push([actualMonth, actualYear])
     }
     try {
       const results = await Promise.all(
-        dateSpans.map((dates) =>
-          this.billRepository.find({
-            where: [
-              {
-                userId,
-                due: Between(dates[0], dates[1]),
-                type: 'companyCredit'
-              },
-              {
-                userId,
-                due: Between(dates[0], dates[1]),
-                type: 'creditCard',
-                isRefund: false
-              },
-              {
-                userId,
-                due: Between(dates[0], dates[1]),
-                type: 'money',
-                isPayment: true
-              }
-            ]
-          })
+        actualMonthAndYear.map((mtyr) =>
+          this.billService.getPaidBillsByMonth(userId, mtyr[0], mtyr[1])
         )
       )
       return results
     } catch (error) {
-      return ErrorHandler.handle(error)
+      return ErrorHandler.INTERNAL_SERVER_ERROR(error)
     }
   }
 
