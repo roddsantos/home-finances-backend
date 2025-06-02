@@ -22,6 +22,7 @@ import {
   Like,
   MoreThan,
   MoreThanOrEqual,
+  Not,
   Or,
   Repository
 } from 'typeorm'
@@ -519,9 +520,23 @@ export class BillService {
     else ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
   }
 
-  async getPaidBillsByMonth(userId: string, month: number, year: number) {
+  /**
+   * Return all the bills in a month
+   * @param {string} userId related user
+   * @param {number} month related month
+   * @param {number} year related year
+   * @param {string[]} relations indicates what relations of entity should be loaded
+   * @returns {Bill[]} array with bills
+   */
+  async getBillsByMonth(
+    userId: string,
+    month: number,
+    year: number,
+    relations: string[] = []
+  ): Promise<Bill[]> {
     try {
       const bills = await this.billRepository.find({
+        relations,
         where: [
           {
             userId,
@@ -549,10 +564,66 @@ export class BillService {
           }
         ]
       })
-
       return bills
     } catch (error) {
-      return ErrorHandler.INTERNAL_SERVER_ERROR(error)
+      ErrorHandler.INTERNAL_SERVER_ERROR("Can't find bills")
+    }
+  }
+
+  /**
+   * Fetch all the bills paid with money
+   * @param {string} userId related user
+   * @param {number} month related month
+   * @param {number} year related year
+   * @returns {Bill[]} list of bills
+   */
+  async getBillsPaidByMoney(
+    userId: string,
+    month: number,
+    year: number
+  ): Promise<Bill[]> {
+    try {
+      const moneyBills = await this.billRepository.find({
+        where: [
+          {
+            userId,
+            due: getMonthBetweenOperator(month, year),
+            type: Not('creditCard'),
+            bank2Id: IsNull()
+          }
+        ]
+      })
+
+      return moneyBills
+    } catch (error) {
+      ErrorHandler.INTERNAL_SERVER_ERROR('Error fetching money bills')
+    }
+  }
+
+  /**
+   * Fetch all bills with income money
+   * @param {string} userId related user
+   * @param {number} month related month
+   * @param {number} year related year
+   * @returns {Bill[]} list of bills
+   */
+  async getIncomeBills(userId: string, month: number, year: number): Promise<Bill[]> {
+    try {
+      const incomeBills = await this.billRepository.find({
+        where: [
+          {
+            userId,
+            due: getMonthBetweenOperator(month, year),
+            type: 'money',
+            bank2Id: IsNull(),
+            isPayment: false
+          }
+        ]
+      })
+
+      return incomeBills
+    } catch (error) {
+      ErrorHandler.INTERNAL_SERVER_ERROR('Error fetching money bills')
     }
   }
 }

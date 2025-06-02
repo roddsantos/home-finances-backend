@@ -79,10 +79,23 @@ export class SavingsService {
     }
   }
 
-  async getOneByBankId(bankId: string) {
+  /**
+   * Fetch a specific saving refering a month and year
+   * @param {string} bankId id of the bank
+   * @param {number} month refered month
+   * @param {number} year refered year
+   * @returns {Savings | null} found saving
+   */
+  async getOneByBankId(
+    bankId: string,
+    month?: number,
+    year?: number
+  ): Promise<Savings | null> {
+    const monthRef = month || new Date().getMonth()
+    const yearRef = year || new Date().getFullYear()
     try {
       const res = await this.savingRepository.findOne({
-        where: { bankId, month: new Date().getMonth(), year: new Date().getFullYear() },
+        where: { bankId, month: monthRef, year: yearRef },
         order: { updatedAt: 'DESC' }
       })
       return res

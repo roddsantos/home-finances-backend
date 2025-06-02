@@ -3,7 +3,7 @@ import { Bank } from './bank.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { CreateBankDto } from './dto/create-bank.dto'
 import { UpdateBankDto } from './dto/update-bank.dto'
-import { Repository } from 'typeorm'
+import { Like, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 
 @Injectable()
@@ -45,14 +45,18 @@ export class BankService {
     }
   }
 
-  async getAllById(userId: string) {
+  async getAllById(userId: string, isPiggyBank?: boolean) {
     try {
       const res = await this.bankRepository.find({
-        where: { userId }
+        where: {
+          userId,
+          isPiggyBank:
+            isPiggyBank === undefined ? Or(Like(true), Like(false)) : isPiggyBank
+        }
       })
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
     }
   }
 
@@ -64,7 +68,7 @@ export class BankService {
       })
       return res
     } catch (error) {
-      throw error
+      ErrorHandler.handle(error)
     }
   }
 }
