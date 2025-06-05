@@ -8,6 +8,7 @@ import { BillService } from '../bill/bill.service'
 import { DashboardBillsPerMonthType, DashboardSavingsType } from '../types/dashboard'
 import { BankService } from '../bank/bank.service'
 import { SavingsService } from '../savings/savings.service'
+import { convertToFloat } from '../utils/conversions'
 
 @Injectable()
 export class DashboardService {
@@ -61,9 +62,7 @@ export class DashboardService {
         delta:
           !Boolean(result[index + 1]) || !Boolean(result[index].total)
             ? 0
-            : parseFloat(
-                ((r.total / (result[index + 1].total || r.total) - 1) * 100).toFixed(2)
-              )
+            : convertToFloat((r.total / (result[index + 1].total || r.total) - 1) * 100)
       }))
 
       return resultWithDelta.slice(0, monthSpan).reverse()
@@ -84,6 +83,12 @@ export class DashboardService {
     year: number
   ): Promise<DashboardSavingsType> {
     try {
+      const piggyBanksProgression = await this.savingsService.getSavingsProgression(
+        userId,
+        5,
+        month,
+        year
+      )
       const userBanks = await this.bankService.getAllById(userId, false)
       const allMoneyBills = await this.billService.getBillsPaidByMoney(
         userId,
@@ -108,6 +113,7 @@ export class DashboardService {
       })
 
       return {
+        piggyBanksProgression,
         totalIncome,
         totalBanks,
         totalSettled,

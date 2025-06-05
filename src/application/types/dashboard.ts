@@ -13,4 +13,19 @@ export type DashboardSavingsType = {
   totalSavings: number
   totalPending: number
   totalPreview: number
+  piggyBanksProgression: any
+}
+
+export type DashboardSavingsPerMonthType = {
+  savedValue: number
+  delta: number
+  month: number
+  year: number
+}
+
+export type DashboardSavingType = {
+  bank: string
+  color: string
+  total: number
+  progression: DashboardSavingsPerMonthType[]
 }
