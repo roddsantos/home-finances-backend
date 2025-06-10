@@ -103,9 +103,9 @@ export class DashboardService {
       let totalSettled = 0
       let totalPending = 0
       const totalIncome = allIncomeBills.reduce((acc, bill) => acc + bill.total, 0)
-      const totalSavings = savings
-        .reduce((acc, saving) => acc + (saving?.total || 0), 0)
-        .toFixed(2)
+      const totalSavings = convertToFloat(
+        savings.reduce((acc, saving) => acc + (saving?.total || 0), 0)
+      )
       const totalBanks = userBanks.reduce((acc, bank) => acc + bank.savings, 0)
       allMoneyBills.forEach((bill) => {
         if (bill.settled) totalSettled += bill.totalParcel
@@ -116,13 +116,11 @@ export class DashboardService {
         piggyBanksProgression,
         totalIncome,
         totalBanks,
-        totalSettled,
-        totalSavings: parseFloat(totalSavings),
+        totalSettled: convertToFloat(totalSettled),
+        totalSavings: convertToFloat(totalSavings),
         totalPending,
-        totalPreview: parseFloat(
-          (parseFloat(totalSavings) + totalIncome - totalSettled - totalPending).toFixed(
-            2
-          )
+        totalPreview: convertToFloat(
+          totalSavings + totalIncome - totalSettled - totalPending
         )
       }
     } catch (error) {

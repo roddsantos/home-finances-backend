@@ -34,6 +34,7 @@ import { CreditCard } from '../credit-card/credit-card.entity'
 import { UUID } from '../utils/uuid'
 import { getMonthBetweenOperator } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
+import { SumAndCountType } from '../types/general'
 
 @Injectable()
 export class BillService {
@@ -589,7 +590,8 @@ export class BillService {
             userId,
             due: getMonthBetweenOperator(month, year),
             type: Not('creditCard'),
-            bank2Id: IsNull()
+            bank2Id: IsNull(),
+            isPayment: true
           }
         ]
       })
@@ -622,6 +624,39 @@ export class BillService {
       })
 
       return incomeBills
+    } catch (error) {
+      ErrorHandler.INTERNAL_SERVER_ERROR('Error fetching money bills')
+    }
+  }
+
+  /**
+   * List of bills count and sum per day of a month
+   * @param {string} userId related user
+   * @param {number} month related month
+   * @param {number} year related year
+   * @returns {SumAndCountType[]} array with sum and count of bills per day
+   */
+  async getDailyBillsCount(
+    userId: string,
+    month: number,
+    year: number
+  ): Promise<Array<{ day: number } & SumAndCountType>> {
+    try {
+      const bills = await this.getBillsByMonth(userId, month, year)
+
+      const dailyBillsCount: Array<{ day: number } & SumAndCountType> = []
+
+      for (let index = 1; index <= new Date(year, month + 1, 0).getDate(); index++) {
+        const billsInThisDay = bills.filter((bill) => bill.due.getDate() === index)
+
+        dailyBillsCount.push({
+          count: billsInThisDay.length,
+          total: billsInThisDay.reduce((acc, bill) => acc + bill.totalParcel, 0),
+          day: index
+        })
+      }
+
+      return dailyBillsCount
     } catch (error) {
       ErrorHandler.INTERNAL_SERVER_ERROR('Error fetching money bills')
     }

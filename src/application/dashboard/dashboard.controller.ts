@@ -44,7 +44,7 @@ export class DashboardController {
     const yearRef = year || new Date().getFullYear()
 
     try {
-      const result = await this.billService.getBillsByMonth(userId, monthRef, yearRef)
+      const result = await this.billService.getDailyBillsCount(userId, monthRef, yearRef)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
