@@ -8,6 +8,8 @@ import { CreditCard } from '../credit-card/credit-card.entity'
 import { SavingsService } from '../savings/savings.service'
 import { getMonthBetweenOperator } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
+import { HomeSavingsType } from '../types/home'
+import { BillService } from '../bill/bill.service'
 
 @Injectable()
 export class HomeService {
@@ -18,7 +20,8 @@ export class HomeService {
     private readonly billRepository: Repository<Bill>,
     @InjectRepository(CreditCard)
     private readonly creditCardRepository: Repository<CreditCard>,
-    private readonly savingsService: SavingsService
+    private readonly savingsService: SavingsService,
+    private readonly billsService: BillService
   ) {}
 
   /**
@@ -26,58 +29,48 @@ export class HomeService {
    * @param userId id of the user
    * @returns total - total of savings; count - number of banks
    */
-  async getSavingsTotal(userId: string, month?: number, year?: number) {
+  async getSavingsTotal(
+    userId: string,
+    month?: number,
+    year?: number
+  ): Promise<HomeSavingsType> {
     const monthRef = month || new Date().getMonth()
     const yearRef = year || new Date().getFullYear()
 
     try {
-      const userBanks = await this.bankRepository.find({ where: { userId } })
-      const piggyBanks = userBanks.filter((pb) => pb.isPiggyBank)
-      const savingsPiggyBanks = piggyBanks.reduce(
-        (acc, pb) => acc + (pb?.savings || 0),
-        0
+      const userBanks = await this.bankRepository.find({
+        where: { userId, isPiggyBank: false }
+      })
+      const savings = await Promise.all(
+        userBanks.map((bank) =>
+          this.savingsService.getOneByBankId(bank.id, monthRef, yearRef)
+        )
+      )
+      const incomeBills = await this.billsService.getIncomeBills(
+        userId,
+        monthRef,
+        yearRef
       )
 
-      const savings = await Promise.all(
-        userBanks.map((bank) => this.savingsService.getOneByBankId(bank.id))
-      )
       const monthlySavings = savings.reduce(
         (acc, saving) => acc + (saving?.total || 0),
         0
       )
+      const totalIncomeBills = incomeBills.reduce((acc, bill) => acc + bill.total, 0)
 
-      const moneyBills = await this.billRepository.find({
-        where: [
-          {
-            userId,
-            due: getMonthBetweenOperator(monthRef, yearRef),
-            type: 'money',
-            bank2Id: IsNull(),
-            isPayment: false
-          }
-        ]
-      })
-      const moneyToReceive = moneyBills.reduce(
-        (prev, curr) => prev + (!curr.settled ? curr.total : 0),
-        0
-      )
-
-      const moneyIncome =
-        moneyBills.reduce((acc, bill) => acc + bill.total, 0) +
-        monthlySavings -
-        savingsPiggyBanks
-      const totalSavings =
-        userBanks.reduce((acc, bank) => acc + bank.savings, 0) - savingsPiggyBanks
-      const totalBanks = userBanks.length - piggyBanks.length
+      const totalIncome = totalIncomeBills
+      const totalSavingsPreview = totalIncomeBills + monthlySavings
+      const totalBanks = userBanks.reduce((acc, bank) => acc + bank.savings, 0)
+      const countBanks = userBanks.length
 
       return {
-        totalSavings,
-        moneyToReceive,
-        moneyIncome,
-        totalBanks
+        totalBanks,
+        totalSavingsPreview,
+        totalIncome,
+        countBanks
       }
     } catch (error) {
-      return ErrorHandler.INTERNAL_SERVER_ERROR('Unable to get savings')
+      ErrorHandler.INTERNAL_SERVER_ERROR('Unable to get savings')
     }
   }
 
