@@ -225,6 +225,7 @@ export class BillService {
 
   async updateCompanyBill(id: string, data: Partial<Omit<UpdateBillCompany, 'id'>>) {
     const isQuickSettle = id && data.settled && !data.companyId
+
     try {
       const bill = await this.billRepository.findOneBy({
         id
@@ -237,7 +238,10 @@ export class BillService {
           ? bill.totalParcel + (data.taxes - bill.taxes) + newDelta
           : bill.totalParcel
 
-      const { bank1Id, creditCardId, totalParcel, parcels, total } = bill
+      const bank1Id = isQuickSettle ? bill.bank1Id : data.bank1Id
+      const creditCardId = isQuickSettle ? bill.creditCardId : data.creditCardId
+      const { totalParcel, parcels, total } = bill
+
       if (data.settled) {
         if (bank1Id) {
           const bank = await this.bankService.getOneById(bank1Id)
