@@ -35,6 +35,7 @@ import { UUID } from '../utils/uuid'
 import { getMonthBetweenOperator } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
 import { SumAndCountType } from '../types/general'
+import { convertToFloat } from '../utils/conversions'
 
 @Injectable()
 export class BillService {
@@ -196,13 +197,19 @@ export class BillService {
   async updateTransactionBill(id: string, data: Omit<UpdateBillBank, 'id'>) {
     try {
       const { settled, bank1Id, bank2Id, total, isPayment } = data
+      const bill = await this.billRepository.findOne({
+        where: { id }
+      })
+      if (!bill) ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+
       const bank1 = await this.bankService.getOneById(bank1Id)
       if (!bank1) ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
+
       if (settled) {
         const newBank1Object: Bank = {
           ...bank1,
           id: bank1Id,
-          savings: bank1.savings + total * (isPayment ? -1 : 1)
+          savings: bank1.savings + (total - bill.total) * (isPayment ? -1 : 1)
         }
         if (bank2Id) {
           const bank2 = await this.bankService.getOneById(bank2Id)
@@ -210,12 +217,13 @@ export class BillService {
           const newBank2Object: Bank = {
             ...bank2,
             id: bank2Id,
-            savings: bank2.savings + total * (isPayment ? 1 : -1)
+            savings: bank2.savings + (total - bill.total) * (isPayment ? 1 : -1)
           }
           await this.bankService.update(bank2Id, newBank2Object)
         }
         await this.bankService.update(bank1Id, newBank1Object)
       }
+
       const res = await this.billRepository.update(id, { ...data })
       return res
     } catch (error) {
@@ -381,6 +389,7 @@ export class BillService {
       let parsedFilter: FilterDisplay[] = []
       const filterObject: any = {
         name: '',
+        moneyflux: '',
         months: [],
         min: null,
         max: null,
@@ -396,6 +405,9 @@ export class BillService {
         parsedFilter = JSON.parse(data) as FilterDisplay[]
         parsedFilter.forEach((d) => {
           switch (d.identifier) {
+            case 'moneyflux':
+              filterObject.moneyflux! = d.id as string
+              break
             case 'name':
               filterObject.name = d.id as string
               break
@@ -446,6 +458,9 @@ export class BillService {
       const finalFilter: any = {}
       // set name
       if (filterObject.name) finalFilter.name = Like(`%${filterObject.name}%`)
+      // set money flux
+      if (filterObject.moneyflux)
+        finalFilter.isPayment = filterObject.moneyflux === 'outcome'
       // set months
       if (filterObject.months.length > 0) {
         const dates: Array<Date[]> = []
@@ -510,9 +525,13 @@ export class BillService {
         where: [{ ...finalFilter, userId }],
         order: { paid: 'ASC', due: 'ASC' }
       })
+      const sum = await this.billRepository.sum('totalParcel', [
+        { ...finalFilter, userId }
+      ])
       return {
         count: total,
-        data: result
+        data: result,
+        total: convertToFloat(sum)
       }
     } catch (error) {
       return ErrorHandler.handle(error)

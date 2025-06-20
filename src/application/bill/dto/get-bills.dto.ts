@@ -25,6 +25,7 @@ export type AvailableFilters =
   | 'type'
   | 'date1'
   | 'date2'
+  | 'moneyflux'
 
 export type FilterDisplay = {
   id: string | number
