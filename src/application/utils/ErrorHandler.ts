@@ -6,11 +6,7 @@ export abstract class ErrorHandler {
   static entityReferenceError: any
 
   public static handle(error: HttpException) {
-    try {
-      throw error
-    } catch (error) {
-      throw new HttpException(error.message, error.status)
-    }
+    throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
   }
 
   public static errorResponse(res: Response, error: HttpException) {

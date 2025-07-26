@@ -20,3 +20,12 @@ export type SumAndCountType = {
 }
 
 export type MonthlySavingsTypes = 'start'
+
+export type OptionalKeys<T> = {
+  [K in keyof T]?: any
+  // eslint-disable-next-line @typescript-eslint/ban-types
+} & {}
+
+export type DiscriminatedUnionToObjectType<T extends string, V> =
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  Partial<Record<T, V>>

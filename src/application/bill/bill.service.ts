@@ -13,26 +13,14 @@ import {
   BillCreditCard,
   BillService2
 } from './dto/bill-template.dto'
-import {
-  Between,
-  In,
-  IsNull,
-  LessThan,
-  LessThanOrEqual,
-  Like,
-  MoreThan,
-  MoreThanOrEqual,
-  Not,
-  Or,
-  Repository
-} from 'typeorm'
+import { IsNull, LessThan, MoreThan, Not, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { CreditCard } from '../credit-card/credit-card.entity'
 import { UUID } from '../utils/uuid'
-import { getMonthBetweenOperator } from '../utils/operators'
+import { getMonthBetweenOperator, operatorFilter } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
 import { SumAndCountType } from '../types/general'
 import { convertToFloat } from '../utils/conversions'
@@ -195,21 +183,27 @@ export class BillService {
   }
 
   async updateTransactionBill(id: string, data: Omit<UpdateBillBank, 'id'>) {
+    const isQuickSettle = id && data.settled && !data.bank1Id
+
     try {
       const { settled, bank1Id, bank2Id, total, isPayment } = data
-      const bill = await this.billRepository.findOne({
-        where: { id }
-      })
+      const bill = await this.billRepository.findOneBy({ id })
       if (!bill) ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+
+      const newTotalDelta = isQuickSettle
+        ? bill.total
+        : !bill.settled
+          ? total
+          : total - bill.total
 
       const bank1 = await this.bankService.getOneById(bank1Id)
       if (!bank1) ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
 
-      if (settled) {
+      if (settled && newTotalDelta !== 0) {
         const newBank1Object: Bank = {
           ...bank1,
           id: bank1Id,
-          savings: bank1.savings + (total - bill.total) * (isPayment ? -1 : 1)
+          savings: bank1.savings + newTotalDelta * (isPayment ? -1 : 1)
         }
         if (bank2Id) {
           const bank2 = await this.bankService.getOneById(bank2Id)
@@ -217,7 +211,7 @@ export class BillService {
           const newBank2Object: Bank = {
             ...bank2,
             id: bank2Id,
-            savings: bank2.savings + (total - bill.total) * (isPayment ? 1 : -1)
+            savings: bank2.savings + newTotalDelta * (isPayment ? 1 : -1)
           }
           await this.bankService.update(bank2Id, newBank2Object)
         }
@@ -227,7 +221,7 @@ export class BillService {
       const res = await this.billRepository.update(id, { ...data })
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
     }
   }
 
@@ -235,9 +229,7 @@ export class BillService {
     const isQuickSettle = id && data.settled && !data.companyId
 
     try {
-      const bill = await this.billRepository.findOneBy({
-        id
-      })
+      const bill = await this.billRepository.findOneBy({ id })
       if (!bill) ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
 
       const newDelta = bill.parcel === bill.parcels - 1 ? data.delta - bill.delta : 0
@@ -380,143 +372,14 @@ export class BillService {
         affected: allBillsRelated.map((abr) => abr.id)
       }
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
     }
   }
 
   async getBills(userId: string, page: number, take: number, data: any) {
     try {
-      let parsedFilter: FilterDisplay[] = []
-      const filterObject: any = {
-        name: '',
-        moneyflux: '',
-        months: [],
-        min: null,
-        max: null,
-        years: [],
-        categoryId: [],
-        bankId: [],
-        companyId: [],
-        creditCardId: [],
-        status: 'all',
-        type: []
-      }
-      if (data.length > 0) {
-        parsedFilter = JSON.parse(data) as FilterDisplay[]
-        parsedFilter.forEach((d) => {
-          switch (d.identifier) {
-            case 'moneyflux':
-              filterObject.moneyflux! = d.id as string
-              break
-            case 'name':
-              filterObject.name = d.id as string
-              break
-            case 'month':
-              filterObject.months!.push(d.id as number)
-              break
-            case 'year':
-              filterObject.years!.push(d.id as number)
-              break
-            case 'min':
-              filterObject.min! = d.id as number
-              break
-            case 'max':
-              filterObject.max! = d.id as number
-              break
-            case 'status':
-              filterObject.status = d.id as string
-              break
-            case 'category':
-              filterObject.categoryId.push(d.id)
-              break
-            case 'company':
-              filterObject.companyId.push(d.id)
-              break
-            case 'creditcard':
-              filterObject.creditCardId.push(d.id)
-              break
-            case 'bank':
-              filterObject.bankId.push(d.id)
-              break
-            case 'status':
-              filterObject.status = d.id as string
-              break
-            case 'type':
-              filterObject.type.push(d.id)
-              break
-            case 'date1':
-              filterObject.date1 = d.id
-              break
-            case 'date2':
-              filterObject.date2 = d.id
-              break
-            default:
-              break
-          }
-        })
-      }
-      const finalFilter: any = {}
-      // set name
-      if (filterObject.name) finalFilter.name = Like(`%${filterObject.name}%`)
-      // set money flux
-      if (filterObject.moneyflux)
-        finalFilter.isPayment = filterObject.moneyflux === 'outcome'
-      // set months
-      if (filterObject.months.length > 0) {
-        const dates: Array<Date[]> = []
-        filterObject.years.forEach((y) =>
-          filterObject.months.forEach((m) => {
-            dates.push([new Date(y, m, 1), new Date(y, m + 1, 0)])
-          })
-        )
-        finalFilter.due = Or(...dates.map((d) => Between(d[0], d[1])))
-      }
-      if (filterObject.date1 && filterObject.date2) {
-        finalFilter.due = Between(
-          new Date(filterObject.date1),
-          new Date(filterObject.date2)
-        )
-      }
-      if (filterObject.date1 && !filterObject.date2) {
-        finalFilter.due = MoreThanOrEqual(new Date(filterObject.date1))
-      }
-      if (filterObject.date2 && !filterObject.date1) {
-        finalFilter.due = LessThanOrEqual(new Date(filterObject.date2))
-      }
-      // set years
-      if (filterObject.years.length > 0 && filterObject.months.length === 0) {
-        const dates: Array<Date[]> = []
-        filterObject.years.forEach((y) =>
-          dates.push([new Date(y, 0, 1), new Date(y, 11, 31)])
-        )
-        finalFilter.due = Or(...dates.map((d) => Between(d[0], d[1])))
-      }
-      // met min and max total values
-      if (filterObject.min && filterObject.max)
-        finalFilter.totalParcel = Between(filterObject.min, filterObject.max)
-      else if (filterObject.min)
-        finalFilter.totalParcel = MoreThanOrEqual(filterObject.min)
-      else if (filterObject.max)
-        finalFilter.totalParcel = LessThanOrEqual(filterObject.max)
-      // set type bills ids
-      if (filterObject.categoryId.length > 0)
-        finalFilter.categoryId = In([...filterObject.categoryId])
-      // set banks ids
-      if (filterObject.bankId.length > 0) {
-        finalFilter.bank1Id = In([...filterObject.bankId])
-        finalFilter.bank2Id = In([...filterObject.bankId])
-      }
-      // set companies ids
-      if (filterObject.companyId.length > 0)
-        finalFilter.companyId = In([...filterObject.companyId])
-      // set credit cards ids
-      if (filterObject.creditCardId.length > 0)
-        finalFilter.creditCardId = In([...filterObject.creditCardId])
-      // set status
-      if (filterObject.status !== 'all')
-        finalFilter.settled = filterObject.status === 'settled'
-      // set type of payments
-      if (filterObject.type.length > 0) finalFilter.type = In([...filterObject.type])
+      const parsedFilter: FilterDisplay[] = JSON.parse(data) as FilterDisplay[]
+      const finalFilter = operatorFilter(parsedFilter)
 
       const [result, total] = await this.billRepository.findAndCount({
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
@@ -528,13 +391,14 @@ export class BillService {
       const sum = await this.billRepository.sum('totalParcel', [
         { ...finalFilter, userId }
       ])
+
       return {
         count: total,
         data: result,
         total: convertToFloat(sum)
       }
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.INTERNAL_SERVER_ERROR('Error getting the bills list')
     }
   }
 
