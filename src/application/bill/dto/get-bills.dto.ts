@@ -32,3 +32,8 @@ export type FilterDisplay = {
   identifier: AvailableFilters
   name: string | number
 }
+
+export type GroupedFilterType = {
+  field: string
+  value: any
+}

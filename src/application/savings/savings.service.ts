@@ -128,6 +128,7 @@ export class SavingsService {
           year: 0
         })
       })
+      let previousMonthSaved = 0
 
       for (const pbIndex in piggyBanks) {
         piggyBanksResume[pbIndex].bank = piggyBanks[pbIndex].name
@@ -141,8 +142,7 @@ export class SavingsService {
               month: (month || new Date().getMonth()) - i
             }
           })
-          const previousMonthSaved =
-            piggyBanksResume[pbIndex].progression[monthSpan - 1 - i]?.savedValue || 0
+
           const savingDiff = (monthSaving?.total || 0) - previousMonthSaved
 
           piggyBanksResume[pbIndex].progression[monthSpan - i] = {
@@ -155,6 +155,7 @@ export class SavingsService {
             month: new Date(year, month - i, 1).getMonth(),
             year: new Date(year, month - i, 1).getFullYear()
           }
+          previousMonthSaved = monthSaving ? monthSaving.total : 0
         }
       }
 
