@@ -27,3 +27,5 @@ export const initializeFilters: DiscriminatedUnionToObjectType<
   date2: '',
   date: []
 }
+
+export const DAY_START = [4, 0, 0]

@@ -1,8 +1,17 @@
-import { Between, In, IsNull, LessThanOrEqual, Like, MoreThanOrEqual, Or } from 'typeorm'
+import {
+  And,
+  Between,
+  In,
+  IsNull,
+  LessThanOrEqual,
+  Like,
+  MoreThanOrEqual,
+  Or
+} from 'typeorm'
 import { AvailableFilters, FilterDisplay } from '../bill/dto/get-bills.dto'
 import { Bill } from '../bill/bill.entity'
 import { OptionalKeys } from '../types/general'
-import { initializeFilters } from './constants'
+import { DAY_START, initializeFilters } from './constants'
 
 /**
  * Get filters treated and grouped
@@ -61,8 +70,8 @@ export function getInOperatorForArrays(array: Array<any>) {
  * @returns {FindOperator<Date>} a Between typeorm filter operator
  */
 export function getMonthBetweenOperator(month: number, year: number) {
-  const firstDay = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
+  const firstDay = new Date(year, month, 1, ...DAY_START)
+  const lastDay = new Date(year, month + 1, 1, ...DAY_START)
 
   return Between(firstDay, lastDay)
 }
@@ -109,12 +118,18 @@ export function getDateOperators(filters: FilterDisplay[]) {
 
   if (monthFilters.length === 0) {
     yearFilters.forEach((year) =>
-      dates.push([new Date(year, 0, 1), new Date(year, 11, 31)])
+      dates.push([
+        new Date(year, 0, 1, ...DAY_START),
+        new Date(year + 1, 0, 1, ...DAY_START)
+      ])
     )
   } else {
     yearFilters.forEach((year) =>
       monthFilters.forEach((month) =>
-        dates.push([new Date(year, month, 1), new Date(year, month + 1, 0)])
+        dates.push([
+          new Date(year, month, 1, ...DAY_START),
+          new Date(year, month + 1, 1, ...DAY_START)
+        ])
       )
     )
   }
@@ -131,8 +146,12 @@ export function operatorFilter(filters: FilterDisplay[]) {
   const finalFilter: OptionalKeys<Bill> = {}
   const groupedFiltersObject = groupFilters(filters)
 
+  const dueFilters = []
+  const totalParcelFilters = []
+
   Object.keys(groupedFiltersObject).map((key: AvailableFilters | 'date') => {
     const value = groupedFiltersObject[key]
+
     switch (key) {
       case 'moneyflux':
         if (value) finalFilter.isPayment = (value as string) === 'outcome'
@@ -141,13 +160,13 @@ export function operatorFilter(filters: FilterDisplay[]) {
         if (value) finalFilter.name = getTermOperator(value as string)
         break
       case 'date':
-        if (value.length) finalFilter.due = getDateOperators(value)
+        if (value.length) dueFilters.push(getDateOperators(value))
         break
       case 'min':
-        if (value) finalFilter.totalParcel = MoreThanOrEqual(value as number)
+        if (value) totalParcelFilters.push(MoreThanOrEqual(value as number))
         break
       case 'max':
-        if (value) finalFilter.totalParcel = LessThanOrEqual(value as number)
+        if (value) totalParcelFilters.push(LessThanOrEqual(value as number))
         break
       case 'status':
         if (value !== 'all') {
@@ -172,15 +191,21 @@ export function operatorFilter(filters: FilterDisplay[]) {
         }
         break
       case 'date1':
-        if (value) finalFilter.due = MoreThanOrEqual(new Date(value))
+        if (value) dueFilters.push(MoreThanOrEqual(new Date(value)))
         break
       case 'date2':
-        if (value) finalFilter.due = LessThanOrEqual(new Date(value))
+        if (value) dueFilters.push(LessThanOrEqual(new Date(value)))
         break
       default:
         break
     }
   })
+
+  if (dueFilters.length > 0)
+    finalFilter.due = dueFilters.length > 1 ? And(...dueFilters) : dueFilters[0]
+  if (totalParcelFilters.length > 0)
+    finalFilter.totalParcel =
+      totalParcelFilters.length > 1 ? And(...totalParcelFilters) : totalParcelFilters[0]
 
   return finalFilter
 }

@@ -60,7 +60,8 @@ export class SavingsService {
     try {
       const [data, total] = await this.savingRepository.findAndCount({
         where: { bankId },
-        take: pages * (take || 4)
+        take: pages * (take || 4),
+        order: { updatedAt: 'DESC' }
       })
       return {
         count: total,

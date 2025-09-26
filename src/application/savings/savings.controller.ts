@@ -21,7 +21,7 @@ export class SavingsController {
   constructor(private readonly savingsService: SavingsService) {}
 
   private verifyBody(data: NewSavingDto) {
-    return !data.bankId || !data.month || !data.year || !data.type || !data.total
+    return !data.bankId || !data.month || !data.year || !data.type || data.total < 0
   }
 
   @Post()
