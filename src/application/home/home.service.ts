@@ -31,36 +31,37 @@ export class HomeService {
    */
   async getSavingsTotal(
     userId: string,
-    month?: number,
-    year?: number
+    month: number,
+    year: number
   ): Promise<HomeSavingsType> {
-    const monthRef = month || new Date().getMonth()
-    const yearRef = year || new Date().getFullYear()
-
     try {
       const userBanks = await this.bankRepository.find({
         where: { userId, isPiggyBank: false }
       })
-      const savings = await Promise.all(
-        userBanks.map((bank) =>
-          this.savingsService.getOneByBankId(bank.id, monthRef, yearRef)
-        )
-      )
-      const incomeBills = await this.billsService.getIncomeBills(
-        userId,
-        monthRef,
-        yearRef
-      )
+      const sumBanks = userBanks.reduce((acc, bank) => acc + bank.savings, 0)
 
-      const monthlySavings = savings.reduce(
-        (acc, saving) => acc + (saving?.total || 0),
-        0
-      )
+      const bills = await this.billsService.getBillsByMonth(userId, month, year)
+      const sumOfBills = bills.reduce((prev, curr) => prev + curr.totalParcel, 0)
+      const incomeBills = await this.billsService.getIncomeBills(userId, month, year)
       const totalIncomeBills = incomeBills.reduce((acc, bill) => acc + bill.total, 0)
 
+      const savingsOffset = month < new Date().getMonth() ? 1 : 0
+      const savings = await Promise.all(
+        userBanks.map((bank) =>
+          this.savingsService.getOneByBankId(bank.id, month + savingsOffset, year)
+        )
+      )
+      const monthlySavings =
+        month > new Date().getMonth()
+          ? sumBanks
+          : savings.reduce((acc, saving) => acc + (saving?.total || 0), 0)
+
+      const totalBanks = month < new Date().getMonth() ? monthlySavings : sumBanks
+      const totalSavingsPreview =
+        month < new Date().getMonth()
+          ? monthlySavings
+          : totalIncomeBills + monthlySavings - sumOfBills
       const totalIncome = totalIncomeBills
-      const totalSavingsPreview = totalIncomeBills + monthlySavings
-      const totalBanks = userBanks.reduce((acc, bank) => acc + bank.savings, 0)
       const countBanks = userBanks.length
 
       return {
@@ -129,11 +130,11 @@ export class HomeService {
     }
   }
 
-  async getCreditCardValues(userId: string) {
+  async getCreditCardValues(userId: string, month: number, year: number) {
     try {
       const filterObject = {
-        months: [new Date().getMonth()],
-        years: [new Date().getFullYear()]
+        months: [month],
+        years: [year]
       }
       const dates: Array<Date[]> = []
       filterObject.years.forEach((y) =>
@@ -158,7 +159,7 @@ export class HomeService {
     }
   }
 
-  async getLastFiveBills(userId: string) {
+  async getLastFiveBills(userId: string, month: number, year: number) {
     try {
       const bills = await this.billRepository.find({
         relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
@@ -166,11 +167,13 @@ export class HomeService {
           {
             userId,
             type: Or(Like('companyCredit'), Like('creditCard')),
+            due: getMonthBetweenOperator(month, year),
             parcel: 0
           },
           {
             userId,
-            type: 'money'
+            type: 'money',
+            due: getMonthBetweenOperator(month, year)
           }
         ],
         take: 5,

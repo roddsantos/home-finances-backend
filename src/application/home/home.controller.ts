@@ -19,12 +19,13 @@ export class HomeController {
     @Query() query: any,
     @Res() res: Response
   ) {
+    if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('home/expenses - no id found')
+
     const { month, year } = query
-    const monthRef = month || new Date().getMonth()
-    const yearRef = year || new Date().getFullYear()
+    const monthRef = parseInt(month) || new Date().getMonth()
+    const yearRef = parseInt(year) || new Date().getFullYear()
 
     try {
-      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('home/expenses - no id found')
       const result = await this.homeService.getBillsDetails(id, monthRef, yearRef)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
@@ -39,10 +40,13 @@ export class HomeController {
     @Res() res: Response
   ): Promise<Response<SumAndCountType> | void> {
     if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('home/savings - no id found')
+
     const { month, year } = query
+    const monthRef = parseInt(month) || new Date().getMonth()
+    const yearRef = parseInt(year) || new Date().getFullYear()
 
     try {
-      const result = await this.homeService.getSavingsTotal(id, month, year)
+      const result = await this.homeService.getSavingsTotal(id, monthRef, yearRef)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -52,11 +56,17 @@ export class HomeController {
   @Get('/invoices/:id')
   public async getInvoicesInfo(
     @Param('id') id: string,
+    @Query() query: any,
     @Res() res: Response
   ): Promise<Response<SumAndCountType> | void> {
+    if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
+
+    const { month, year } = query
+    const monthRef = parseInt(month) || new Date().getMonth()
+    const yearRef = parseInt(year) || new Date().getFullYear()
+
     try {
-      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
-      const result = await this.homeService.getCreditCardValues(id)
+      const result = await this.homeService.getCreditCardValues(id, monthRef, yearRef)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -64,10 +74,19 @@ export class HomeController {
   }
 
   @Get('/recents/:id')
-  public async getRecentBills(@Param('id') id: string, @Res() res: Response) {
+  public async getRecentBills(
+    @Param('id') id: string,
+    @Query() query: any,
+    @Res() res: Response
+  ) {
+    if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
+
+    const { month, year } = query
+    const monthRef = parseInt(month) || new Date().getMonth()
+    const yearRef = parseInt(year) || new Date().getFullYear()
+
     try {
-      if (!id) return ErrorHandler.NOT_FOUND_MESSAGE('No id found')
-      const result = await this.homeService.getLastFiveBills(id)
+      const result = await this.homeService.getLastFiveBills(id, monthRef, yearRef)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

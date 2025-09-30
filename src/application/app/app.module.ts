@@ -1,4 +1,9 @@
-import { Module, OnApplicationBootstrap } from '@nestjs/common'
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  OnApplicationBootstrap
+} from '@nestjs/common'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { dataBaseConfig } from '../database/database.config'
@@ -15,6 +20,7 @@ import { HomeModule } from '../home/home.module'
 import { SavingsModule } from '../savings/savings.module'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import typeorm from '../database/typeorm'
+import { DateMiddleware } from '../middlewares/date.middleware'
 
 @Module({
   imports: [
@@ -39,8 +45,12 @@ import typeorm from '../database/typeorm'
   controllers: [AppController],
   providers: [AppService, SeedingService]
 })
-export class AppModule implements OnApplicationBootstrap {
+export class AppModule implements OnApplicationBootstrap, NestModule {
   constructor(private readonly seedingService: SeedingService) {}
+
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(DateMiddleware).forRoutes('home')
+  }
 
   async onApplicationBootstrap(): Promise<void> {
     if (dataBaseConfig.synchronize) await this.seedingService.seed()
