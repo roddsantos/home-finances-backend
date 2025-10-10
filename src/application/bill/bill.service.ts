@@ -392,13 +392,45 @@ export class BillService {
         { ...finalFilter, userId }
       ])
 
+      let income = {
+        total: 0,
+        count: 0
+      }
+      const addIncomeBills = !Boolean(
+        parsedFilter.find((pf) => pf.identifier === 'moneyflux' && pf.id === 'outcome')
+      )
+
+      if (addIncomeBills) {
+        const incomeBillsArray = await this.billRepository.findAndCount({
+          relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
+          take,
+          skip: take * page - take,
+          where: [
+            {
+              ...finalFilter,
+              userId,
+              isPayment: !addIncomeBills
+            }
+          ],
+          order: { paid: 'ASC', due: 'ASC' }
+        })
+
+        income = {
+          total: convertToFloat(
+            incomeBillsArray[0].reduce((prev, curr) => curr.totalParcel + prev, 0)
+          ),
+          count: addIncomeBills ? incomeBillsArray[1] : 0
+        }
+      }
+
       return {
         count: total,
         data: result,
-        total: convertToFloat(sum)
+        total: convertToFloat(sum),
+        income
       }
     } catch (error) {
-      ErrorHandler.INTERNAL_SERVER_ERROR('Error getting the bills list')
+      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting the bills list')
     }
   }
 
