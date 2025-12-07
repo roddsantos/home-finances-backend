@@ -28,7 +28,7 @@ export class UpdateCreditCardBillDto {
   totalParcel?: number
   delta?: number
   taxes?: number
-  isRefund: boolean
+  isRecurrent: boolean
 }
 
 export class UpdateCompanyBillDto {
@@ -40,7 +40,7 @@ export class UpdateCompanyBillDto {
   due: Date
   delta?: number
   taxes?: number
-  isRefund: boolean
+  isRecurrent: boolean
 }
 
 export type AllUpdateBillProps = UpdateBillTemplateDto &

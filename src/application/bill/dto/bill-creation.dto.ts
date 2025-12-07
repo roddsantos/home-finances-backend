@@ -13,7 +13,7 @@ export class CreateCreditCardBillDto {
   totalParcel?: number
   delta?: number
   taxes?: number
-  isRefund: boolean
+  isRecurrent: boolean
 }
 
 export class CreateCompanyBillDto {

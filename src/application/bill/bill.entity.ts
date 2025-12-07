@@ -149,7 +149,7 @@ export class Bill {
     nullable: false,
     default: false
   })
-  isRefund: boolean | null
+  isRecurrent: boolean
 
   @Column({
     nullable: true

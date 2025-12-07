@@ -5,8 +5,8 @@ export abstract class ErrorHandler {
   static type: any
   static entityReferenceError: any
 
-  public static handle(error: HttpException) {
-    throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
+  public static handle(error?: HttpException) {
+    throw new HttpException(error.message || '', HttpStatus.INTERNAL_SERVER_ERROR)
   }
 
   public static errorResponse(res: Response, error: HttpException) {

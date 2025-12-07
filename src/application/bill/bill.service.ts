@@ -24,6 +24,8 @@ import { getMonthBetweenOperator, operatorFilter } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
 import { SumAndCountType } from '../types/general'
 import { convertToFloat } from '../utils/conversions'
+import { WinstonLogger } from '../utils/logging/winston.logger'
+import * as path from 'path'
 
 @Injectable()
 export class BillService {
@@ -36,6 +38,9 @@ export class BillService {
   ) {
     this.uuid = new UUID()
   }
+  logDirectory = path.join(__dirname, '../../logs')
+
+  logger = new WinstonLogger()
 
   parcelsCcBills(bill: BillCreditCard) {
     const bills = [] as BillCreditCard[]
@@ -82,52 +87,49 @@ export class BillService {
     return bills
   }
 
+  async updateBank(bank: Bank, total: number, isPayment: boolean) {
+    const newBankValue: Bank = {
+      ...bank,
+      savings: bank.savings + total * (isPayment ? -1 : 1)
+    }
+    return await this.bankService.update(bank.id, newBankValue)
+  }
+
   async createTransactionBill(createTransactionBillDto: BillBank) {
     try {
       const { total, bank1Id, bank2Id, isPayment, settled } = createTransactionBillDto
-      const bank1 = await this.bankService.getOneById(bank1Id)
-      if (bank1 && settled) {
-        if (bank2Id) {
-          const bank2 = await this.bankService.getOneById(bank2Id)
-          if (bank2) {
-            const newBank1Value: Bank = {
-              ...bank1,
-              savings: bank1.savings + total * (isPayment ? -1 : 1)
-            }
-            const newBank2Value: Bank = {
-              ...bank2,
-              savings: bank2.savings + total * (isPayment ? 1 : -1)
-            }
-            await this.bankService.update(bank1Id, newBank1Value)
-            await this.bankService.update(bank2Id, newBank2Value)
 
-            const res = await this.billRepository.save({
-              ...createTransactionBillDto,
-              totalParcel: total
-            })
-            return res
-          } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 2 not found')
-        } else {
-          const newBank1Value: Bank = {
-            ...bank1,
-            savings: bank1.savings + total * (isPayment ? -1 : 1)
-          }
-          await this.bankService.update(bank1Id, newBank1Value)
-          const res = await this.billRepository.save({
-            ...createTransactionBillDto,
-            totalParcel: total
-          })
-          return res
-        }
-      } else if (!settled) {
-        const res = await this.billRepository.save({
+      if (!settled) {
+        return await this.billRepository.save({
           ...createTransactionBillDto,
           totalParcel: total
         })
-        return res
-      } else ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
+      }
+
+      const bank1 = await this.bankService.getOneById(bank1Id)
+      if (!bank1) {
+        this.logger.error(this.logDirectory + ' Bills - Bank 1 not found')
+        ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 1 not found')
+      }
+      await this.updateBank(bank1, total, isPayment)
+
+      if (bank2Id) {
+        const bank2 = await this.bankService.getOneById(bank2Id)
+        if (!bank2) {
+          this.logger.error(this.logDirectory + ' Bills - Bank 2 not found')
+          ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 2 not found')
+        }
+        await this.updateBank(bank2, total, !isPayment)
+      }
+      return await this.billRepository.save({
+        ...createTransactionBillDto,
+        totalParcel: total
+      })
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(
+        this.logDirectory + ' Bills - Error creating transaction bill : ' + error
+      )
+      return ErrorHandler.handle()
     }
   }
 
@@ -145,14 +147,16 @@ export class BillService {
       )
       return allBills
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(
+        this.logDirectory + ' Bills - Error creating company bill : ' + error
+      )
+      return ErrorHandler.handle()
     }
   }
 
   async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
     try {
-      const { creditCardId, total, taxes, delta, isRefund, settled } =
-        createCreditCardBillDto
+      const { creditCardId, total, taxes, delta, settled } = createCreditCardBillDto
       const groupId = this.uuid.v4()
 
       const bills = this.parcelsCcBills(createCreditCardBillDto)
@@ -163,8 +167,8 @@ export class BillService {
         if (cc) {
           const newCcObject: CreditCard = {
             ...cc,
-            limit: cc.limit + (total + taxes + delta) * (isRefund ? 1 : -1),
-            invoice: cc.invoice + bills[0].totalParcel * (isRefund ? -1 : 1)
+            limit: cc.limit + (total + taxes + delta) * -1,
+            invoice: cc.invoice + bills[0].totalParcel * -1
           }
           await this.ccService.update(creditCardId, newCcObject)
         } else throw ErrorHandler.CONFLICT_MESSAGE("This card can't be used")
@@ -178,7 +182,10 @@ export class BillService {
       )
       return allBills
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(
+        this.logDirectory + ' Bills - Error creating credit card bill : ' + error
+      )
+      return ErrorHandler.handle()
     }
   }
 
@@ -187,41 +194,45 @@ export class BillService {
 
     try {
       const { settled, bank1Id, bank2Id, total, isPayment } = data
+
       const bill = await this.billRepository.findOneBy({ id })
-      if (!bill) ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+      if (!bill) {
+        this.logger.error(this.logDirectory + ' Bills - Bill not found')
+        ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bill not found')
+      }
 
       const newTotalDelta = isQuickSettle
         ? bill.total
         : !bill.settled
           ? total
-          : total - bill.total
+          : parseFloat((total - bill.total).toFixed(2))
 
-      const bank1 = await this.bankService.getOneById(bank1Id)
-      if (!bank1) ErrorHandler.NOT_FOUND_MESSAGE('Bank 1 not found')
-
-      if (settled && newTotalDelta !== 0) {
-        const newBank1Object: Bank = {
-          ...bank1,
-          id: bank1Id,
-          savings: bank1.savings + newTotalDelta * (isPayment ? -1 : 1)
-        }
-        if (bank2Id) {
-          const bank2 = await this.bankService.getOneById(bank2Id)
-          if (!bank2) ErrorHandler.NOT_FOUND_MESSAGE('Bank 2 not found')
-          const newBank2Object: Bank = {
-            ...bank2,
-            id: bank2Id,
-            savings: bank2.savings + newTotalDelta * (isPayment ? 1 : -1)
-          }
-          await this.bankService.update(bank2Id, newBank2Object)
-        }
-        await this.bankService.update(bank1Id, newBank1Object)
+      if (!(settled && newTotalDelta !== 0)) {
+        return await this.billRepository.update(id, { ...data })
       }
 
-      const res = await this.billRepository.update(id, { ...data })
-      return res
+      const bank1 = await this.bankService.getOneById(bank1Id)
+      if (!bank1) {
+        this.logger.error(this.logDirectory + ' Bills - Bank 1 not found')
+        ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 1 not found')
+      }
+      this.updateBank(bank1, newTotalDelta, isPayment)
+
+      if (bank2Id) {
+        const bank2 = await this.bankService.getOneById(bank2Id)
+        if (!bank2) {
+          this.logger.error(this.logDirectory + ' Bills - Bank 2 not found')
+          ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 2 not found')
+        }
+        this.updateBank(bank2, newTotalDelta, !isPayment)
+      }
+
+      return await this.billRepository.update(id, { ...data })
     } catch (error) {
-      ErrorHandler.handle(error)
+      this.logger.error(
+        this.logDirectory + ' Bills - Error updating transaction bill : ' + error
+      )
+      ErrorHandler.handle()
     }
   }
 
@@ -288,7 +299,10 @@ export class BillService {
       })
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(
+        this.logDirectory + ' Bills - Error updating company bill : ' + error
+      )
+      return ErrorHandler.handle()
     }
   }
 
@@ -297,7 +311,6 @@ export class BillService {
       total,
       taxes,
       delta,
-      isRefund,
       groupId,
       parcel,
       parcels,
@@ -362,8 +375,8 @@ export class BillService {
               : total + taxes + delta
           const newCcObject: CreditCard = {
             ...cc,
-            limit: cc.limit + valueForLimit * (isRefund ? 1 : -1),
-            invoice: cc.invoice + totalParcel * (isRefund ? -1 : 1)
+            limit: cc.limit + valueForLimit * -1,
+            invoice: cc.invoice + totalParcel * -1
           }
           await this.ccService.update(creditCardId, newCcObject)
         }
@@ -372,6 +385,9 @@ export class BillService {
         affected: allBillsRelated.map((abr) => abr.id)
       }
     } catch (error) {
+      this.logger.error(
+        this.logDirectory + ' Bills - Error updating credit card bill : ' + error
+      )
       ErrorHandler.handle(error)
     }
   }
@@ -403,8 +419,6 @@ export class BillService {
       if (addIncomeBills) {
         const incomeBillsArray = await this.billRepository.findAndCount({
           relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
-          take,
-          skip: take * page - take,
           where: [
             {
               ...finalFilter,
@@ -430,14 +444,22 @@ export class BillService {
         income
       }
     } catch (error) {
+      this.logger.error(
+        this.logDirectory + ' Bills - Error getting the bills list : ' + error
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting the bills list')
     }
   }
 
   async getBillById(id: string) {
-    const bill = await this.billRepository.findOneBy({ id })
-    if (bill) return bill
-    else ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+    try {
+      return await this.billRepository.findOneBy({ id })
+    } catch (error) {
+      this.logger.error(
+        this.logDirectory + ' Bills - Error getting bill by id : ' + error
+      )
+      return ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+    }
   }
 
   /**
@@ -462,14 +484,12 @@ export class BillService {
             userId,
             due: getMonthBetweenOperator(month, year),
             isPayment: true,
-            bank2Id: IsNull(),
-            isRefund: false
+            bank2Id: IsNull()
           },
           {
             userId,
             due: getMonthBetweenOperator(month, year),
-            type: 'creditCard',
-            isRefund: false
+            type: 'creditCard'
           },
           {
             userId,
@@ -479,14 +499,16 @@ export class BillService {
             ),
             paid: getMonthBetweenOperator(month, year),
             isPayment: true,
-            bank2Id: IsNull(),
-            isRefund: false
+            bank2Id: IsNull()
           }
         ]
       })
       return bills
     } catch (error) {
-      ErrorHandler.INTERNAL_SERVER_ERROR("Can't find bills")
+      this.logger.error(
+        this.logDirectory + ' Bills - Error getting bill by month : ' + error
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting bill by month')
     }
   }
 
@@ -517,7 +539,10 @@ export class BillService {
 
       return moneyBills
     } catch (error) {
-      ErrorHandler.INTERNAL_SERVER_ERROR('Error fetching money bills')
+      this.logger.error(
+        this.logDirectory + ' Bills - Error getting bills paid by money : ' + error
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting bills paid by money')
     }
   }
 
@@ -544,7 +569,10 @@ export class BillService {
 
       return incomeBills
     } catch (error) {
-      ErrorHandler.INTERNAL_SERVER_ERROR('Error fetching money bills')
+      this.logger.error(
+        this.logDirectory + ' Bills - Error getting income bills : ' + error
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting income bills')
     }
   }
 
@@ -577,7 +605,10 @@ export class BillService {
 
       return dailyBillsCount
     } catch (error) {
-      ErrorHandler.INTERNAL_SERVER_ERROR('Error fetching money bills')
+      this.logger.error(
+        this.logDirectory + ' Bills - Error getting money bills : ' + error
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting money bills')
     }
   }
 }

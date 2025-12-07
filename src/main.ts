@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core'
 import { AppModule } from './application/app/app.module'
 import * as dotenv from 'dotenv'
 import { resolve } from 'path'
+import { WinstonLogger } from './application/utils/logging/winston.logger'
 
 dotenv.config({ path: resolve(__dirname, '../.env') })
 
@@ -15,7 +16,9 @@ export const appConfig = {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create(AppModule, {
+    logger: new WinstonLogger()
+  })
 
   app.enableCors({
     origin: '*',

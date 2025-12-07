@@ -35,16 +35,39 @@ export class HomeService {
     year: number
   ): Promise<HomeSavingsType> {
     try {
+      // Get sum of common banks
       const userBanks = await this.bankRepository.find({
         where: { userId, isPiggyBank: false }
       })
       const sumBanks = userBanks.reduce((acc, bank) => acc + bank.savings, 0)
 
+      // Get sum of piggy banks
+      const piggyBanks = await this.bankRepository.find({
+        where: { userId, isPiggyBank: true }
+      })
+
+      // Get piggy bank bills history
+      const piggyBankDeposits = await this.billRepository.sum('total', [
+        {
+          userId,
+          bank2Id: Or(...piggyBanks.map((pb) => Like(pb.id))),
+          due: getMonthBetweenOperator(month, year)
+        }
+      ])
+      const piggyBankWithdraws = await this.billRepository.sum('total', {
+        userId,
+        bank1Id: Or(...piggyBanks.map((pb) => Like(pb.id))),
+        due: getMonthBetweenOperator(month, year)
+      })
+      const piggyBankBillsDelta = piggyBankDeposits - piggyBankWithdraws
+
+      // Get resume of bills (income and outcome)
       const bills = await this.billsService.getBillsByMonth(userId, month, year)
       const sumOfBills = bills.reduce((prev, curr) => prev + curr.totalParcel, 0)
       const incomeBills = await this.billsService.getIncomeBills(userId, month, year)
       const totalIncomeBills = incomeBills.reduce((acc, bill) => acc + bill.total, 0)
 
+      // Get savings
       const savingsOffset = month < new Date().getMonth() ? 1 : 0
       const savings = await Promise.all(
         userBanks.map((bank) =>
@@ -60,7 +83,7 @@ export class HomeService {
       const totalSavingsPreview =
         month < new Date().getMonth()
           ? monthlySavings
-          : totalIncomeBills + monthlySavings - sumOfBills
+          : totalIncomeBills + monthlySavings - sumOfBills - piggyBankBillsDelta
       const totalIncome = totalIncomeBills
       const countBanks = userBanks.length
 
@@ -83,22 +106,19 @@ export class HomeService {
             userId,
             due: getMonthBetweenOperator(m, y),
             isPayment: true,
-            bank2Id: IsNull(),
-            isRefund: false
+            bank2Id: IsNull()
           },
           {
             userId,
             due: getMonthBetweenOperator(m, y),
-            type: 'creditCard',
-            isRefund: false
+            type: 'creditCard'
           },
           {
             userId,
             due: Or(LessThan(firstDayOfMonth(m, y)), MoreThan(lastDayOfMonth(m, y))),
             paid: getMonthBetweenOperator(m, y),
             isPayment: true,
-            bank2Id: IsNull(),
-            isRefund: false
+            bank2Id: IsNull()
           }
         ]
       }
