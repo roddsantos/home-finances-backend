@@ -1,0 +1,26 @@
+import { GeneralService } from 'src/application/app/general/service.general'
+import * as path from 'path'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Bill } from '../bill.entity'
+import { Repository } from 'typeorm'
+import { ErrorHandler } from 'src/application/utils/ErrorHandler'
+import { Injectable } from '@nestjs/common'
+
+@Injectable()
+export class GetBillService extends GeneralService {
+  constructor(
+    @InjectRepository(Bill)
+    private readonly billRepository: Repository<Bill>
+  ) {
+    super(path.join(__dirname, '../../logs'))
+  }
+
+  async getBillById(id: string) {
+    try {
+      return await this.billRepository.findOneBy({ id })
+    } catch (error) {
+      this.logger.error(this.logDirectory + ' Bills - Bill not found')
+      ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bill not found')
+    }
+  }
+}

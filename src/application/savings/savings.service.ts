@@ -4,17 +4,20 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Savings } from './savings.entity'
 import { Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { DashboardSavingsPerMonthType, DashboardSavingType } from '../types/dashboard'
 import { BankService } from '../bank/bank.service'
 import { convertToFloat } from '../utils/conversions'
+import * as path from 'path'
+import { GeneralService } from '../app/general/service.general'
 
 @Injectable()
-export class SavingsService {
+export class SavingsService extends GeneralService {
   constructor(
     @InjectRepository(Savings)
     private readonly savingRepository: Repository<Savings>,
     private readonly bankService: BankService
-  ) {}
+  ) {
+    super(path.join(__dirname, '../../logs'))
+  }
 
   async create(newMonthlySavingDto: NewSavingDto) {
     const { type, bankId, month, year } = newMonthlySavingDto
@@ -118,23 +121,19 @@ export class SavingsService {
     try {
       const piggyBanks = await this.bankService.getAllById(userId, true)
 
-      const piggyBanksResume = new Array<DashboardSavingType>(piggyBanks.length).fill({
-        bank: '',
-        color: '',
-        total: 0,
-        progression: new Array<DashboardSavingsPerMonthType>(monthSpan + 1).fill({
-          savedValue: 0,
-          delta: 0,
-          month: 0,
-          year: 0
-        })
-      })
+      const piggyBanksResume = []
       let previousMonthSaved = 0
 
-      for (const pbIndex in piggyBanks) {
-        piggyBanksResume[pbIndex].bank = piggyBanks[pbIndex].name
-        piggyBanksResume[pbIndex].color = piggyBanks[pbIndex].color
-        piggyBanksResume[pbIndex].total = piggyBanks[pbIndex].savings
+      for (const index in piggyBanks) {
+        const pbIndex = parseInt(index)
+        const info = {
+          bank: piggyBanks[pbIndex].name,
+          color: piggyBanks[pbIndex].color,
+          savings: piggyBanks[pbIndex].savings,
+          progression: []
+        }
+
+        const progressionAux = []
 
         for (let i = monthSpan; i >= 0; i--) {
           const monthSaving = await this.savingRepository.findOne({
@@ -146,18 +145,19 @@ export class SavingsService {
 
           const savingDiff = (monthSaving?.total || 0) - previousMonthSaved
 
-          piggyBanksResume[pbIndex].progression[monthSpan - i] = {
+          progressionAux.push({
             savedValue: Boolean(monthSaving) ? savingDiff : 0,
             delta:
-              !Boolean(piggyBanksResume[pbIndex].progression[monthSpan - 1 - i]) ||
-              !Boolean(previousMonthSaved)
+              !Boolean(progressionAux[monthSpan - 1 - i]) || !Boolean(previousMonthSaved)
                 ? 0
                 : convertToFloat((savingDiff / previousMonthSaved - 1) * 100),
             month: new Date(year, month - i, 1).getMonth(),
             year: new Date(year, month - i, 1).getFullYear()
-          }
+          })
           previousMonthSaved = monthSaving ? monthSaving.total : 0
         }
+        info.progression = progressionAux
+        piggyBanksResume.push(info)
       }
 
       return piggyBanksResume.map((pbr) => ({
@@ -165,6 +165,9 @@ export class SavingsService {
         progression: pbr.progression.slice(1, monthSpan + 1)
       }))
     } catch (error) {
+      this.logger.error(
+        this.logDirectory + ' Bills - Error getting the bills list : ' + error
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR('Error getting savings progression')
     }
   }

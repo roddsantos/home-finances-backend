@@ -1,46 +1,28 @@
 import { Injectable } from '@nestjs/common'
 import { Bill } from './bill.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import {
-  UpdateBillBank,
-  UpdateBillCompany,
-  UpdateBillCreditCard
-} from './dto/update-bill.dto'
 import { FilterDisplay } from './dto/get-bills.dto'
-import {
-  BillBank,
-  BillCompany,
-  BillCreditCard,
-  BillService2
-} from './dto/bill-template.dto'
+import { BillCompany, BillCreditCard, BillService2 } from './dto/bill-template.dto'
 import { IsNull, LessThan, MoreThan, Not, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
-import { CreditCardService } from '../credit-card/credit-card.service'
-import { CreditCard } from '../credit-card/credit-card.entity'
-import { UUID } from '../utils/uuid'
 import { getMonthBetweenOperator, operatorFilter } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
 import { SumAndCountType } from '../types/general'
 import { convertToFloat } from '../utils/conversions'
-import { WinstonLogger } from '../utils/logging/winston.logger'
 import * as path from 'path'
+import { GeneralService } from '../app/general/service.general'
 
 @Injectable()
-export class BillService {
-  private readonly uuid: UUID
+export class BillService extends GeneralService {
   constructor(
     @InjectRepository(Bill)
     private readonly billRepository: Repository<Bill>,
-    private readonly bankService: BankService,
-    private readonly ccService: CreditCardService
+    private readonly bankService: BankService
   ) {
-    this.uuid = new UUID()
+    super(path.join(__dirname, '../../logs'))
   }
-  logDirectory = path.join(__dirname, '../../logs')
-
-  logger = new WinstonLogger()
 
   parcelsCcBills(bill: BillCreditCard) {
     const bills = [] as BillCreditCard[]
@@ -65,26 +47,33 @@ export class BillService {
   }
 
   parcelsCompanyCreditBills(bill: BillService2 | BillCompany) {
-    const bills = [] as BillService2[]
-    let month = new Date(bill.due).getMonth()
+    try {
+      const bills = [] as BillService2[]
+      let month = new Date(bill.due).getMonth()
 
-    for (let i = 0; i < bill.parcels; i++) {
-      month = month + 1
-      const newDate = new Date(new Date(bill.due).setMonth(month))
-      const parcelObject = {
-        ...bill,
-        parcel: i,
-        totalParcel:
-          parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
-          (i === bill.parcels - 1 ? bill.delta : 0),
-        taxes: parseFloat((bill.taxes / bill.parcels).toFixed(2)),
-        delta: i === bill.parcels - 1 ? bill.delta : 0,
-        paid: null,
-        due: newDate.toISOString()
+      for (let i = 0; i < bill.parcels; i++) {
+        month = month + 1
+        const newDate = new Date(new Date(bill.due).setMonth(month))
+        const parcelObject = {
+          ...bill,
+          parcel: i,
+          totalParcel:
+            parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
+            (i === bill.parcels - 1 ? bill.delta : 0),
+          taxes: parseFloat((bill.taxes / bill.parcels).toFixed(2)),
+          delta: i === bill.parcels - 1 ? bill.delta : 0,
+          paid: null,
+          due: newDate.toISOString()
+        }
+        bills.push(parcelObject)
       }
-      bills.push(parcelObject)
+      return bills
+    } catch (error) {
+      this.logger.error(
+        this.logDirectory + ' Bills - Unable to generate bills data : ' + error
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Unable to generate bills data')
     }
-    return bills
   }
 
   async updateBank(bank: Bank, total: number, isPayment: boolean) {
@@ -93,303 +82,6 @@ export class BillService {
       savings: bank.savings + total * (isPayment ? -1 : 1)
     }
     return await this.bankService.update(bank.id, newBankValue)
-  }
-
-  async createTransactionBill(createTransactionBillDto: BillBank) {
-    try {
-      const { total, bank1Id, bank2Id, isPayment, settled } = createTransactionBillDto
-
-      if (!settled) {
-        return await this.billRepository.save({
-          ...createTransactionBillDto,
-          totalParcel: total
-        })
-      }
-
-      const bank1 = await this.bankService.getOneById(bank1Id)
-      if (!bank1) {
-        this.logger.error(this.logDirectory + ' Bills - Bank 1 not found')
-        ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 1 not found')
-      }
-      await this.updateBank(bank1, total, isPayment)
-
-      if (bank2Id) {
-        const bank2 = await this.bankService.getOneById(bank2Id)
-        if (!bank2) {
-          this.logger.error(this.logDirectory + ' Bills - Bank 2 not found')
-          ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 2 not found')
-        }
-        await this.updateBank(bank2, total, !isPayment)
-      }
-      return await this.billRepository.save({
-        ...createTransactionBillDto,
-        totalParcel: total
-      })
-    } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Error creating transaction bill : ' + error
-      )
-      return ErrorHandler.handle()
-    }
-  }
-
-  async createCompanyCreditBill(createCompanyBillDto: BillCompany) {
-    try {
-      const groupId = this.uuid.v4()
-
-      const bills = this.parcelsCompanyCreditBills(createCompanyBillDto)
-
-      const allBills = await Promise.all(
-        bills.map((b) => {
-          const res = this.billRepository.save({ ...b, groupId })
-          return res
-        })
-      )
-      return allBills
-    } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Error creating company bill : ' + error
-      )
-      return ErrorHandler.handle()
-    }
-  }
-
-  async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
-    try {
-      const { creditCardId, total, taxes, delta, settled } = createCreditCardBillDto
-      const groupId = this.uuid.v4()
-
-      const bills = this.parcelsCcBills(createCreditCardBillDto)
-      if (settled) {
-        const cc = await this.ccService.getOneById(creditCardId, {
-          isClosed: false
-        })
-        if (cc) {
-          const newCcObject: CreditCard = {
-            ...cc,
-            limit: cc.limit + (total + taxes + delta) * -1,
-            invoice: cc.invoice + bills[0].totalParcel * -1
-          }
-          await this.ccService.update(creditCardId, newCcObject)
-        } else throw ErrorHandler.CONFLICT_MESSAGE("This card can't be used")
-      }
-
-      const allBills = await Promise.all(
-        bills.map((b) => {
-          const res = this.billRepository.save({ ...b, groupId })
-          return res
-        })
-      )
-      return allBills
-    } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Error creating credit card bill : ' + error
-      )
-      return ErrorHandler.handle()
-    }
-  }
-
-  async updateTransactionBill(id: string, data: Omit<UpdateBillBank, 'id'>) {
-    const isQuickSettle = id && data.settled && !data.bank1Id
-
-    try {
-      const { settled, bank1Id, bank2Id, total, isPayment } = data
-
-      const bill = await this.billRepository.findOneBy({ id })
-      if (!bill) {
-        this.logger.error(this.logDirectory + ' Bills - Bill not found')
-        ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bill not found')
-      }
-
-      const newTotalDelta = isQuickSettle
-        ? bill.total
-        : !bill.settled
-          ? total
-          : parseFloat((total - bill.total).toFixed(2))
-
-      if (!(settled && newTotalDelta !== 0)) {
-        return await this.billRepository.update(id, { ...data })
-      }
-
-      const bank1 = await this.bankService.getOneById(bank1Id)
-      if (!bank1) {
-        this.logger.error(this.logDirectory + ' Bills - Bank 1 not found')
-        ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 1 not found')
-      }
-      this.updateBank(bank1, newTotalDelta, isPayment)
-
-      if (bank2Id) {
-        const bank2 = await this.bankService.getOneById(bank2Id)
-        if (!bank2) {
-          this.logger.error(this.logDirectory + ' Bills - Bank 2 not found')
-          ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 2 not found')
-        }
-        this.updateBank(bank2, newTotalDelta, !isPayment)
-      }
-
-      return await this.billRepository.update(id, { ...data })
-    } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Error updating transaction bill : ' + error
-      )
-      ErrorHandler.handle()
-    }
-  }
-
-  async updateCompanyBill(id: string, data: Partial<Omit<UpdateBillCompany, 'id'>>) {
-    const isQuickSettle = id && data.settled && !data.companyId
-
-    try {
-      const bill = await this.billRepository.findOneBy({ id })
-      if (!bill) ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
-
-      const newDelta = bill.parcel === bill.parcels - 1 ? data.delta - bill.delta : 0
-      const newTotalParcel =
-        data.taxes !== undefined
-          ? bill.totalParcel + (data.taxes - bill.taxes) + newDelta
-          : bill.totalParcel
-
-      const bank1Id = isQuickSettle ? bill.bank1Id : data.bank1Id
-      const creditCardId = isQuickSettle ? bill.creditCardId : data.creditCardId
-      const { totalParcel, parcels, total } = bill
-
-      if (data.settled) {
-        if (bank1Id) {
-          const bank = await this.bankService.getOneById(bank1Id)
-          if (!bank) ErrorHandler.NOT_FOUND_MESSAGE('Bank not found')
-          else {
-            const savings = isQuickSettle
-              ? bank.savings - (parcels > 1 ? newTotalParcel : total)
-              : bank.savings - newTotalParcel
-            const newBankValue: Bank = {
-              ...bank,
-              id: bank1Id,
-              savings
-            }
-            await this.bankService.update(bank1Id, newBankValue)
-          }
-        } else if (creditCardId) {
-          const cc = await this.ccService.getOneById(creditCardId)
-          if (!cc) ErrorHandler.NOT_FOUND_MESSAGE('Credit card not found')
-          else {
-            const calculatedValue = isQuickSettle
-              ? parcels > 1
-                ? totalParcel
-                : total
-              : data.parcels > 1
-                ? data.totalParcel
-                : data.total
-            const newCcObject: CreditCard = {
-              ...cc,
-              limit: cc.limit - calculatedValue,
-              invoice: cc.invoice + calculatedValue
-            }
-            await this.ccService.update(creditCardId, newCcObject)
-          }
-        } else
-          ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
-            'Neither credit card nor bank were found'
-          )
-      }
-
-      const res = await this.billRepository.update(id, {
-        ...data,
-        paid: data.settled ? data.paid || new Date() : null,
-        totalParcel: newTotalParcel
-      })
-      return res
-    } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Error updating company bill : ' + error
-      )
-      return ErrorHandler.handle()
-    }
-  }
-
-  async updateCreditCardBill(id: string, data: Omit<UpdateBillCreditCard, 'id'>) {
-    const {
-      total,
-      taxes,
-      delta,
-      groupId,
-      parcel,
-      parcels,
-      totalParcel,
-      creditCardId,
-      due,
-      settled
-    } = data
-
-    try {
-      if (!groupId) throw ErrorHandler.NOT_FOUND_MESSAGE('Group id not found')
-      const allBillsRelated = await this.billRepository.find({
-        where: {
-          groupId
-        }
-      })
-      if (allBillsRelated.length === 0)
-        throw ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
-      const firstBill = allBillsRelated[0]
-
-      let month = new Date(due).getMonth()
-      const allPromises = await Promise.all(
-        allBillsRelated.map((abr, i) => {
-          const newDate = new Date(new Date(due).setMonth(month))
-          const updateData = this.billRepository.update(abr.id, {
-            ...data,
-            parcel: abr.parcel,
-            totalParcel:
-              parseFloat(((total + taxes) / parcels).toFixed(2)) +
-              (i === parcels - 1 ? delta : 0),
-            paid: newDate.toISOString(),
-            due: newDate.toISOString()
-          })
-          month = month + 1
-          return updateData
-        })
-      )
-
-      if (
-        (firstBill.total !== total ||
-          firstBill.taxes !== taxes ||
-          firstBill.delta !== delta) &&
-        parcel > 0
-      )
-        throw ErrorHandler.NOT_ACCEPTABLE(
-          "Can't change bill value after first one is processed"
-        )
-
-      if (allPromises.length !== allBillsRelated.length)
-        throw ErrorHandler.SOME_PROMISE_NOT_COMPLETED_MESSAGE(
-          'One or more bills were not updated'
-        )
-
-      if (settled && !firstBill.settled) {
-        const cc = await this.ccService.getOneById(creditCardId, {
-          isClosed: false
-        })
-        if (cc) {
-          const valueForLimit =
-            parcel > 0
-              ? total - (parcel * total + taxes + (parcels === parcel - 1 ? delta : 0))
-              : total + taxes + delta
-          const newCcObject: CreditCard = {
-            ...cc,
-            limit: cc.limit + valueForLimit * -1,
-            invoice: cc.invoice + totalParcel * -1
-          }
-          await this.ccService.update(creditCardId, newCcObject)
-        }
-      }
-      return {
-        affected: allBillsRelated.map((abr) => abr.id)
-      }
-    } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Error updating credit card bill : ' + error
-      )
-      ErrorHandler.handle(error)
-    }
   }
 
   async getBills(userId: string, page: number, take: number, data: any) {
