@@ -5,6 +5,7 @@ import { Bill } from '../bill.entity'
 import { Repository } from 'typeorm'
 import { ErrorHandler } from 'src/application/utils/ErrorHandler'
 import { Injectable } from '@nestjs/common'
+import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 
 @Injectable()
 export class GetBillService extends GeneralService {
@@ -12,7 +13,7 @@ export class GetBillService extends GeneralService {
     @InjectRepository(Bill)
     private readonly billRepository: Repository<Bill>
   ) {
-    super(path.join(__dirname, '../../logs'))
+    super(path.join(__dirname, BILL_MODULE.getBillService))
   }
 
   async getBillById(id: string) {

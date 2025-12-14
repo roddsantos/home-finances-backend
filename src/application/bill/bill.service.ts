@@ -9,10 +9,11 @@ import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
 import { getMonthBetweenOperator, operatorFilter } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
-import { SumAndCountType } from '../types/general'
+import { SumAndCountType } from 'src/application/core/types/general'
 import { convertToFloat } from '../utils/conversions'
 import * as path from 'path'
 import { GeneralService } from '../app/general/service.general'
+import { BILL_MODULE } from '../core/consts/filename.consts'
 
 @Injectable()
 export class BillService extends GeneralService {
@@ -21,7 +22,7 @@ export class BillService extends GeneralService {
     private readonly billRepository: Repository<Bill>,
     private readonly bankService: BankService
   ) {
-    super(path.join(__dirname, '../../logs'))
+    super(path.join(__dirname, BILL_MODULE.service))
   }
 
   parcelsCcBills(bill: BillCreditCard) {
@@ -128,6 +129,7 @@ export class BillService extends GeneralService {
           count: addIncomeBills ? incomeBillsArray[1] : 0
         }
       }
+      this.logger.info(this.logDirectory + ' Bills - fetch bills successfully')
 
       return {
         count: total,

@@ -1,4 +1,4 @@
-import { PaymentTypes } from 'src/application/types/general'
+import { PaymentTypes } from 'src/application/core/types/general'
 
 export class UpdateBillTemplateDto {
   id: string

@@ -3,7 +3,7 @@ import { ErrorHandler } from '../utils/ErrorHandler'
 import { BillService } from '../bill/bill.service'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { Response } from 'express'
-import { SumAndCountType } from '../types/general'
+import { SumAndCountType } from 'src/application/core/types/general'
 import { HomeService } from './home.service'
 
 @Controller('home')

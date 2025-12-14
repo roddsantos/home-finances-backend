@@ -5,7 +5,10 @@ import { Injectable } from '@nestjs/common'
 import { Bill } from '../bill/bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
 import { BillService } from '../bill/bill.service'
-import { DashboardBillsPerMonthType, DashboardSavingsType } from '../types/dashboard'
+import {
+  DashboardBillsPerMonthType,
+  DashboardSavingsType
+} from 'src/application/core/types/dashboard'
 import { BankService } from '../bank/bank.service'
 import { SavingsService } from '../savings/savings.service'
 import { convertToFloat } from '../utils/conversions'

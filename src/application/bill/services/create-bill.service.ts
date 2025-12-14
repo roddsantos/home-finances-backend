@@ -10,6 +10,7 @@ import { CreditCardService } from 'src/application/credit-card/credit-card.servi
 import { CreditCard } from 'src/application/credit-card/credit-card.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 
 @Injectable()
 export class CreateBillService extends GeneralService {
@@ -20,7 +21,7 @@ export class CreateBillService extends GeneralService {
     private readonly billService: BillService,
     private readonly ccService: CreditCardService
   ) {
-    super(path.join(__dirname, '../../logs'))
+    super(path.join(__dirname, BILL_MODULE.createBillService))
   }
 
   async createTransactionBill(createTransactionBillDto: BillBank) {

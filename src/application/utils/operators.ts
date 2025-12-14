@@ -10,7 +10,7 @@ import {
 } from 'typeorm'
 import { AvailableFilters, FilterDisplay } from '../bill/dto/get-bills.dto'
 import { Bill } from '../bill/bill.entity'
-import { OptionalKeys } from '../types/general'
+import { OptionalKeys } from 'src/application/core/types/general'
 import { DAY_START, initializeFilters } from './constants'
 
 /**

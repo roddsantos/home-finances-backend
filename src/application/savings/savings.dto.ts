@@ -1,4 +1,4 @@
-import { MonthlySavingsTypes } from '../types/general'
+import { MonthlySavingsTypes } from 'src/application/core/types/general'
 
 export class NewSavingDto {
   bankId: string

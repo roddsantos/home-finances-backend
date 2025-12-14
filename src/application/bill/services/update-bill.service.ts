@@ -16,6 +16,7 @@ import { BillService } from '../bill.service'
 import { GetBillService } from './get-bill.service'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 
 @Injectable()
 export class UpdateBillService extends GeneralService {
@@ -27,7 +28,7 @@ export class UpdateBillService extends GeneralService {
     private readonly getBillService: GetBillService,
     private readonly ccService: CreditCardService
   ) {
-    super(path.join(__dirname, '../../logs'))
+    super(path.join(__dirname, BILL_MODULE.updateBillService))
   }
 
   async updateTransactionBill(id: string, data: Omit<UpdateBillBank, 'id'>) {
