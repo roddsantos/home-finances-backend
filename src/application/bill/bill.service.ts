@@ -129,7 +129,6 @@ export class BillService extends GeneralService {
           count: addIncomeBills ? incomeBillsArray[1] : 0
         }
       }
-      this.logger.info(this.logDirectory + ' Bills - fetch bills successfully')
 
       return {
         count: total,

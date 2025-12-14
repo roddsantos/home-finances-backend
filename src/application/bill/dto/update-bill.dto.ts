@@ -7,17 +7,19 @@ export class UpdateBillTemplateDto {
   categoryId: string
   total: number
   settled: boolean
-  due: Date
-  paid: Date
+  due: string
+  paid: string | null
   type: PaymentTypes
   groupId: string
+  userId: string
 }
 
 export class UpdateBankTransactionDto {
   bank1Id: string
   bank2Id?: string
   companyId?: string
-  isPayment?: boolean
+  isPayment: boolean
+  isRecurrent: boolean
 }
 
 export class UpdateCreditCardBillDto {
@@ -35,12 +37,12 @@ export class UpdateCompanyBillDto {
   companyId: string
   parcels: number
   bank1Id?: string
-  creditCardId?: string
-  totalParcel?: number
-  due: Date
+  due: string
+  isRecurrent: boolean
   delta?: number
   taxes?: number
-  isRecurrent: boolean
+  creditCardId?: string
+  totalParcel?: number
 }
 
 export type AllUpdateBillProps = UpdateBillTemplateDto &

@@ -17,6 +17,7 @@ import { GetBillService } from './get-bill.service'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
+import { CreateBillService } from './create-bill.service'
 
 @Injectable()
 export class UpdateBillService extends GeneralService {
@@ -26,6 +27,7 @@ export class UpdateBillService extends GeneralService {
     private readonly bankService: BankService,
     private readonly billService: BillService,
     private readonly getBillService: GetBillService,
+    private readonly createBillService: CreateBillService,
     private readonly ccService: CreditCardService
   ) {
     super(path.join(__dirname, BILL_MODULE.updateBillService))
@@ -33,9 +35,8 @@ export class UpdateBillService extends GeneralService {
 
   async updateTransactionBill(id: string, data: Omit<UpdateBillBank, 'id'>) {
     const isQuickSettle = id && data.settled && !data.bank1Id
-
     try {
-      const { settled, bank1Id, bank2Id, total, isPayment } = data
+      const { settled, bank1Id, bank2Id, total, isPayment, isRecurrent } = data
 
       const bill = await this.getBillService.getBillById(id)
 
@@ -55,6 +56,10 @@ export class UpdateBillService extends GeneralService {
       if (bank2Id) {
         const bank2 = await this.bankService.getOneById(bank2Id)
         this.billService.updateBank(bank2, newTotalDelta, !isPayment)
+      }
+
+      if (isRecurrent) {
+        this.createBillService.createRecurrentBill(data)
       }
 
       return await this.billRepository.update(id, { ...data })

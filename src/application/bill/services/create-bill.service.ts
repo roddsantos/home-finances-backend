@@ -11,6 +11,7 @@ import { CreditCard } from 'src/application/credit-card/credit-card.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
+import { UpdateBillBank } from '../dto/update-bill.dto'
 
 @Injectable()
 export class CreateBillService extends GeneralService {
@@ -113,6 +114,37 @@ export class CreateBillService extends GeneralService {
     } catch (error) {
       this.logger.error(
         this.logDirectory + ' Bills - Error creating credit card bill : ' + error
+      )
+      return ErrorHandler.handle()
+    }
+  }
+
+  async createRecurrentBill(data: Omit<UpdateBillBank, 'id'>) {
+    try {
+      const dueDate = new Date(data.due)
+      const dueDay = dueDate.getDate()
+      const dueMonth = dueDate.getMonth()
+      const dueYear = dueDate.getFullYear()
+
+      const newYear = dueMonth + 1 > 11 ? dueYear + 1 : dueYear
+      const newMonth = dueMonth + 1 > 11 ? 0 : dueMonth + 1
+      const newDay =
+        new Date(newYear, newMonth, dueDay).getDate() !== dueDay
+          ? new Date(newYear, newMonth + 1, -1).getDate()
+          : dueDay
+
+      const newDue = new Date(newYear, newMonth, newDay).toISOString()
+
+      await this.createTransactionBill({
+        ...data,
+        due: newDue,
+        settled: false,
+        paid: null
+      })
+      this.logger.info(this.logDirectory + ' Bills - Recurrent bill successfully created')
+    } catch (error) {
+      this.logger.error(
+        this.logDirectory + ' Bills - Error creating recurrent bill : ' + error
       )
       return ErrorHandler.handle()
     }
