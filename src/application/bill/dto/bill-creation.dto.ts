@@ -3,6 +3,7 @@ export class CreateBankTransactionDto {
   bank2Id?: string
   companyId?: string
   isPayment: boolean
+  isRecurrent: boolean
 }
 
 export class CreateCreditCardBillDto {

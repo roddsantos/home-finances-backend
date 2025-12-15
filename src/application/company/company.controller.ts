@@ -63,10 +63,13 @@ export class CompanyController {
 
   @Get('/:id')
   public async getCompanies(
-    @Param('/:id') id: string,
+    @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<Company>> {
     try {
+      if (!id) {
+        ErrorHandler.BAD_REQUEST('Companies - no user id provided')
+      }
       const result = await this.companyService.getAllById(id)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {

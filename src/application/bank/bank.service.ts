@@ -5,13 +5,17 @@ import { CreateBankDto } from './dto/create-bank.dto'
 import { UpdateBankDto } from './dto/update-bank.dto'
 import { Like, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
+import { GeneralService } from '../app/general/service.general'
+import * as path from 'path'
 
 @Injectable()
-export class BankService {
+export class BankService extends GeneralService {
   constructor(
     @InjectRepository(Bank)
     private readonly bankRepository: Repository<Bank>
-  ) {}
+  ) {
+    super(path.join(__dirname, '../../logs'))
+  }
 
   async create(createBankDto: CreateBankDto) {
     try {
@@ -62,13 +66,13 @@ export class BankService {
 
   async getOneById(id: string) {
     try {
-      const res = await this.bankRepository.findOne({
+      return await this.bankRepository.findOne({
         where: { id },
         order: { updatedAt: 'DESC' }
       })
-      return res
     } catch (error) {
-      ErrorHandler.handle(error)
+      this.logger.error(this.logDirectory + ' Bills - Bank 1 not found')
+      ErrorHandler.NOT_FOUND_MESSAGE('Banks - Bank not found')
     }
   }
 }

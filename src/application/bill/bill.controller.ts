@@ -17,10 +17,16 @@ import {
   UpdateBillCreditCard
 } from './dto/update-bill.dto'
 import { GetBillsDto } from './dto/get-bills.dto'
+import { UpdateBillService } from './services/update-bill.service'
+import { CreateBillService } from './services/create-bill.service'
 
 @Controller('bill')
 export class BillController {
-  constructor(private readonly billService: BillService) {}
+  constructor(
+    private readonly billService: BillService,
+    private readonly updateBillService: UpdateBillService,
+    private readonly createBillService: CreateBillService
+  ) {}
 
   verifyCreateTemplate(data: Pick<AllBillProps, keyof CreateBillTemplateDto>) {
     return (
@@ -47,7 +53,7 @@ export class BillController {
       if (data.bank1Id === data.bank2Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Banks cant be the same')
 
-      const result = await this.billService.createTransactionBill(data)
+      const result = await this.createBillService.createTransactionBill(data)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -62,7 +68,7 @@ export class BillController {
       if (this.verifyCreateTemplate(data) || !data.creditCardId || data.parcels < 0)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
-      const result = await this.billService.createCreditCardBill(data)
+      const result = await this.createBillService.createCreditCardBill(data)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -81,7 +87,7 @@ export class BillController {
           "Bank and credit card can't be present together"
         )
 
-      const result = await this.billService.createCompanyCreditBill(data)
+      const result = await this.createBillService.createCompanyCreditBill(data)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -97,7 +103,7 @@ export class BillController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const { id, ...rest } = data
-      const result = await this.billService.updateTransactionBill(id, rest)
+      const result = await this.updateBillService.updateTransactionBill(id, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -113,7 +119,7 @@ export class BillController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const { id, ...rest } = data
-      const result = await this.billService.updateCreditCardBill(id, rest)
+      const result = await this.updateBillService.updateCreditCardBill(id, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -134,7 +140,7 @@ export class BillController {
         )
 
       const { id, ...rest } = data
-      const result = await this.billService.updateCompanyBill(id, rest)
+      const result = await this.updateBillService.updateCompanyBill(id, rest)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

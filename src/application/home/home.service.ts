@@ -8,7 +8,7 @@ import { CreditCard } from '../credit-card/credit-card.entity'
 import { SavingsService } from '../savings/savings.service'
 import { getMonthBetweenOperator } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
-import { HomeSavingsType } from '../types/home'
+import { HomeSavingsType } from 'src/application/core/types/home'
 import { BillService } from '../bill/bill.service'
 
 @Injectable()

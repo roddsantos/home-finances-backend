@@ -13,7 +13,7 @@ export class CreateBillTemplateDto {
   userId: string
   settled: boolean
   due: string
-  paid: string
+  paid: string | null
 }
 
 export type AllBillProps = CreateBillTemplateDto &
