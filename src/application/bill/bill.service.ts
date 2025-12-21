@@ -50,11 +50,20 @@ export class BillService extends GeneralService {
   parcelsCompanyCreditBills(bill: BillService2 | BillCompany) {
     try {
       const bills = [] as BillService2[]
-      let month = new Date(bill.due).getMonth()
+      const dueDate = new Date(bill.due)
+      let dueDay = dueDate.getDate()
+      let dueMonth = dueDate.getMonth()
+      let dueYear = dueDate.getFullYear()
 
       for (let i = 0; i < bill.parcels; i++) {
-        month = month + 1
-        const newDate = new Date(new Date(bill.due).setMonth(month))
+        const newYear = dueMonth + 1 > 11 ? dueYear + 1 : dueYear
+        const newMonth = dueMonth + 1 > 11 ? 0 : dueMonth + 1
+        const newDay =
+          new Date(newYear, newMonth, dueDay).getDate() !== dueDay
+            ? new Date(newYear, newMonth + 1, 0).getDate()
+            : dueDay
+
+        const newDate = new Date(newYear, newMonth, newDay).toISOString()
         const parcelObject = {
           ...bill,
           parcel: i,
@@ -64,9 +73,12 @@ export class BillService extends GeneralService {
           taxes: parseFloat((bill.taxes / bill.parcels).toFixed(2)),
           delta: i === bill.parcels - 1 ? bill.delta : 0,
           paid: null,
-          due: newDate.toISOString()
+          due: newDate
         }
         bills.push(parcelObject)
+        dueMonth = newMonth
+        dueYear = newYear
+        dueDay = newDay
       }
       return bills
     } catch (error) {
