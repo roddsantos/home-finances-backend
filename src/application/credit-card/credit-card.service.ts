@@ -6,13 +6,18 @@ import { UpdateCreditCardDto } from './dto/update-credit-card.dto'
 import { GetCreditCardDto } from './dto/get-credit-cards.dto'
 import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
+import * as path from 'path'
+import { CREDIT_CARD_MODULE } from '../core/consts/filename.consts'
+import { GeneralService } from '../app/general/service.general'
 
 @Injectable()
-export class CreditCardService {
+export class CreditCardService extends GeneralService {
   constructor(
     @InjectRepository(CreditCard)
     private readonly creditCardRepository: Repository<CreditCard>
-  ) {}
+  ) {
+    super(path.join(__dirname, CREDIT_CARD_MODULE.service))
+  }
 
   async create(createCreditCard: CreateCreditCardDto) {
     try {
@@ -24,14 +29,20 @@ export class CreditCardService {
           year: createCreditCard.year
         }
       })
-      if (cc) ErrorHandler.CONFLICT_MESSAGE('This credit card already exists')
+      if (cc) {
+        this.logger.error(
+          this.logDirectory + ' - Credit Card - This credit card already exists'
+        )
+        ErrorHandler.CONFLICT_MESSAGE('Credit Card - This credit card already exists')
+      }
       const res = this.creditCardRepository.save({
         ...createCreditCard,
         limitLeft: createCreditCard.limit
       })
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(this.logDirectory + ' - Credit Card - error creating credit card')
+      ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error creating credit card')
     }
   }
 
@@ -40,7 +51,8 @@ export class CreditCardService {
       const res = await this.creditCardRepository.update({ id }, data)
       return { ...res, id }
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(this.logDirectory + ' - Credit Card - error updating credit card')
+      ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error uppdating credit card')
     }
   }
 
@@ -49,7 +61,8 @@ export class CreditCardService {
       const res = await this.creditCardRepository.delete(id)
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(this.logDirectory + ' - Credit Card - error deleting credit card')
+      ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error deleting credit card')
     }
   }
 
@@ -61,7 +74,12 @@ export class CreditCardService {
       })
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(
+        this.logDirectory + ' - Credit Card - error retrieving all credit cards by id'
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR(
+        'Credit Card - error retrieving all credit cards by id'
+      )
     }
   }
 
@@ -72,7 +90,10 @@ export class CreditCardService {
       })
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      this.logger.error(
+        this.logDirectory + ' - Credit Card - error retrieving credit card'
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error retrieving credit card')
     }
   }
 }

@@ -58,7 +58,7 @@ export class UpdateBillService extends GeneralService {
         this.billService.updateBank(bank2, newTotalDelta, !isPayment)
       }
 
-      if (isRecurrent) {
+      if (isRecurrent && (isQuickSettle || (settled && !bill.settled))) {
         this.createBillService.createRecurrentBill(data)
       }
 
@@ -76,46 +76,19 @@ export class UpdateBillService extends GeneralService {
 
     try {
       const bill = await this.getBillService.getBillById(id)
-
-      const newDelta = bill.parcel === bill.parcels - 1 ? data.delta - bill.delta : 0
-      const newTotalParcel =
-        data.taxes !== undefined
-          ? bill.totalParcel + (data.taxes - bill.taxes) + newDelta
-          : bill.totalParcel
-
-      const bank1Id = isQuickSettle ? bill.bank1Id : data.bank1Id
-      const creditCardId = isQuickSettle ? bill.creditCardId : data.creditCardId
       const { totalParcel, parcels, total } = bill
 
+      const dataToUpdate = isQuickSettle ? bill : data
+
+      const newDelta = bill.parcel === bill.parcels - 1 ? dataToUpdate.delta : 0
+      const newTaxes = dataToUpdate.taxes
+      const totalParcelToDeduct = bill.totalParcel + newTaxes + newDelta
+
+      const bank1Id = dataToUpdate.bank1Id
+      const creditCardId = dataToUpdate.creditCardId
+
       if (data.settled) {
-        if (bank1Id) {
-          const bank = await this.bankService.getOneById(bank1Id)
-          const quickSettleSaving = bank.savings - (parcels > 1 ? newTotalParcel : total)
-          const notQuickSettleSaving = bank.savings - newTotalParcel
-          const savings = isQuickSettle ? quickSettleSaving : notQuickSettleSaving
-          const newBankValue: Bank = {
-            ...bank,
-            id: bank1Id,
-            savings
-          }
-          await this.bankService.update(bank1Id, newBankValue)
-        } else if (creditCardId) {
-          const cc = await this.ccService.getOneById(creditCardId)
-          if (!cc) ErrorHandler.NOT_FOUND_MESSAGE('Credit card not found')
-          else {
-            const calculatedParcels = parcels > 1 ? totalParcel : total
-            const calculatedDataParcels = data.parcels > 1 ? data.totalParcel : data.total
-            const calculatedValue = isQuickSettle
-              ? calculatedParcels
-              : calculatedDataParcels
-            const newCcObject: CreditCard = {
-              ...cc,
-              limit: cc.limit - calculatedValue,
-              invoice: cc.invoice + calculatedValue
-            }
-            await this.ccService.update(creditCardId, newCcObject)
-          }
-        } else {
+        if (!bank1Id && !creditCardId) {
           this.logger.error(
             this.logDirectory + ' Bills - Neither credit card nor bank were found'
           )
@@ -123,13 +96,43 @@ export class UpdateBillService extends GeneralService {
             'Bills - Neither credit card nor bank were found'
           )
         }
+
+        if (bank1Id) {
+          const bank = await this.bankService.getOneById(bank1Id)
+          if (!bank) ErrorHandler.NOT_FOUND_MESSAGE('Bills - bank not found')
+
+          const newSavings = bank.savings - totalParcelToDeduct
+          const savings = newSavings
+          const newBankValue: Bank = {
+            ...bank,
+            id: bank1Id,
+            savings
+          }
+          await this.bankService.update(bank1Id, newBankValue)
+        }
+        if (creditCardId) {
+          const cc = await this.ccService.getOneById(creditCardId)
+          if (!cc) ErrorHandler.NOT_FOUND_MESSAGE('Credit card not found')
+
+          const calculatedParcels = parcels > 1 ? totalParcel : total
+          const calculatedDataParcels = data.parcels > 1 ? data.totalParcel : data.total
+          const calculatedValue = isQuickSettle
+            ? calculatedParcels
+            : calculatedDataParcels
+          const newCcObject: CreditCard = {
+            ...cc,
+            limit: cc.limit - calculatedValue,
+            invoice: cc.invoice + calculatedValue
+          }
+          await this.ccService.update(creditCardId, newCcObject)
+        }
       }
 
       const res = await this.billRepository.update(id, {
         ...data,
-        paid: data.settled ? data.paid || new Date() : null,
-        totalParcel: newTotalParcel
+        paid: data.settled ? data.paid || new Date() : null
       })
+
       return res
     } catch (error) {
       this.logger.error(
