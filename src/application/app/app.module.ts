@@ -2,7 +2,8 @@ import {
   MiddlewareConsumer,
   Module,
   NestModule,
-  OnApplicationBootstrap
+  OnApplicationBootstrap,
+  RequestMethod
 } from '@nestjs/common'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
@@ -21,6 +22,8 @@ import { SavingsModule } from '../savings/savings.module'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import typeorm from '../database/typeorm'
 import { DateMiddleware } from '../middlewares/date.middleware'
+import { ThemeModule } from '../theme/theme.module'
+import { BodyThemeMiddleware } from '../middlewares/theme/body.theme.middleware'
 
 @Module({
   imports: [
@@ -34,13 +37,14 @@ import { DateMiddleware } from '../middlewares/date.middleware'
     }),
     BankModule,
     BillModule,
+    CategoryModule,
     CompanyModule,
     CreditCardModule,
-    CategoryModule,
     DashboardModule,
-    UserModule,
     HomeModule,
-    SavingsModule
+    SavingsModule,
+    ThemeModule,
+    UserModule
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService]
@@ -50,6 +54,10 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(DateMiddleware).forRoutes('home')
+    consumer.apply(BodyThemeMiddleware).forRoutes({
+      path: 'theme',
+      method: RequestMethod.POST
+    })
   }
 
   async onApplicationBootstrap(): Promise<void> {

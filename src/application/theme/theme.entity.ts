@@ -10,7 +10,7 @@ import {
 import { User } from '../user/user.entity'
 
 const tableOptions: EntityOptions = {
-  name: 'thems'
+  name: 'themes'
 }
 @Entity(tableOptions)
 export class Theme {
