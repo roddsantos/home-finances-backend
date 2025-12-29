@@ -8,7 +8,9 @@ export type ThemeBody = {
   text2: string
   borderRadius: number
   borderWidth: string
-  font: string
+  font1: string
+  font2: string
   inputSize: string
   padding: string
+  theme: string
 }

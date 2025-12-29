@@ -65,7 +65,8 @@ export class UpdateBillService extends GeneralService {
       return await this.billRepository.update(id, { ...data })
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error updating transaction bill : ' + error
+        'Bills - Error updating transaction bill : ' + error,
+        this.logDirectory
       )
       ErrorHandler.handle()
     }
@@ -90,7 +91,8 @@ export class UpdateBillService extends GeneralService {
       if (data.settled) {
         if (!bank1Id && !creditCardId) {
           this.logger.error(
-            this.logDirectory + ' Bills - Neither credit card nor bank were found'
+            'Bills - Neither credit card nor bank were found',
+            this.logDirectory
           )
           ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
             'Bills - Neither credit card nor bank were found'
@@ -136,7 +138,8 @@ export class UpdateBillService extends GeneralService {
       return res
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error updating company bill : ' + error
+        'Bills - Error updating company bill : ' + error,
+        this.logDirectory
       )
       return ErrorHandler.handle()
     }
@@ -222,7 +225,8 @@ export class UpdateBillService extends GeneralService {
       }
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error updating credit card bill : ' + error
+        'Bills - Error updating credit card bill : ' + error,
+        this.logDirectory
       )
       ErrorHandler.handle(error)
     }

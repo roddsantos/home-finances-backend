@@ -31,7 +31,8 @@ export class CreditCardService extends GeneralService {
       })
       if (cc) {
         this.logger.error(
-          this.logDirectory + ' - Credit Card - This credit card already exists'
+          'Credit Card - This credit card already exists',
+          this.logDirectory
         )
         ErrorHandler.CONFLICT_MESSAGE('Credit Card - This credit card already exists')
       }
@@ -41,7 +42,7 @@ export class CreditCardService extends GeneralService {
       })
       return res
     } catch (error) {
-      this.logger.error(this.logDirectory + ' - Credit Card - error creating credit card')
+      this.logger.error('Credit Card - error creating credit card', this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error creating credit card')
     }
   }
@@ -51,7 +52,7 @@ export class CreditCardService extends GeneralService {
       const res = await this.creditCardRepository.update({ id }, data)
       return { ...res, id }
     } catch (error) {
-      this.logger.error(this.logDirectory + ' - Credit Card - error updating credit card')
+      this.logger.error('Credit Card - error updating credit card', this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error uppdating credit card')
     }
   }
@@ -61,7 +62,7 @@ export class CreditCardService extends GeneralService {
       const res = await this.creditCardRepository.delete(id)
       return res
     } catch (error) {
-      this.logger.error(this.logDirectory + ' - Credit Card - error deleting credit card')
+      this.logger.error('Credit Card - error deleting credit card', this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error deleting credit card')
     }
   }
@@ -75,7 +76,8 @@ export class CreditCardService extends GeneralService {
       return res
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' - Credit Card - error retrieving all credit cards by id'
+        'Credit Card - error retrieving all credit cards by id',
+        this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR(
         'Credit Card - error retrieving all credit cards by id'
@@ -90,9 +92,7 @@ export class CreditCardService extends GeneralService {
       })
       return res
     } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' - Credit Card - error retrieving credit card'
-      )
+      this.logger.error('Credit Card - error retrieving credit card', this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error retrieving credit card')
     }
   }

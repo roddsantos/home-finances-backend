@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Post, Res } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
 import { ThemeBody } from '../core/types/theme'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Response } from 'express'
@@ -21,9 +21,7 @@ export class ThemeController extends GeneralController {
 
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Unable to generate bills data : ' + error
-      )
+      this.logger.error('Theme - Error creating theme : ' + error, this.logDirectory)
       return ErrorHandler.errorResponse(res, error)
     }
   }
@@ -31,8 +29,19 @@ export class ThemeController extends GeneralController {
   @Patch()
   updateTheme() {}
 
-  @Get()
-  getThemesById() {}
+  @Get('/:id')
+  public async getThemesByUserId(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const result = await this.themeService.getAllByUserId(id)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      this.logger.error(
+        'Theme - Error fetching themes by userId : ' + error,
+        this.logDirectory
+      )
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 
   @Delete()
   deleteTheme() {}

@@ -38,7 +38,7 @@ export class CreateBillService extends GeneralService {
 
       const bank1 = await this.bankService.getOneById(bank1Id)
       if (!bank1) {
-        this.logger.error(this.logDirectory + ' Bills - Bank 1 not found')
+        this.logger.error('Bills - Bank 1 not found', this.logDirectory)
         ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 1 not found')
       }
       await this.billService.updateBank(bank1, total, isPayment)
@@ -46,7 +46,7 @@ export class CreateBillService extends GeneralService {
       if (bank2Id) {
         const bank2 = await this.bankService.getOneById(bank2Id)
         if (!bank2) {
-          this.logger.error(this.logDirectory + ' Bills - Bank 2 not found')
+          this.logger.error('Bills - Bank 2 not found', this.logDirectory)
           ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 2 not found')
         }
         await this.billService.updateBank(bank2, total, !isPayment)
@@ -57,7 +57,8 @@ export class CreateBillService extends GeneralService {
       })
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error creating transaction bill : ' + error
+        +'Bills - Error creating transaction bill : ' + error,
+        this.logDirectory
       )
       return ErrorHandler.handle()
     }
@@ -78,7 +79,8 @@ export class CreateBillService extends GeneralService {
       return allBills
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error creating company bill : ' + error
+        'Bills - Error creating company bill : ' + error,
+        this.logDirectory
       )
       return ErrorHandler.handle()
     }
@@ -113,7 +115,8 @@ export class CreateBillService extends GeneralService {
       return allBills
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error creating credit card bill : ' + error
+        'Bills - Error creating credit card bill : ' + error,
+        this.logDirectory
       )
       return ErrorHandler.handle()
     }
@@ -141,10 +144,11 @@ export class CreateBillService extends GeneralService {
         settled: false,
         paid: null
       })
-      this.logger.info(this.logDirectory + ' Bills - Recurrent bill successfully created')
+      this.logger.info('Bills - Recurrent bill successfully created', this.logDirectory)
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error creating recurrent bill : ' + error
+        'Bills - Error creating recurrent bill : ' + error,
+        this.logDirectory
       )
       return ErrorHandler.handle()
     }

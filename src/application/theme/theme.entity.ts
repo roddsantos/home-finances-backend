@@ -65,7 +65,12 @@ export class Theme {
   @Column({
     nullable: false
   })
-  public font: string
+  public font1: string
+
+  @Column({
+    nullable: false
+  })
+  public font2: string
 
   @Column({
     nullable: false
@@ -76,6 +81,11 @@ export class Theme {
     nullable: false
   })
   public padding: string
+
+  @Column({
+    nullable: false
+  })
+  public theme: string
 
   @ManyToOne(() => User)
   public user: User

@@ -6,7 +6,7 @@ export class CreateThemeTable1766947210885 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE \`themes\` (\`id\` varchar(36) NOT NULL, \`title\` varchar(255) NOT NULL, \`description\` varchar(255) NOT NULL, \`primary\` varchar(255) NOT NULL, \`secondary\` varchar(255) NOT NULL, \`background\` varchar(255) NOT NULL, \`text1\` varchar(255) NOT NULL, \`text2\` varchar(255) NOT NULL, \`borderRadius\` int NOT NULL, \`borderWidth\` varchar(255) NOT NULL, \`font\` varchar(255) NOT NULL, \`inputSize\` varchar(255) NOT NULL, \`padding\` varchar(255) NOT NULL, \`userId\` varchar(255) NOT NULL, \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`
+      `CREATE TABLE \`themes\` (\`id\` varchar(36) NOT NULL, \`title\` varchar(255) NOT NULL, \`description\` varchar(255) NOT NULL, \`primary\` varchar(255) NOT NULL, \`secondary\` varchar(255) NOT NULL, \`background\` varchar(255) NOT NULL, \`text1\` varchar(255) NOT NULL, \`text2\` varchar(255) NOT NULL, \`borderRadius\` int NOT NULL, \`borderWidth\` varchar(255) NOT NULL, \`font1\` varchar(255) NOT NULL, \`font2\` varchar(255) NOT NULL, \`inputSize\` varchar(255) NOT NULL, \`padding\` varchar(255) NOT NULL, \`theme\` varchar(255) NOT NULL, \`userId\` varchar(255) NOT NULL, \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updatedAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`
     )
     await queryRunner.query(`ALTER TABLE \`users\` DROP COLUMN \`password\``)
     await queryRunner.query(

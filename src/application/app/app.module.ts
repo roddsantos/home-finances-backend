@@ -24,6 +24,7 @@ import typeorm from '../database/typeorm'
 import { DateMiddleware } from '../middlewares/date.middleware'
 import { ThemeModule } from '../theme/theme.module'
 import { BodyThemeMiddleware } from '../middlewares/theme/body.theme.middleware'
+import { IdMiddleware } from '../middlewares/general/id.middleware'
 
 @Module({
   imports: [
@@ -58,6 +59,12 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
       path: 'theme',
       method: RequestMethod.POST
     })
+    consumer
+      .apply(IdMiddleware)
+      .forRoutes(
+        { path: 'theme', method: RequestMethod.GET },
+        { path: 'theme', method: RequestMethod.DELETE }
+      )
   }
 
   async onApplicationBootstrap(): Promise<void> {

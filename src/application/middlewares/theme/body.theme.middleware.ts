@@ -14,9 +14,17 @@ export class BodyThemeMiddleware extends GeneralMiddleware implements NestMiddle
   use(req: Request, res: Response, next: NextFunction) {
     const body = req.body as unknown as ThemeBody
 
-    Object.values(body).map((value) => {
-      if (!value) {
-        this.logger.error(this.logDirectory + ' - Middleware : invalid theme body')
+    Object.keys(body).map((key) => {
+      console.log(req.body)
+      if (key === 'borderRadius' && (body[key] < 0 || body[key] > 20)) {
+        this.logger.error(
+          'Middleware : invalid theme body - border radius',
+          this.logDirectory
+        )
+        ErrorHandler.BAD_REQUEST('Middleware : invalid theme body')
+      }
+      if (key !== 'borderRadius' && !body[key]) {
+        this.logger.error('Middleware : invalid theme body', this.logDirectory)
         ErrorHandler.BAD_REQUEST('Middleware : invalid theme body')
       }
     })

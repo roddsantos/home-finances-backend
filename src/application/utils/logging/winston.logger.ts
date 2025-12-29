@@ -61,15 +61,15 @@ export class WinstonLogger implements LoggerService {
     this.logger.error({ message, trace })
   }
 
-  warn(message: string) {
-    this.logger.warn(message)
+  warn(message: string, path: string) {
+    this.logger.warn(path + ' - ' + message)
   }
 
-  debug(message: string) {
-    this.logger.debug(message)
+  debug(message: string, path: string) {
+    this.logger.debug(path + ' - ' + message)
   }
 
-  info(message: string) {
-    this.logger.info(message)
+  info(message: string, path: string) {
+    this.logger.info(message + ' - ' + path)
   }
 }

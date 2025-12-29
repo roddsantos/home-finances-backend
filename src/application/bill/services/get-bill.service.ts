@@ -20,7 +20,7 @@ export class GetBillService extends GeneralService {
     try {
       return await this.billRepository.findOneBy({ id })
     } catch (error) {
-      this.logger.error(this.logDirectory + ' Bills - Bill not found')
+      this.logger.error('Bills - Bill not found', this.logDirectory)
       ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bill not found')
     }
   }

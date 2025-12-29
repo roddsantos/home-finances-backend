@@ -166,7 +166,8 @@ export class SavingsService extends GeneralService {
       }))
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error getting the bills list : ' + error
+        'Bills - Error getting the bills list : ' + error,
+        this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('Error getting savings progression')
     }

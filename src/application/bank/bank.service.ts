@@ -71,7 +71,7 @@ export class BankService extends GeneralService {
         order: { updatedAt: 'DESC' }
       })
     } catch (error) {
-      this.logger.error(this.logDirectory + ' Bills - Bank 1 not found')
+      this.logger.error('Bills - Bank 1 not found', this.logDirectory)
       ErrorHandler.NOT_FOUND_MESSAGE('Banks - Bank not found')
     }
   }
