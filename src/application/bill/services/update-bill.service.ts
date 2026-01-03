@@ -58,14 +58,15 @@ export class UpdateBillService extends GeneralService {
         this.billService.updateBank(bank2, newTotalDelta, !isPayment)
       }
 
-      if (isRecurrent) {
+      if (isRecurrent && (isQuickSettle || (settled && !bill.settled))) {
         this.createBillService.createRecurrentBill(data)
       }
 
       return await this.billRepository.update(id, { ...data })
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error updating transaction bill : ' + error
+        'Bills - Error updating transaction bill : ' + error,
+        this.logDirectory
       )
       ErrorHandler.handle()
     }
@@ -76,64 +77,69 @@ export class UpdateBillService extends GeneralService {
 
     try {
       const bill = await this.getBillService.getBillById(id)
-
-      const newDelta = bill.parcel === bill.parcels - 1 ? data.delta - bill.delta : 0
-      const newTotalParcel =
-        data.taxes !== undefined
-          ? bill.totalParcel + (data.taxes - bill.taxes) + newDelta
-          : bill.totalParcel
-
-      const bank1Id = isQuickSettle ? bill.bank1Id : data.bank1Id
-      const creditCardId = isQuickSettle ? bill.creditCardId : data.creditCardId
       const { totalParcel, parcels, total } = bill
 
+      const dataToUpdate = isQuickSettle ? bill : data
+
+      const newDelta = bill.parcel === bill.parcels - 1 ? dataToUpdate.delta : 0
+      const newTaxes = dataToUpdate.taxes
+      const totalParcelToDeduct = bill.totalParcel + newTaxes + newDelta
+
+      const bank1Id = dataToUpdate.bank1Id
+      const creditCardId = dataToUpdate.creditCardId
+
       if (data.settled) {
+        if (!bank1Id && !creditCardId) {
+          this.logger.error(
+            'Bills - Neither credit card nor bank were found',
+            this.logDirectory
+          )
+          ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
+            'Bills - Neither credit card nor bank were found'
+          )
+        }
+
         if (bank1Id) {
           const bank = await this.bankService.getOneById(bank1Id)
-          const quickSettleSaving = bank.savings - (parcels > 1 ? newTotalParcel : total)
-          const notQuickSettleSaving = bank.savings - newTotalParcel
-          const savings = isQuickSettle ? quickSettleSaving : notQuickSettleSaving
+          if (!bank) ErrorHandler.NOT_FOUND_MESSAGE('Bills - bank not found')
+
+          const newSavings = bank.savings - totalParcelToDeduct
+          const savings = newSavings
           const newBankValue: Bank = {
             ...bank,
             id: bank1Id,
             savings
           }
           await this.bankService.update(bank1Id, newBankValue)
-        } else if (creditCardId) {
+        }
+        if (creditCardId) {
           const cc = await this.ccService.getOneById(creditCardId)
           if (!cc) ErrorHandler.NOT_FOUND_MESSAGE('Credit card not found')
-          else {
-            const calculatedParcels = parcels > 1 ? totalParcel : total
-            const calculatedDataParcels = data.parcels > 1 ? data.totalParcel : data.total
-            const calculatedValue = isQuickSettle
-              ? calculatedParcels
-              : calculatedDataParcels
-            const newCcObject: CreditCard = {
-              ...cc,
-              limit: cc.limit - calculatedValue,
-              invoice: cc.invoice + calculatedValue
-            }
-            await this.ccService.update(creditCardId, newCcObject)
+
+          const calculatedParcels = parcels > 1 ? totalParcel : total
+          const calculatedDataParcels = data.parcels > 1 ? data.totalParcel : data.total
+          const calculatedValue = isQuickSettle
+            ? calculatedParcels
+            : calculatedDataParcels
+          const newCcObject: CreditCard = {
+            ...cc,
+            limit: cc.limit - calculatedValue,
+            invoice: cc.invoice + calculatedValue
           }
-        } else {
-          this.logger.error(
-            this.logDirectory + ' Bills - Neither credit card nor bank were found'
-          )
-          ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
-            'Bills - Neither credit card nor bank were found'
-          )
+          await this.ccService.update(creditCardId, newCcObject)
         }
       }
 
       const res = await this.billRepository.update(id, {
         ...data,
-        paid: data.settled ? data.paid || new Date() : null,
-        totalParcel: newTotalParcel
+        paid: data.settled ? data.paid || new Date() : null
       })
+
       return res
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error updating company bill : ' + error
+        'Bills - Error updating company bill : ' + error,
+        this.logDirectory
       )
       return ErrorHandler.handle()
     }
@@ -219,7 +225,8 @@ export class UpdateBillService extends GeneralService {
       }
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error updating credit card bill : ' + error
+        'Bills - Error updating credit card bill : ' + error,
+        this.logDirectory
       )
       ErrorHandler.handle(error)
     }

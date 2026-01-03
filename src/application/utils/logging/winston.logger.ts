@@ -28,29 +28,19 @@ export class WinstonLogger implements LoggerService {
         }),
         format.printf((info) => `[${info.timestamp}] [${info.level}] : ${info.message}`)
       ),
-      transports: [
-        new transports.Console({
-          level: 'info',
-          format: format.combine(
-            format.colorize(),
-            format.printf((info) => `${info.message}`)
-          )
-        }),
-        new transports.Console({
-          level: 'error',
-          format: format.combine(
-            format.colorize(),
-            format.printf((info) => `${info.message}`)
-          )
-        }),
-        transport
-      ]
+      transports: [transport]
     })
 
     if (process.env.NODE_ENV !== 'production') {
       // APP_ENV is accessed from env file
       this.logger.add(new transports.Console())
     }
+  }
+
+  reducePath(path: string) {
+    if (!path) return ''
+    const splittedPath = path.split('dist')
+    return splittedPath[1] || ''
   }
 
   log(message: string, context?: string) {
@@ -61,15 +51,15 @@ export class WinstonLogger implements LoggerService {
     this.logger.error({ message, trace })
   }
 
-  warn(message: string) {
-    this.logger.warn(message)
+  warn(message: string, path: string) {
+    this.logger.warn(this.reducePath(path) + ' - ' + message)
   }
 
-  debug(message: string) {
-    this.logger.debug(message)
+  debug(message: string, path: string) {
+    this.logger.debug(this.reducePath(path) + ' - ' + message)
   }
 
-  info(message: string) {
-    this.logger.info(message)
+  info(message: string, path: string) {
+    this.logger.info(this.reducePath(path) + ' - ' + message)
   }
 }

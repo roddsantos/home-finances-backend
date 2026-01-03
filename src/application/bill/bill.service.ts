@@ -83,7 +83,8 @@ export class BillService extends GeneralService {
       return bills
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Unable to generate bills data : ' + error
+        'Bills - Unable to generate bills data : ' + error,
+        this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Unable to generate bills data')
     }
@@ -150,7 +151,8 @@ export class BillService extends GeneralService {
       }
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error getting the bills list : ' + error
+        'Bills - Error getting the bills list : ' + error,
+        this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting the bills list')
     }
@@ -160,9 +162,7 @@ export class BillService extends GeneralService {
     try {
       return await this.billRepository.findOneBy({ id })
     } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Error getting bill by id : ' + error
-      )
+      this.logger.error('Bills - Error getting bill by id : ' + error, this.logDirectory)
       return ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
     }
   }
@@ -211,7 +211,8 @@ export class BillService extends GeneralService {
       return bills
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error getting bill by month : ' + error
+        'Bills - Error getting bill by month : ' + error,
+        this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting bill by month')
     }
@@ -245,7 +246,8 @@ export class BillService extends GeneralService {
       return moneyBills
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error getting bills paid by money : ' + error
+        'Bills - Error getting bills paid by money : ' + error,
+        this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting bills paid by money')
     }
@@ -275,7 +277,8 @@ export class BillService extends GeneralService {
       return incomeBills
     } catch (error) {
       this.logger.error(
-        this.logDirectory + ' Bills - Error getting income bills : ' + error
+        'Bills - Error getting income bills : ' + error,
+        this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting income bills')
     }
@@ -310,9 +313,7 @@ export class BillService extends GeneralService {
 
       return dailyBillsCount
     } catch (error) {
-      this.logger.error(
-        this.logDirectory + ' Bills - Error getting money bills : ' + error
-      )
+      this.logger.error('Bills - Error getting money bills : ' + error, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting money bills')
     }
   }

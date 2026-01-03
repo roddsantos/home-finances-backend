@@ -2,7 +2,8 @@ import {
   MiddlewareConsumer,
   Module,
   NestModule,
-  OnApplicationBootstrap
+  OnApplicationBootstrap,
+  RequestMethod
 } from '@nestjs/common'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
@@ -21,6 +22,11 @@ import { SavingsModule } from '../savings/savings.module'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import typeorm from '../database/typeorm'
 import { DateMiddleware } from '../middlewares/date.middleware'
+import { ThemeModule } from '../theme/theme.module'
+import { BodyThemeMiddleware } from '../middlewares/theme/body.theme.middleware'
+import { IdMiddleware } from '../middlewares/general/id.middleware'
+// eslint-disable-next-line max-len
+import { UpdateBodyThemeMiddleware } from '../middlewares/theme/update.body.theme.middleware'
 
 @Module({
   imports: [
@@ -34,13 +40,14 @@ import { DateMiddleware } from '../middlewares/date.middleware'
     }),
     BankModule,
     BillModule,
+    CategoryModule,
     CompanyModule,
     CreditCardModule,
-    CategoryModule,
     DashboardModule,
-    UserModule,
     HomeModule,
-    SavingsModule
+    SavingsModule,
+    ThemeModule,
+    UserModule
   ],
   controllers: [AppController],
   providers: [AppService, SeedingService]
@@ -50,6 +57,20 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
 
   configure(consumer: MiddlewareConsumer) {
     consumer.apply(DateMiddleware).forRoutes('home')
+    consumer.apply(BodyThemeMiddleware).forRoutes({
+      path: 'theme',
+      method: RequestMethod.POST
+    })
+    consumer.apply(UpdateBodyThemeMiddleware).forRoutes({
+      path: 'theme',
+      method: RequestMethod.PATCH
+    })
+    consumer
+      .apply(IdMiddleware)
+      .forRoutes(
+        { path: 'theme', method: RequestMethod.GET },
+        { path: 'theme', method: RequestMethod.DELETE }
+      )
   }
 
   async onApplicationBootstrap(): Promise<void> {

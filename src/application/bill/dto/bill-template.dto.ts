@@ -1,3 +1,4 @@
+import { PaymentTypes } from 'src/application/core/types/general'
 import {
   CreateBankTransactionDto,
   CreateCompanyBillDto,
@@ -14,6 +15,8 @@ export class CreateBillTemplateDto {
   settled: boolean
   due: string
   paid: string | null
+  type: PaymentTypes
+  groupId: string
 }
 
 export type AllBillProps = CreateBillTemplateDto &
