@@ -15,7 +15,6 @@ export class BodyThemeMiddleware extends GeneralMiddleware implements NestMiddle
     const body = req.body as unknown as ThemeBody
 
     Object.keys(body).map((key) => {
-      console.log(req.body)
       if (key === 'borderRadius' && (body[key] < 0 || body[key] > 20)) {
         this.logger.error(
           'Middleware : invalid theme body - border radius',

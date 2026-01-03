@@ -14,3 +14,8 @@ export type ThemeBody = {
   padding: string
   theme: string
 }
+
+export type UpdateThemeBody = ThemeBody & {
+  id: string
+  userId: string
+}

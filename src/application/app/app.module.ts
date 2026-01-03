@@ -25,6 +25,8 @@ import { DateMiddleware } from '../middlewares/date.middleware'
 import { ThemeModule } from '../theme/theme.module'
 import { BodyThemeMiddleware } from '../middlewares/theme/body.theme.middleware'
 import { IdMiddleware } from '../middlewares/general/id.middleware'
+// eslint-disable-next-line max-len
+import { UpdateBodyThemeMiddleware } from '../middlewares/theme/update.body.theme.middleware'
 
 @Module({
   imports: [
@@ -58,6 +60,10 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
     consumer.apply(BodyThemeMiddleware).forRoutes({
       path: 'theme',
       method: RequestMethod.POST
+    })
+    consumer.apply(UpdateBodyThemeMiddleware).forRoutes({
+      path: 'theme',
+      method: RequestMethod.PATCH
     })
     consumer
       .apply(IdMiddleware)

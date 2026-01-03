@@ -13,6 +13,7 @@ export const CREDIT_CARD_MODULE = {
 
 export const THEME_MODULE = {
   bodyMiddleware: 'body.theme.middleware.ts',
+  updateBodyMiddleware: 'update.body.theme.middleware.ts',
   controller: 'theme.controller.ts',
   service: 'theme.service.ts'
 }

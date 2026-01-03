@@ -27,7 +27,8 @@ export class CreateBillService extends GeneralService {
 
   async createTransactionBill(createTransactionBillDto: BillBank) {
     try {
-      const { total, bank1Id, bank2Id, isPayment, settled } = createTransactionBillDto
+      const { total, bank1Id, bank2Id, isPayment, settled, isRecurrent } =
+        createTransactionBillDto
 
       if (!settled) {
         return await this.billRepository.save({
@@ -51,6 +52,11 @@ export class CreateBillService extends GeneralService {
         }
         await this.billService.updateBank(bank2, total, !isPayment)
       }
+
+      if (isRecurrent) {
+        this.createRecurrentBill(createTransactionBillDto)
+      }
+
       return await this.billRepository.save({
         ...createTransactionBillDto,
         totalParcel: total

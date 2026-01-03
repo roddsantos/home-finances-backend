@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
-import { ThemeBody } from '../core/types/theme'
+import { ThemeBody, UpdateThemeBody } from '../core/types/theme'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Response } from 'express'
 import { GeneralController } from '../app/general/controller.general'
@@ -21,28 +21,40 @@ export class ThemeController extends GeneralController {
 
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      this.logger.error('Theme - Error creating theme : ' + error, this.logDirectory)
+      this.logger.error('theme - error creating theme : ' + error, this.logDirectory)
       return ErrorHandler.errorResponse(res, error)
     }
   }
 
   @Patch()
-  updateTheme() {}
+  public async updateTheme(@Body() data: UpdateThemeBody, @Res() res: Response) {
+    try {
+      const result = await this.themeService.update(data)
+
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      this.logger.error('theme - error updating theme : ' + error, this.logDirectory)
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 
   @Get('/:id')
   public async getThemesByUserId(@Param('id') id: string, @Res() res: Response) {
     try {
       const result = await this.themeService.getAllByUserId(id)
-      return ResponseHandler.sendCreatedResponse(result, res)
+      return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       this.logger.error(
-        'Theme - Error fetching themes by userId : ' + error,
+        'theme - error fetching themes by userId : ' + error,
         this.logDirectory
       )
       return ErrorHandler.errorResponse(res, error)
     }
   }
 
-  @Delete()
-  deleteTheme() {}
+  @Delete('/:id')
+  public async deleteTheme(@Param('id') id: string, @Res() res: Response) {
+    const result = await this.themeService.delete(id)
+    return ResponseHandler.sendResponse(result, res)
+  }
 }
