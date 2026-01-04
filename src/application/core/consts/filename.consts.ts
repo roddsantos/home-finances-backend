@@ -17,3 +17,7 @@ export const THEME_MODULE = {
   controller: 'theme.controller.ts',
   service: 'theme.service.ts'
 }
+
+export const SAVING_MODULE = {
+  bodyMiddleware: 'body.saving.middleware.ts'
+}

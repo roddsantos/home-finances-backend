@@ -27,11 +27,6 @@ export class SavingsController {
   @Post()
   public async createSaving(@Body() newSavingDto: NewSavingDto, @Res() res: Response) {
     try {
-      if (!newSavingDto) ErrorHandler.BAD_REQUEST('Data not found')
-
-      if (this.verifyBody(newSavingDto))
-        ErrorHandler.BAD_REQUEST('Missing required fields')
-
       const result = await this.savingsService.create(newSavingDto)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
