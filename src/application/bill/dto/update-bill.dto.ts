@@ -12,6 +12,7 @@ export class UpdateBillTemplateDto {
   type: PaymentTypes
   groupId: string
   userId: string
+  totalParcel: number
 }
 
 export class UpdateBankTransactionDto {
@@ -27,7 +28,6 @@ export class UpdateCreditCardBillDto {
   companyId?: string
   parcels?: number
   parcel?: number
-  totalParcel?: number
   delta?: number
   taxes?: number
   isRecurrent: boolean
@@ -42,7 +42,6 @@ export class UpdateCompanyBillDto {
   delta?: number
   taxes?: number
   creditCardId?: string
-  totalParcel?: number
 }
 
 export type AllUpdateBillProps = UpdateBillTemplateDto &

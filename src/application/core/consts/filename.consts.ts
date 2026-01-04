@@ -3,7 +3,8 @@ export const BILL_MODULE = {
   service: 'bill.service.ts',
   createBillService: 'create-bill.service.ts',
   getBillService: 'get-bill.service.ts',
-  updateBillService: 'update-bill.service.ts'
+  updateBillService: 'update-bill.service.ts',
+  quickSettleBillService: 'quick-settle-bill.service.ts'
 }
 
 export const CREDIT_CARD_MODULE = {

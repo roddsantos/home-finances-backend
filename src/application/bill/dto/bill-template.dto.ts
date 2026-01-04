@@ -17,6 +17,7 @@ export class CreateBillTemplateDto {
   paid: string | null
   type: PaymentTypes
   groupId: string
+  totalParcel: number
 }
 
 export type AllBillProps = CreateBillTemplateDto &

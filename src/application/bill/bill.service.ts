@@ -160,10 +160,16 @@ export class BillService extends GeneralService {
 
   async getBillById(id: string) {
     try {
+      this.logger.info(`retrieving bill data : id : ${id}`, this.logDirectory)
       return await this.billRepository.findOneBy({ id })
     } catch (error) {
-      this.logger.error('Bills - Error getting bill by id : ' + error, this.logDirectory)
-      return ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+      this.logger.error(
+        `error updating transaction bill : bill not found : id : ${id}`,
+        this.logDirectory
+      )
+      ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
+        'bills - error updating transaction bill : bill not found'
+      )
     }
   }
 
@@ -182,6 +188,10 @@ export class BillService extends GeneralService {
     relations: string[] = []
   ): Promise<Bill[]> {
     try {
+      this.logger.info(
+        `fetching bills by month : month: ${month} & year: ${year}`,
+        this.logDirectory
+      )
       const bills = await this.billRepository.find({
         relations,
         where: [
@@ -211,10 +221,10 @@ export class BillService extends GeneralService {
       return bills
     } catch (error) {
       this.logger.error(
-        'Bills - Error getting bill by month : ' + error,
+        `error fetching bills by month : month: ${month} & year: ${year} : ` + error,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting bill by month')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting bill by month')
     }
   }
 
@@ -313,8 +323,8 @@ export class BillService extends GeneralService {
 
       return dailyBillsCount
     } catch (error) {
-      this.logger.error('Bills - Error getting money bills : ' + error, this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting money bills')
+      this.logger.error('error getting daily bills count : ' + error, this.logDirectory)
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting money bills')
     }
   }
 }

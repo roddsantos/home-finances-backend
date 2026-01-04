@@ -27,6 +27,7 @@ export class CreateBillService extends GeneralService {
 
   async createTransactionBill(createTransactionBillDto: BillBank) {
     try {
+      this.logger.info('creating transaction bill', this.logDirectory)
       const { total, bank1Id, bank2Id, isPayment, settled, isRecurrent } =
         createTransactionBillDto
 
@@ -38,18 +39,10 @@ export class CreateBillService extends GeneralService {
       }
 
       const bank1 = await this.bankService.getOneById(bank1Id)
-      if (!bank1) {
-        this.logger.error('Bills - Bank 1 not found', this.logDirectory)
-        ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 1 not found')
-      }
       await this.billService.updateBank(bank1, total, isPayment)
 
       if (bank2Id) {
         const bank2 = await this.bankService.getOneById(bank2Id)
-        if (!bank2) {
-          this.logger.error('Bills - Bank 2 not found', this.logDirectory)
-          ErrorHandler.NOT_FOUND_MESSAGE('Bills - Bank 2 not found')
-        }
         await this.billService.updateBank(bank2, total, !isPayment)
       }
 
@@ -62,16 +55,14 @@ export class CreateBillService extends GeneralService {
         totalParcel: total
       })
     } catch (error) {
-      this.logger.error(
-        +'Bills - Error creating transaction bill : ' + error,
-        this.logDirectory
-      )
-      return ErrorHandler.handle()
+      this.logger.error('error creating transaction bill : ' + error, this.logDirectory)
+      return ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating transaction bill')
     }
   }
 
   async createCompanyCreditBill(createCompanyBillDto: BillCompany) {
     try {
+      this.logger.info('creating company bill', this.logDirectory)
       const groupId = this.uuid.v4()
 
       const bills = this.billService.parcelsCompanyCreditBills(createCompanyBillDto)
@@ -84,11 +75,8 @@ export class CreateBillService extends GeneralService {
       )
       return allBills
     } catch (error) {
-      this.logger.error(
-        'Bills - Error creating company bill : ' + error,
-        this.logDirectory
-      )
-      return ErrorHandler.handle()
+      this.logger.error('error creating company bill : ' + error, this.logDirectory)
+      return ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating company bill')
     }
   }
 
@@ -120,16 +108,17 @@ export class CreateBillService extends GeneralService {
       )
       return allBills
     } catch (error) {
-      this.logger.error(
-        'Bills - Error creating credit card bill : ' + error,
-        this.logDirectory
-      )
-      return ErrorHandler.handle()
+      this.logger.error('error creating credit card bill : ' + error, this.logDirectory)
+      return ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating credit card bill')
     }
   }
 
   async createRecurrentBill(data: Omit<UpdateBillBank, 'id'>) {
     try {
+      this.logger.info(
+        `creating recurrent bill : payload: ${JSON.stringify(data)}`,
+        this.logDirectory
+      )
       const dueDate = new Date(data.due)
       const dueDay = dueDate.getDate()
       const dueMonth = dueDate.getMonth()
@@ -150,13 +139,9 @@ export class CreateBillService extends GeneralService {
         settled: false,
         paid: null
       })
-      this.logger.info('Bills - Recurrent bill successfully created', this.logDirectory)
     } catch (error) {
-      this.logger.error(
-        'Bills - Error creating recurrent bill : ' + error,
-        this.logDirectory
-      )
-      return ErrorHandler.handle()
+      this.logger.error('error creating recurrent bill : ' + error, this.logDirectory)
+      return ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating recurrent bill')
     }
   }
 }
