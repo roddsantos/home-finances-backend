@@ -9,8 +9,8 @@ export class IdMiddleware extends GeneralMiddleware implements NestMiddleware {
     const { id } = req.params
 
     if (!id) {
-      this.logger.error('Middleware : no id found', this.logDirectory)
-      ErrorHandler.BAD_REQUEST('Middleware : no id found')
+      this.logger.error('no id found', this.logDirectory)
+      ErrorHandler.BAD_REQUEST('middleware : no id found')
     }
 
     next()

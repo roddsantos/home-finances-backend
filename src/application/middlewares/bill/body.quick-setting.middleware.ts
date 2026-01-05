@@ -24,10 +24,6 @@ export class BodyQuickSavingMiddleware
       invalidKeys.push(`id (missing id)`)
     }
 
-    if (!body['settled']) {
-      invalidKeys.push(`settled (missing settled)`)
-    }
-
     if (invalidKeys.length > 0) {
       this.logger.error(
         `invalid quick settle bill body key(s) : ${JSON.stringify(invalidKeys)}`,

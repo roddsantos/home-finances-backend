@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Query, Res } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query, Res } from '@nestjs/common'
 import { BillService } from './bill.service'
 import { Response } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
@@ -145,12 +145,18 @@ export class BillController extends GeneralController {
     }
   }
 
-  @Patch('/quick-settle')
-  public async quickSetting(@Body() data: UpdateBillTemplateDto, @Res() res: Response) {
+  @Patch('/quick-settle/:id')
+  public async quickSetting(
+    @Param('id') id: string,
+    @Body() data: UpdateBillTemplateDto,
+    @Res() res: Response
+  ) {
     try {
-      const result = await this.quickSettleBillService.quickSettle(data)
+      const result = await this.quickSettleBillService.quickSettle(id, data)
+
+      const payload = Object.keys(data).length > 0 ? JSON.stringify(data) : 'none'
       this.logger.info(
-        `quick settle bill successfully updated : payload : ${JSON.stringify(data)}`,
+        `quick settle bill successfully updated : payload : ${payload}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
@@ -159,15 +165,18 @@ export class BillController extends GeneralController {
     }
   }
 
-  @Patch('/redo-quick-settle')
+  @Patch('/redo-quick-settle/:id')
   public async redoQuickSetting(
+    @Param('id') id: string,
     @Body() data: UpdateBillTemplateDto,
     @Res() res: Response
   ) {
     try {
-      const result = await this.quickSettleBillService.reversingQuickSettle(data)
+      const result = await this.quickSettleBillService.reversingQuickSettle(id, data)
+
+      const payload = Object.keys(data).length > 0 ? JSON.stringify(data) : 'none'
       this.logger.info(
-        `quick settle bill successfully reversed : payload : ${JSON.stringify(data)}`,
+        `quick settle bill successfully reversed : id : ${id} payload : ${payload}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)

@@ -23,42 +23,78 @@ export class QuickSettleBillService extends GeneralService {
     super(path.join(__dirname, BILL_MODULE.quickSettleBillService))
   }
 
-  async quickSettle(data: UpdateBillTemplateDto) {
+  async quickSettle(id: string, data: UpdateBillTemplateDto) {
     try {
       this.logger.info(
-        `quick updating bill : payload : ${JSON.stringify(data)}`,
+        `quick updating bill : id : ${id} payload : ` +
+          (Object.keys(data).length > 0 ? JSON.stringify(data) : 'none'),
         this.logDirectory
       )
-      const bill = await this.billService.getBillById(data.id)
-      const { bank1Id, bank2Id, totalParcel, isPayment, isRecurrent } = bill
+      const bill = await this.billService.getBillById(id)
+      const {
+        bank1Id,
+        bank2Id,
+        totalParcel,
+        parcel,
+        parcels,
+        delta,
+        taxes,
+        isPayment,
+        isRecurrent
+      } = bill
+
+      const newDelta = parcel === parcels - 1 ? delta : 0
+      const totalParcelToDeduct = totalParcel + taxes + newDelta
 
       const bank1 = await this.bankService.getOneById(bank1Id)
-      this.billService.updateBank(bank1, totalParcel, isPayment)
+      this.billService.updateBank(bank1, totalParcelToDeduct, isPayment)
 
       if (bank2Id) {
         const bank2 = await this.bankService.getOneById(bank2Id)
-        this.billService.updateBank(bank2, totalParcel, !isPayment)
+        this.billService.updateBank(bank2, totalParcelToDeduct, !isPayment)
       }
 
       if (isRecurrent) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, ...rest } = bill
         this.createBillService.createRecurrentBill({
-          ...bill,
+          ...rest,
           ...data
         })
       }
 
-      const paid = new Date().toISOString()
-      return await this.billRepository.update(data.id, { paid })
+      const payload = {
+        settled: true,
+        paid: new Date(),
+        ...data
+      }
+
+      return await this.billRepository.update(id, payload)
     } catch (error) {
-      this.logger.error(`error quick updating bill :  id : ${data.id}`, this.logDirectory)
+      this.logger.error(`error quick updating bill :  id : ${id}`, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error quick updating bill')
     }
   }
 
-  async reversingQuickSettle(data: UpdateBillTemplateDto) {
+  async reversingQuickSettle(id: string, data: UpdateBillTemplateDto) {
     try {
-      await this.billService.getBillById(data.id)
-      const { id, bank1Id, bank2Id, totalParcel, isPayment, isRecurrent } = data
+      this.logger.info(
+        `reversing quick update bill : id : ${id} payload : ` +
+          (Object.keys(data).length > 0 ? JSON.stringify(data) : 'none'),
+        this.logDirectory
+      )
+      const bill = await this.billService.getBillById(id)
+      const {
+        bank1Id,
+        bank2Id,
+        totalParcel,
+        parcel,
+        parcels,
+        delta,
+        taxes,
+        isPayment,
+        isRecurrent
+      } = bill
 
       if (isRecurrent) {
         this.logger.error(
@@ -71,23 +107,27 @@ export class QuickSettleBillService extends GeneralService {
         )
       }
 
+      const newDelta = parcel === parcels - 1 ? delta : 0
+      const totalParcelToDeduct = totalParcel + taxes + newDelta
+
       const bank1 = await this.bankService.getOneById(bank1Id)
-      this.billService.updateBank(bank1, totalParcel, !isPayment)
+      this.billService.updateBank(bank1, totalParcelToDeduct, !isPayment)
 
       if (bank2Id) {
         const bank2 = await this.bankService.getOneById(bank2Id)
-        this.billService.updateBank(bank2, totalParcel, isPayment)
+        this.billService.updateBank(bank2, totalParcelToDeduct, isPayment)
       }
 
       const payload = {
         settled: false,
-        paid: null
+        paid: null,
+        ...data
       }
 
       this.logger.info(`successful reversed quick update : id : ${id}`, this.logDirectory)
       return await this.billRepository.update(id, payload)
     } catch (error) {
-      this.logger.error(`error quick updating bill :  id : ${data.id}`, this.logDirectory)
+      this.logger.error(`error quick updating bill :  id : ${id}`, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error quick updating bill')
     }
   }
