@@ -1,11 +1,6 @@
 import { Bank } from 'src/application/bank/bank.entity'
 import { BankService } from 'src/application/bank/bank.service'
 import { CreditCardService } from 'src/application/credit-card/credit-card.service'
-import {
-  UpdateBillBank,
-  UpdateBillCompany,
-  UpdateBillCreditCard
-} from '../dto/update-bill.dto'
 import { Repository } from 'typeorm'
 import { Bill } from '../bill.entity'
 import * as path from 'path'
@@ -18,6 +13,10 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 import { CreateBillService } from './create-bill.service'
+import {
+  CreateBillTemplateDto,
+  UpdateBillTemplateDto
+} from 'src/application/core/types/bill'
 
 @Injectable()
 export class UpdateBillService extends GeneralService {
@@ -33,10 +32,11 @@ export class UpdateBillService extends GeneralService {
     super(path.join(__dirname, BILL_MODULE.updateBillService))
   }
 
-  async updateTransactionBill(id: string, data: Omit<UpdateBillBank, 'id'>) {
+  async updateTransactionBill(id: string, data: UpdateBillTemplateDto) {
     const isQuickSettle = id && data.settled && !data.bank1Id
     try {
       const { settled, bank1Id, bank2Id, total, isPayment, isRecurrent } = data
+      const groupId = isRecurrent ? this.uuid.v4() : null
 
       const bill = await this.getBillService.getBillById(id)
 
@@ -59,7 +59,8 @@ export class UpdateBillService extends GeneralService {
       }
 
       if (isRecurrent && (isQuickSettle || (settled && !bill.settled))) {
-        this.createBillService.createRecurrentBill(data)
+        const createBillData = data as CreateBillTemplateDto
+        this.createBillService.createRecurrentBill({ ...createBillData, groupId })
       }
 
       return await this.billRepository.update(id, { ...data })
@@ -72,7 +73,7 @@ export class UpdateBillService extends GeneralService {
     }
   }
 
-  async updateCompanyBill(id: string, data: Partial<Omit<UpdateBillCompany, 'id'>>) {
+  async updateCompanyBill(id: string, data: UpdateBillTemplateDto) {
     const isQuickSettle = id && data.settled && !data.companyId
 
     try {
@@ -145,7 +146,7 @@ export class UpdateBillService extends GeneralService {
     }
   }
 
-  async updateCreditCardBill(id: string, data: Omit<UpdateBillCreditCard, 'id'>) {
+  async updateCreditCardBill(data: UpdateBillTemplateDto) {
     const {
       total,
       taxes,

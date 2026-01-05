@@ -28,6 +28,8 @@ import { IdMiddleware } from '../middlewares/general/id.middleware'
 // eslint-disable-next-line max-len
 import { UpdateBodyThemeMiddleware } from '../middlewares/theme/update.body.theme.middleware'
 import { BodySavingMiddleware } from '../middlewares/saving/body.saving.middleware'
+// eslint-disable-next-line max-len
+import { BodyQuickSavingMiddleware } from '../middlewares/bill/body.quick-setting.middleware'
 
 @Module({
   imports: [
@@ -76,6 +78,11 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
     consumer.apply(BodySavingMiddleware).forRoutes({
       path: 'savings',
       method: RequestMethod.POST
+    })
+
+    consumer.apply(BodyQuickSavingMiddleware).forRoutes({
+      path: 'bill/quick-settle',
+      method: RequestMethod.PATCH
     })
   }
 

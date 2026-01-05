@@ -7,6 +7,7 @@ import { Like, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { GeneralService } from '../app/general/service.general'
 import * as path from 'path'
+import { BANK_MODULE } from '../core/consts/filename.consts'
 
 @Injectable()
 export class BankService extends GeneralService {
@@ -14,7 +15,7 @@ export class BankService extends GeneralService {
     @InjectRepository(Bank)
     private readonly bankRepository: Repository<Bank>
   ) {
-    super(path.join(__dirname, '../../logs'))
+    super(path.join(__dirname, BANK_MODULE.service))
   }
 
   async create(createBankDto: CreateBankDto) {

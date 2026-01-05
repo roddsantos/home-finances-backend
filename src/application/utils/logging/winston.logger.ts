@@ -37,9 +37,9 @@ export class WinstonLogger implements LoggerService {
     }
   }
 
-  reducePath(path: string) {
+  private reducePath(path: string) {
     if (!path) return ''
-    const splittedPath = path.split('dist')
+    const splittedPath = path.split('dist\\')
     return splittedPath[1] || ''
   }
 
@@ -47,19 +47,19 @@ export class WinstonLogger implements LoggerService {
     this.logger.info(message, { context })
   }
 
-  error(message: string, trace?: string) {
-    this.logger.error({ message, trace })
+  error(message: string, path: string) {
+    this.logger.error(`{${this.reducePath(path)}} - ${message}`)
   }
 
   warn(message: string, path: string) {
-    this.logger.warn(this.reducePath(path) + ' - ' + message)
+    this.logger.warn(`{${this.reducePath(path)}} - ${message}`)
   }
 
   debug(message: string, path: string) {
-    this.logger.debug(this.reducePath(path) + ' - ' + message)
+    this.logger.debug(`{${this.reducePath(path)}} - ${message}`)
   }
 
   info(message: string, path: string) {
-    this.logger.info(this.reducePath(path) + ' - ' + message)
+    this.logger.info(`{${this.reducePath(path)}} - ${message}`)
   }
 }

@@ -4,7 +4,8 @@ export const BILL_MODULE = {
   createBillService: 'create-bill.service.ts',
   getBillService: 'get-bill.service.ts',
   updateBillService: 'update-bill.service.ts',
-  quickSettleBillService: 'quick-settle-bill.service.ts'
+  quickSettleBillService: 'quick-settle-bill.service.ts',
+  bodyQuickSettingMiddleware: 'body.quick-setting.middleware.ts'
 }
 
 export const CREDIT_CARD_MODULE = {
@@ -17,6 +18,10 @@ export const THEME_MODULE = {
   updateBodyMiddleware: 'update.body.theme.middleware.ts',
   controller: 'theme.controller.ts',
   service: 'theme.service.ts'
+}
+
+export const BANK_MODULE = {
+  service: 'bank.service.ts'
 }
 
 export const SAVING_MODULE = {

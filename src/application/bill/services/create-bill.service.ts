@@ -1,7 +1,6 @@
 import { GeneralService } from 'src/application/app/general/service.general'
 import * as path from 'path'
 import { Repository } from 'typeorm'
-import { BillBank, BillCompany, BillCreditCard } from '../dto/bill-template.dto'
 import { ErrorHandler } from 'src/application/utils/ErrorHandler'
 import { BankService } from 'src/application/bank/bank.service'
 import { BillService } from '../bill.service'
@@ -11,7 +10,7 @@ import { CreditCard } from 'src/application/credit-card/credit-card.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
-import { UpdateBillBank } from '../dto/update-bill.dto'
+import { CreateBillTemplateDto } from 'src/application/core/types/bill'
 
 @Injectable()
 export class CreateBillService extends GeneralService {
@@ -25,7 +24,7 @@ export class CreateBillService extends GeneralService {
     super(path.join(__dirname, BILL_MODULE.createBillService))
   }
 
-  async createTransactionBill(createTransactionBillDto: BillBank) {
+  async createTransactionBill(createTransactionBillDto: CreateBillTemplateDto) {
     try {
       this.logger.info('creating transaction bill', this.logDirectory)
       const { total, bank1Id, bank2Id, isPayment, settled, isRecurrent } =
@@ -60,7 +59,7 @@ export class CreateBillService extends GeneralService {
     }
   }
 
-  async createCompanyCreditBill(createCompanyBillDto: BillCompany) {
+  async createCompanyCreditBill(createCompanyBillDto: CreateBillTemplateDto) {
     try {
       this.logger.info('creating company bill', this.logDirectory)
       const groupId = this.uuid.v4()
@@ -80,7 +79,7 @@ export class CreateBillService extends GeneralService {
     }
   }
 
-  async createCreditCardBill(createCreditCardBillDto: BillCreditCard) {
+  async createCreditCardBill(createCreditCardBillDto: CreateBillTemplateDto) {
     try {
       const { creditCardId, total, taxes, delta, settled } = createCreditCardBillDto
       const groupId = this.uuid.v4()
@@ -113,7 +112,7 @@ export class CreateBillService extends GeneralService {
     }
   }
 
-  async createRecurrentBill(data: Omit<UpdateBillBank, 'id'>) {
+  async createRecurrentBill(data: CreateBillTemplateDto) {
     try {
       this.logger.info(
         `creating recurrent bill : payload: ${JSON.stringify(data)}`,
@@ -131,7 +130,7 @@ export class CreateBillService extends GeneralService {
           ? new Date(newYear, newMonth + 1, -1).getDate()
           : dueDay
 
-      const newDue = new Date(newYear, newMonth, newDay).toISOString()
+      const newDue = new Date(newYear, newMonth, newDay)
 
       await this.createTransactionBill({
         ...data,

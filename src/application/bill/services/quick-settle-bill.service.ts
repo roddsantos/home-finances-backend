@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common'
 import * as path from 'path'
 import { GeneralService } from 'src/application/app/general/service.general'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
-import { UpdateBillBank } from '../dto/update-bill.dto'
 import { BillService } from '../bill.service'
 import { ErrorHandler } from 'src/application/utils/ErrorHandler'
 import { Bill } from '../bill.entity'
@@ -10,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { BankService } from 'src/application/bank/bank.service'
 import { CreateBillService } from './create-bill.service'
+import { UpdateBillTemplateDto } from 'src/application/core/types/bill'
 
 @Injectable()
 export class QuickSettleBillService extends GeneralService {
@@ -23,14 +23,14 @@ export class QuickSettleBillService extends GeneralService {
     super(path.join(__dirname, BILL_MODULE.quickSettleBillService))
   }
 
-  async quickSettle(data: UpdateBillBank) {
+  async quickSettle(data: UpdateBillTemplateDto) {
     try {
       this.logger.info(
         `quick updating bill : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
-      const { id, bank1Id, bank2Id, totalParcel, isPayment, isRecurrent } = data
-      await this.billService.getBillById(id)
+      const bill = await this.billService.getBillById(data.id)
+      const { bank1Id, bank2Id, totalParcel, isPayment, isRecurrent } = bill
 
       const bank1 = await this.bankService.getOneById(bank1Id)
       this.billService.updateBank(bank1, totalParcel, isPayment)
@@ -41,7 +41,10 @@ export class QuickSettleBillService extends GeneralService {
       }
 
       if (isRecurrent) {
-        this.createBillService.createRecurrentBill(data)
+        this.createBillService.createRecurrentBill({
+          ...bill,
+          ...data
+        })
       }
 
       const paid = new Date().toISOString()
@@ -52,8 +55,9 @@ export class QuickSettleBillService extends GeneralService {
     }
   }
 
-  async reversingQuickSettle(data: UpdateBillBank) {
+  async reversingQuickSettle(data: UpdateBillTemplateDto) {
     try {
+      await this.billService.getBillById(data.id)
       const { id, bank1Id, bank2Id, totalParcel, isPayment, isRecurrent } = data
 
       if (isRecurrent) {
@@ -66,8 +70,6 @@ export class QuickSettleBillService extends GeneralService {
           'bills - error quick updating bill : cannot reverse a recurrent bill'
         )
       }
-
-      await this.billService.getBillById(id)
 
       const bank1 = await this.bankService.getOneById(bank1Id)
       this.billService.updateBank(bank1, totalParcel, !isPayment)

@@ -1,5 +1,5 @@
-import { AvailableFilters } from '../bill/dto/get-bills.dto'
 import { DiscriminatedUnionToObjectType } from 'src/application/core/types/general'
+import { AvailableFilters } from '../core/types/bill'
 
 export const SEQUELIZE = 'sequelize'
 
