@@ -31,17 +31,17 @@ export class BodySavingMiddleware extends GeneralMiddleware implements NestMiddl
         default:
           if (!body[key]) invalidKeys.push(`${key}`)
       }
-
-      if (invalidKeys.length > 0) {
-        this.logger.error(
-          `middleware : invalid saving body key(s) : ${JSON.stringify(invalidKeys)}`,
-          this.logDirectory
-        )
-        ErrorHandler.BAD_REQUEST(
-          `middleware : invalid saving body key(s) : ${JSON.stringify(invalidKeys)}`
-        )
-      }
     })
+
+    if (invalidKeys.length > 0) {
+      this.logger.error(
+        `middleware : invalid saving body key(s) : ${JSON.stringify(invalidKeys)}`,
+        this.logDirectory
+      )
+      ErrorHandler.BAD_REQUEST(
+        `middleware : invalid saving body key(s) : ${JSON.stringify(invalidKeys)}`
+      )
+    }
 
     next()
   }

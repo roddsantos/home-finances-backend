@@ -1,34 +1,32 @@
-import { Body, Controller, Get, Patch, Post, Query, Res } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query, Res } from '@nestjs/common'
 import { BillService } from './bill.service'
 import { Response } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import {
-  AllBillProps,
-  BillBank,
-  BillCompany,
-  BillCreditCard,
-  CreateBillTemplateDto
-} from './dto/bill-template.dto'
 import { ResponseHandler } from '../utils/ResponseHandler'
-import {
-  AllUpdateBillProps,
-  UpdateBillBank,
-  UpdateBillCompany,
-  UpdateBillCreditCard
-} from './dto/update-bill.dto'
-import { GetBillsDto } from './dto/get-bills.dto'
 import { UpdateBillService } from './services/update-bill.service'
 import { CreateBillService } from './services/create-bill.service'
+import { QuickSettleBillService } from './services/quick-settle-bill.service'
+import {
+  CreateBillTemplateDto,
+  GetBillsTemplateDto,
+  UpdateBillTemplateDto
+} from '../core/types/bill'
+import { GeneralController } from '../app/general/controller.general'
+import * as path from 'path'
+import { BILL_MODULE } from '../core/consts/filename.consts'
 
 @Controller('bill')
-export class BillController {
+export class BillController extends GeneralController {
   constructor(
     private readonly billService: BillService,
     private readonly updateBillService: UpdateBillService,
-    private readonly createBillService: CreateBillService
-  ) {}
+    private readonly createBillService: CreateBillService,
+    private readonly quickSettleBillService: QuickSettleBillService
+  ) {
+    super(path.join(__dirname, BILL_MODULE.controller))
+  }
 
-  verifyCreateTemplate(data: Pick<AllBillProps, keyof CreateBillTemplateDto>) {
+  verifyCreateTemplate(data: CreateBillTemplateDto) {
     return (
       !data.name ||
       !data.description ||
@@ -39,12 +37,15 @@ export class BillController {
     )
   }
 
-  verifyUpdateTemplate(data: Partial<AllUpdateBillProps>) {
+  verifyUpdateTemplate(data: UpdateBillTemplateDto) {
     return !data.id
   }
 
   @Post('/transaction')
-  public async createTransaction(@Body() data: BillBank, @Res() res: Response) {
+  public async createTransaction(
+    @Body() data: CreateBillTemplateDto,
+    @Res() res: Response
+  ) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -61,7 +62,7 @@ export class BillController {
   }
 
   @Post('/cc')
-  public async createCc(@Body() data: BillCreditCard, @Res() res: Response) {
+  public async createCc(@Body() data: CreateBillTemplateDto, @Res() res: Response) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -76,7 +77,7 @@ export class BillController {
   }
 
   @Post('/company')
-  public async createCompany(@Body() data: BillCompany, @Res() res: Response) {
+  public async createCompany(@Body() data: CreateBillTemplateDto, @Res() res: Response) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -95,7 +96,10 @@ export class BillController {
   }
 
   @Patch('/transaction')
-  public async updateTransaction(@Body() data: UpdateBillBank, @Res() res: Response) {
+  public async updateTransaction(
+    @Body() data: UpdateBillTemplateDto,
+    @Res() res: Response
+  ) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -111,15 +115,14 @@ export class BillController {
   }
 
   @Patch('/cc')
-  public async updateCc(@Body() data: UpdateBillCreditCard, @Res() res: Response) {
+  public async updateCc(@Body() data: UpdateBillTemplateDto, @Res() res: Response) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (this.verifyUpdateTemplate(data) || !data.creditCardId)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
-      const { id, ...rest } = data
-      const result = await this.updateBillService.updateCreditCardBill(id, rest)
+      const result = await this.updateBillService.updateCreditCardBill(data)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -127,10 +130,7 @@ export class BillController {
   }
 
   @Patch('/company')
-  public async updateCompany(
-    @Body() data: Partial<UpdateBillCompany>,
-    @Res() res: Response
-  ) {
+  public async updateCompany(@Body() data: UpdateBillTemplateDto, @Res() res: Response) {
     try {
       if (!Boolean(data) || this.verifyUpdateTemplate(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -138,9 +138,47 @@ export class BillController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
           'Missing Required Fields: settled needs to be checked when setting a paid date'
         )
+      const result = await this.updateBillService.updateCompanyBill(data.id, data)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 
-      const { id, ...rest } = data
-      const result = await this.updateBillService.updateCompanyBill(id, rest)
+  @Patch('/quick-settle/:id')
+  public async quickSetting(
+    @Param('id') id: string,
+    @Body() data: UpdateBillTemplateDto,
+    @Res() res: Response
+  ) {
+    try {
+      const result = await this.quickSettleBillService.quickSettle(id, data)
+
+      const payload = Object.keys(data).length > 0 ? JSON.stringify(data) : 'none'
+      this.logger.info(
+        `quick settle bill successfully updated : payload : ${payload}`,
+        this.logDirectory
+      )
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Patch('/redo-quick-settle/:id')
+  public async redoQuickSetting(
+    @Param('id') id: string,
+    @Body() data: UpdateBillTemplateDto,
+    @Res() res: Response
+  ) {
+    try {
+      const result = await this.quickSettleBillService.reversingQuickSettle(id, data)
+
+      const payload = Object.keys(data).length > 0 ? JSON.stringify(data) : 'none'
+      this.logger.info(
+        `quick settle bill successfully reversed : id : ${id} payload : ${payload}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -148,7 +186,10 @@ export class BillController {
   }
 
   @Get()
-  public async getFilteredBills(@Res() res: Response, @Query() filters: GetBillsDto) {
+  public async getFilteredBills(
+    @Res() res: Response,
+    @Query() filters: GetBillsTemplateDto
+  ) {
     try {
       if (!Boolean(filters.page) || !Boolean(filters.limit) || !Boolean(filters.userId))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')

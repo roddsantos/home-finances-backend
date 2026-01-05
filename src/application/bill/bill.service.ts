@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { Bill } from './bill.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { FilterDisplay } from './dto/get-bills.dto'
-import { BillCompany, BillCreditCard, BillService2 } from './dto/bill-template.dto'
 import { IsNull, LessThan, MoreThan, Not, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
@@ -14,6 +12,7 @@ import { convertToFloat } from '../utils/conversions'
 import * as path from 'path'
 import { GeneralService } from '../app/general/service.general'
 import { BILL_MODULE } from '../core/consts/filename.consts'
+import { CreateBillTemplateDto, FilterDisplay } from '../core/types/bill'
 
 @Injectable()
 export class BillService extends GeneralService {
@@ -25,8 +24,8 @@ export class BillService extends GeneralService {
     super(path.join(__dirname, BILL_MODULE.service))
   }
 
-  parcelsCcBills(bill: BillCreditCard) {
-    const bills = [] as BillCreditCard[]
+  parcelsCcBills(bill: CreateBillTemplateDto) {
+    const bills = [] as CreateBillTemplateDto[]
     let month = new Date(bill.due).getMonth()
 
     for (let i = 0; i < bill.parcels; i++) {
@@ -38,8 +37,8 @@ export class BillService extends GeneralService {
         totalParcel:
           parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
           (i === bill.parcels - 1 ? bill.delta : 0),
-        paid: bill.paid ? newDatePaid.toISOString() : null,
-        due: newDateDue.toISOString()
+        paid: bill.paid ? newDatePaid : null,
+        due: newDateDue
       }
       bills.push(parcelObject)
       month = month + 1
@@ -47,9 +46,9 @@ export class BillService extends GeneralService {
     return bills
   }
 
-  parcelsCompanyCreditBills(bill: BillService2 | BillCompany) {
+  parcelsCompanyCreditBills(bill: CreateBillTemplateDto) {
     try {
-      const bills = [] as BillService2[]
+      const bills = [] as CreateBillTemplateDto[]
       const dueDate = new Date(bill.due)
       let dueDay = dueDate.getDate()
       let dueMonth = dueDate.getMonth()
@@ -63,7 +62,7 @@ export class BillService extends GeneralService {
             ? new Date(newYear, newMonth + 1, 0).getDate()
             : dueDay
 
-        const newDate = new Date(newYear, newMonth, newDay).toISOString()
+        const newDate = new Date(newYear, newMonth, newDay)
         const parcelObject = {
           ...bill,
           parcel: i,
@@ -160,10 +159,16 @@ export class BillService extends GeneralService {
 
   async getBillById(id: string) {
     try {
+      this.logger.info(`retrieving bill data : id : ${id}`, this.logDirectory)
       return await this.billRepository.findOneBy({ id })
     } catch (error) {
-      this.logger.error('Bills - Error getting bill by id : ' + error, this.logDirectory)
-      return ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
+      this.logger.error(
+        `error updating transaction bill : bill not found : id : ${id}`,
+        this.logDirectory
+      )
+      ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
+        'bills - error updating transaction bill : bill not found'
+      )
     }
   }
 
@@ -182,6 +187,10 @@ export class BillService extends GeneralService {
     relations: string[] = []
   ): Promise<Bill[]> {
     try {
+      this.logger.info(
+        `fetching bills by month : month: ${month} & year: ${year}`,
+        this.logDirectory
+      )
       const bills = await this.billRepository.find({
         relations,
         where: [
@@ -211,10 +220,10 @@ export class BillService extends GeneralService {
       return bills
     } catch (error) {
       this.logger.error(
-        'Bills - Error getting bill by month : ' + error,
+        `error fetching bills by month : month: ${month} & year: ${year} : ` + error,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting bill by month')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting bill by month')
     }
   }
 
@@ -313,8 +322,8 @@ export class BillService extends GeneralService {
 
       return dailyBillsCount
     } catch (error) {
-      this.logger.error('Bills - Error getting money bills : ' + error, this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting money bills')
+      this.logger.error('error getting daily bills count : ' + error, this.logDirectory)
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting money bills')
     }
   }
 }

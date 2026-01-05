@@ -8,10 +8,10 @@ import {
   MoreThanOrEqual,
   Or
 } from 'typeorm'
-import { AvailableFilters, FilterDisplay } from '../bill/dto/get-bills.dto'
 import { Bill } from '../bill/bill.entity'
 import { OptionalKeys } from 'src/application/core/types/general'
 import { DAY_START, initializeFilters } from './constants'
+import { AvailableFilters, FilterDisplay } from 'src/application/core/types/bill'
 
 /**
  * Get filters treated and grouped

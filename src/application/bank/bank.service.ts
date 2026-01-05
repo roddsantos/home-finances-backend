@@ -7,6 +7,7 @@ import { Like, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { GeneralService } from '../app/general/service.general'
 import * as path from 'path'
+import { BANK_MODULE } from '../core/consts/filename.consts'
 
 @Injectable()
 export class BankService extends GeneralService {
@@ -14,7 +15,7 @@ export class BankService extends GeneralService {
     @InjectRepository(Bank)
     private readonly bankRepository: Repository<Bank>
   ) {
-    super(path.join(__dirname, '../../logs'))
+    super(path.join(__dirname, BANK_MODULE.service))
   }
 
   async create(createBankDto: CreateBankDto) {
@@ -51,6 +52,10 @@ export class BankService extends GeneralService {
 
   async getAllById(userId: string, isPiggyBank?: boolean) {
     try {
+      this.logger.info(
+        `retrieving all banks by userId : userId : ${userId}`,
+        this.logDirectory
+      )
       const res = await this.bankRepository.find({
         where: {
           userId,
@@ -60,19 +65,21 @@ export class BankService extends GeneralService {
       })
       return res
     } catch (error) {
+      this.logger.error(
+        `error retrieving bank data : userId : ${userId}`,
+        this.logDirectory
+      )
       ErrorHandler.handle(error)
     }
   }
 
   async getOneById(id: string) {
     try {
-      return await this.bankRepository.findOne({
-        where: { id },
-        order: { updatedAt: 'DESC' }
-      })
+      this.logger.info(`retrieving bank data : id : ${id}`, this.logDirectory)
+      return await this.bankRepository.findOneBy({ id })
     } catch (error) {
-      this.logger.error('Bills - Bank 1 not found', this.logDirectory)
-      ErrorHandler.NOT_FOUND_MESSAGE('Banks - Bank not found')
+      this.logger.error(`bank not found : id : ${id}`, this.logDirectory)
+      ErrorHandler.NOT_FOUND_MESSAGE('banks - bank not found')
     }
   }
 }
