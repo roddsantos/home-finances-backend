@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common'
-import { CreateCreditCardDto } from './dto/create-credit-card.dto'
 import { CreditCard } from './credit-card.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { UpdateCreditCardDto } from './dto/update-credit-card.dto'
-import { GetCreditCardDto } from './dto/get-credit-cards.dto'
 import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as path from 'path'
 import { CREDIT_CARD_MODULE } from '../core/consts/filename.consts'
 import { GeneralService } from '../app/general/service.general'
+import {
+  CreateCreditCardTemplateDto,
+  UpdateCreditCardTemplateDto
+} from '../core/types/credit-card'
 
 @Injectable()
 export class CreditCardService extends GeneralService {
@@ -19,7 +20,7 @@ export class CreditCardService extends GeneralService {
     super(path.join(__dirname, CREDIT_CARD_MODULE.service))
   }
 
-  async create(createCreditCard: CreateCreditCardDto) {
+  async create(createCreditCard: CreateCreditCardTemplateDto) {
     try {
       const cc = await this.creditCardRepository.findOne({
         where: {
@@ -47,7 +48,7 @@ export class CreditCardService extends GeneralService {
     }
   }
 
-  async update(id: string, data: Partial<Omit<UpdateCreditCardDto, 'id'>>) {
+  async update(id: string, data: Partial<Omit<UpdateCreditCardTemplateDto, 'id'>>) {
     try {
       const res = await this.creditCardRepository.update({ id }, data)
       return { ...res, id }
@@ -67,10 +68,10 @@ export class CreditCardService extends GeneralService {
     }
   }
 
-  async getAllById(userId: string, filters: Omit<GetCreditCardDto, 'userId'>) {
+  async getAllById(userId: string) {
     try {
       const res = await this.creditCardRepository.find({
-        where: { ...filters, userId },
+        where: { userId },
         order: { updatedAt: 'DESC' }
       })
       return res
