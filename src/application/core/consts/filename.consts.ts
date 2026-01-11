@@ -26,6 +26,11 @@ export const BANK_MODULE = {
   bodyUpdateMiddleware: 'body.create.bank.middleware.ts'
 }
 
+export const CATEGORY_MODULE = {
+  service: 'category.service.ts',
+  controller: 'category.controller.ts'
+}
+
 export const SAVING_MODULE = {
   bodyMiddleware: 'body.saving.middleware.ts'
 }

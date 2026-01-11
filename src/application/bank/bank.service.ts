@@ -46,7 +46,7 @@ export class BankService extends GeneralService {
 
       return { ...bank, ...rest }
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
     }
   }
 
@@ -55,7 +55,7 @@ export class BankService extends GeneralService {
       const res = await this.bankRepository.delete(id)
       return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
     }
   }
 
