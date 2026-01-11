@@ -31,6 +31,11 @@ export const CATEGORY_MODULE = {
   controller: 'category.controller.ts'
 }
 
+export const COMPANY_MODULE = {
+  service: 'company.service.ts',
+  controller: 'company.controller.ts'
+}
+
 export const SAVING_MODULE = {
   bodyMiddleware: 'body.saving.middleware.ts'
 }

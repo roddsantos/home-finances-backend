@@ -73,7 +73,13 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
       .forRoutes(
         { path: 'theme', method: RequestMethod.GET },
         { path: 'theme', method: RequestMethod.DELETE },
-        { path: 'bill/quick-settle/:id', method: RequestMethod.PATCH }
+        { path: 'bill/quick-settle/:id', method: RequestMethod.PATCH },
+        { path: 'category/:id', method: RequestMethod.GET },
+        { path: 'category/:id', method: RequestMethod.DELETE },
+        { path: 'bank/:id', method: RequestMethod.GET },
+        { path: 'bank/:id', method: RequestMethod.DELETE },
+        { path: 'company/:id', method: RequestMethod.GET },
+        { path: 'company/:id', method: RequestMethod.DELETE }
       )
 
     consumer.apply(BodySavingMiddleware).forRoutes({
