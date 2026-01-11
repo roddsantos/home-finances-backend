@@ -1,18 +1,17 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { BankService } from './bank.service'
-import { CreateBankDto } from './dto/create-bank.dto'
 import { Response } from 'express'
 import { ResponseHandler } from '../utils/ResponseHandler'
-import { UpdateBankDto } from './dto/update-bank.dto'
 import { Bank } from './bank.entity'
+import { CreateBankTemplateDto, UpdateBankTemplateDto } from '../core/types/bank'
 
 @Controller('bank')
 export class BankController {
   constructor(private readonly bankService: BankService) {}
 
   @Post()
-  public async createBank(@Body() data: CreateBankDto, @Res() res: Response) {
+  public async createBank(@Body() data: CreateBankTemplateDto, @Res() res: Response) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -33,22 +32,11 @@ export class BankController {
 
   @Patch()
   public async updateBank(
-    @Body() data: UpdateBankDto,
+    @Body() data: UpdateBankTemplateDto,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
-      if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (
-        data.name === '' ||
-        data.description === '' ||
-        data.color === '' ||
-        !data.id ||
-        data.savings < 0
-      )
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const { id, ...rest } = data
-      const result = await this.bankService.update(id, rest)
+      const result = await this.bankService.update(data)
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

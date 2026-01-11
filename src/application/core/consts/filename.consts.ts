@@ -21,7 +21,9 @@ export const THEME_MODULE = {
 }
 
 export const BANK_MODULE = {
-  service: 'bank.service.ts'
+  service: 'bank.service.ts',
+  bodyCreateMiddleware: 'body.create.bank.middleware.ts',
+  bodyUpdateMiddleware: 'body.create.bank.middleware.ts'
 }
 
 export const SAVING_MODULE = {

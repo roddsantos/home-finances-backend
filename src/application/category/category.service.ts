@@ -50,7 +50,7 @@ export class CategoryService {
     try {
       const res = await this.categoryRepository.find({
         where: { userId },
-        order: { updatedAt: 'DESC' }
+        order: { name: 'ASC' }
       })
       return res
     } catch (error) {

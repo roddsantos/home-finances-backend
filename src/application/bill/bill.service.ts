@@ -94,7 +94,7 @@ export class BillService extends GeneralService {
       ...bank,
       savings: bank.savings + total * (isPayment ? -1 : 1)
     }
-    return await this.bankService.update(bank.id, newBankValue)
+    return await this.bankService.update(newBankValue)
   }
 
   async getBills(userId: string, page: number, take: number, data: any) {

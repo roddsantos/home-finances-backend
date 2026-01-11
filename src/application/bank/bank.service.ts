@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { Bank } from './bank.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { CreateBankDto } from './dto/create-bank.dto'
-import { UpdateBankDto } from './dto/update-bank.dto'
 import { Like, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { GeneralService } from '../app/general/service.general'
 import * as path from 'path'
 import { BANK_MODULE } from '../core/consts/filename.consts'
+import { CreateBankTemplateDto, UpdateBankTemplateDto } from '../core/types/bank'
 
 @Injectable()
 export class BankService extends GeneralService {
@@ -18,24 +17,34 @@ export class BankService extends GeneralService {
     super(path.join(__dirname, BANK_MODULE.service))
   }
 
-  async create(createBankDto: CreateBankDto) {
+  async create(createBankDto: CreateBankTemplateDto) {
     try {
-      const bank = await this.bankRepository.findOne({
-        where: { name: createBankDto.name, userId: createBankDto.userId }
-      })
-      if (bank === null) {
-        const res = await this.bankRepository.save(createBankDto)
-        return res
-      } else ErrorHandler.CONFLICT_MESSAGE('This bank already exists')
+      const { name, userId } = createBankDto
+      const bank = await this.getOneByNameAndUserId(name, userId)
+
+      if (!bank) {
+        this.logger.error(
+          `bank already exists with this name : ${name}`,
+          this.logDirectory
+        )
+        ErrorHandler.CONFLICT_MESSAGE(`bank already exists with this name : ${name}`)
+      }
+
+      const res = await this.bankRepository.save(createBankDto)
+      return res
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
     }
   }
 
-  async update(id: string, data: Omit<UpdateBankDto, 'id'>) {
+  async update(data: UpdateBankTemplateDto) {
     try {
-      const res = await this.bankRepository.update({ id }, data)
-      return res
+      const { id, ...rest } = data
+      const bank = await this.getOneById(id)
+
+      await this.bankRepository.update({ id }, rest)
+
+      return { ...bank, ...rest }
     } catch (error) {
       return ErrorHandler.handle(error)
     }
@@ -50,6 +59,21 @@ export class BankService extends GeneralService {
     }
   }
 
+  async getOneByNameAndUserId(name: string, userId: string) {
+    try {
+      const bank = await this.bankRepository.findOne({
+        where: { name, userId }
+      })
+      return bank
+    } catch (error) {
+      this.logger.error(
+        `error fetching bank : userId : ${userId} : name : ${name}`,
+        this.logDirectory
+      )
+      ErrorHandler.handle(error)
+    }
+  }
+
   async getAllById(userId: string, isPiggyBank?: boolean) {
     try {
       this.logger.info(
@@ -61,7 +85,8 @@ export class BankService extends GeneralService {
           userId,
           isPiggyBank:
             isPiggyBank === undefined ? Or(Like(true), Like(false)) : isPiggyBank
-        }
+        },
+        order: { name: 'ASC' }
       })
       return res
     } catch (error) {
@@ -76,10 +101,16 @@ export class BankService extends GeneralService {
   async getOneById(id: string) {
     try {
       this.logger.info(`retrieving bank data : id : ${id}`, this.logDirectory)
-      return await this.bankRepository.findOneBy({ id })
+      const bank = await this.bankRepository.findOneBy({ id })
+
+      if (!bank) {
+        this.logger.error(`bank not found : id : ${id}`, this.logDirectory)
+        ErrorHandler.NOT_FOUND_MESSAGE('banks - bank not found')
+      }
+      return bank
     } catch (error) {
-      this.logger.error(`bank not found : id : ${id}`, this.logDirectory)
-      ErrorHandler.NOT_FOUND_MESSAGE('banks - bank not found')
+      this.logger.error(`error retrieving bank : id : ${id}`, this.logDirectory)
+      ErrorHandler.NOT_FOUND_MESSAGE('banks - error retrieving bank')
     }
   }
 }

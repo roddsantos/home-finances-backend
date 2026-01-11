@@ -28,6 +28,7 @@ import { IdMiddleware } from '../middlewares/general/id.middleware'
 // eslint-disable-next-line max-len
 import { UpdateBodyThemeMiddleware } from '../middlewares/theme/update.body.theme.middleware'
 import { BodySavingMiddleware } from '../middlewares/saving/body.saving.middleware'
+import { BodyUpdateBankMiddleware } from '../middlewares/bank/body.update.bank.middleware'
 // eslint-disable-next-line max-len
 
 @Module({
@@ -78,6 +79,11 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
     consumer.apply(BodySavingMiddleware).forRoutes({
       path: 'savings',
       method: RequestMethod.POST
+    })
+
+    consumer.apply(BodyUpdateBankMiddleware).forRoutes({
+      path: 'bank',
+      method: RequestMethod.PATCH
     })
   }
 

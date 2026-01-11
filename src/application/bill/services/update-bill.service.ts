@@ -1,4 +1,3 @@
-import { Bank } from 'src/application/bank/bank.entity'
 import { BankService } from 'src/application/bank/bank.service'
 import { CreditCardService } from 'src/application/credit-card/credit-card.service'
 import { Repository } from 'typeorm'
@@ -102,16 +101,19 @@ export class UpdateBillService extends GeneralService {
 
         if (bank1Id) {
           const bank = await this.bankService.getOneById(bank1Id)
-          if (!bank) ErrorHandler.NOT_FOUND_MESSAGE('Bills - bank not found')
+          if (!bank) {
+            this.logger.error(`bank not found : id : ${bank1Id}`, this.logDirectory)
+            ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(`bank not found `)
+          }
 
           const newSavings = bank.savings - totalParcelToDeduct
           const savings = newSavings
-          const newBankValue: Bank = {
+          const newBankValue = {
             ...bank,
             id: bank1Id,
             savings
           }
-          await this.bankService.update(bank1Id, newBankValue)
+          await this.bankService.update(newBankValue)
         }
         if (creditCardId) {
           const cc = await this.ccService.getOneById(creditCardId)
