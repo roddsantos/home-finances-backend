@@ -13,17 +13,17 @@ export type BillObjectType = {
   due: Date
   paid: Date | null
   type: string
-  companyId: string
+  companyId: string | null
   categoryId: string
-  bank1Id: string
-  bank2Id: string
+  bank1Id: string | null
+  bank2Id: string | null
   isRecurrent: boolean
-  creditCardId: string
+  creditCardId: string | null
   isPayment: boolean
   userId: string
-  createdAt: string
-  updatedAt: string
-  deletedAt: string
+  createdAt: Date
+  updatedAt: Date
+  deletedAt: Date | null
 }
 
 export type CreateBillTemplateDto = Omit<

@@ -22,7 +22,7 @@ export class BankService extends GeneralService {
       const { name, userId } = createBankDto
       const bank = await this.getOneByNameAndUserId(name, userId)
 
-      if (!bank) {
+      if (bank) {
         this.logger.error(
           `bank already exists with this name : ${name}`,
           this.logDirectory

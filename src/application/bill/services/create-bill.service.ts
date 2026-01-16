@@ -10,7 +10,7 @@ import { CreditCard } from 'src/application/credit-card/credit-card.entity'
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
-import { CreateBillTemplateDto } from 'src/application/core/types/bill'
+import { BillObjectType, CreateBillTemplateDto } from 'src/application/core/types/bill'
 
 @Injectable()
 export class CreateBillService extends GeneralService {
@@ -55,7 +55,7 @@ export class CreateBillService extends GeneralService {
       })
     } catch (error) {
       this.logger.error('error creating transaction bill : ' + error, this.logDirectory)
-      return ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating transaction bill')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating transaction bill')
     }
   }
 
@@ -66,7 +66,7 @@ export class CreateBillService extends GeneralService {
 
       const bills = this.billService.parcelsCompanyCreditBills(createCompanyBillDto)
 
-      const allBills = await Promise.all(
+      const allBills: BillObjectType[] = await Promise.all(
         bills.map((b) => {
           const res = this.billRepository.save({ ...b, groupId })
           return res
@@ -75,7 +75,7 @@ export class CreateBillService extends GeneralService {
       return allBills
     } catch (error) {
       this.logger.error('error creating company bill : ' + error, this.logDirectory)
-      return ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating company bill')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating company bill')
     }
   }
 
@@ -108,7 +108,7 @@ export class CreateBillService extends GeneralService {
       return allBills
     } catch (error) {
       this.logger.error('error creating credit card bill : ' + error, this.logDirectory)
-      return ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating credit card bill')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating credit card bill')
     }
   }
 
@@ -118,6 +118,7 @@ export class CreateBillService extends GeneralService {
         `creating recurrent bill : payload: ${JSON.stringify(data)}`,
         this.logDirectory
       )
+      const groupId = data.groupId || this.uuid.v4()
       const dueDate = new Date(data.due)
       const dueDay = dueDate.getDate()
       const dueMonth = dueDate.getMonth()
@@ -134,13 +135,14 @@ export class CreateBillService extends GeneralService {
 
       await this.createTransactionBill({
         ...data,
+        groupId,
         due: newDue,
         settled: false,
         paid: null
       })
     } catch (error) {
       this.logger.error('error creating recurrent bill : ' + error, this.logDirectory)
-      return ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating recurrent bill')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating recurrent bill')
     }
   }
 }

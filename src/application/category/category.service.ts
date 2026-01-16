@@ -25,7 +25,7 @@ export class CategoryService extends GeneralService {
       const { name, userId } = createCategoryDto
       const category = await this.getOneByNameAndUserId(name, userId)
 
-      if (!category) {
+      if (category) {
         this.logger.error(
           `category already exists with this name : ${name}`,
           this.logDirectory

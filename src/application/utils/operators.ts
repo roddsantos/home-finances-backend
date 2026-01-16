@@ -10,7 +10,7 @@ import {
 } from 'typeorm'
 import { Bill } from '../bill/bill.entity'
 import { OptionalKeys } from 'src/application/core/types/general'
-import { DAY_START, initializeFilters } from './constants'
+import { DAY_START, INITIALIZE_FILTERS } from './constants'
 import { AvailableFilters, FilterDisplay } from 'src/application/core/types/bill'
 
 /**
@@ -19,7 +19,7 @@ import { AvailableFilters, FilterDisplay } from 'src/application/core/types/bill
  * @returns object with filters grouped
  */
 export function groupFilters(filters: FilterDisplay[]) {
-  const groupedFilters = { ...initializeFilters }
+  const groupedFilters = { ...INITIALIZE_FILTERS }
 
   filters.forEach((filter) => {
     const { id, identifier } = filter

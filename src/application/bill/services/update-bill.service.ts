@@ -62,7 +62,9 @@ export class UpdateBillService extends GeneralService {
         this.createBillService.createRecurrentBill({ ...createBillData, groupId })
       }
 
-      return await this.billRepository.update(id, { ...data })
+      await this.billRepository.update(id, { ...data })
+
+      return { ...bill, ...data }
     } catch (error) {
       this.logger.error(
         'Bills - Error updating transaction bill : ' + error,
@@ -133,12 +135,12 @@ export class UpdateBillService extends GeneralService {
         }
       }
 
-      const res = await this.billRepository.update(id, {
+      await this.billRepository.update(id, {
         ...data,
         paid: data.settled ? data.paid || new Date() : null
       })
 
-      return res
+      return { ...bill, ...data }
     } catch (error) {
       this.logger.error(
         'Bills - Error updating company bill : ' + error,

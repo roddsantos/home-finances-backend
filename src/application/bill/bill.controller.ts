@@ -55,6 +55,11 @@ export class BillController extends GeneralController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Banks cant be the same')
 
       const result = await this.createBillService.createTransactionBill(data)
+      this.logger.info(
+        // eslint-disable-next-line max-len
+        `successfully created transaction bill with id : ${result.id} : payload : ${JSON.stringify(data)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -70,6 +75,11 @@ export class BillController extends GeneralController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.createBillService.createCreditCardBill(data)
+      this.logger.info(
+        // eslint-disable-next-line max-len
+        `successfully created credit card bill with groupId : ${result[0].groupId} : payload : ${JSON.stringify(data)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -89,6 +99,11 @@ export class BillController extends GeneralController {
         )
 
       const result = await this.createBillService.createCompanyCreditBill(data)
+      this.logger.info(
+        // eslint-disable-next-line max-len
+        `successfully created company bill with groupId : ${result[0].groupId} : payload : ${JSON.stringify(data)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -108,6 +123,11 @@ export class BillController extends GeneralController {
 
       const { id, ...rest } = data
       const result = await this.updateBillService.updateTransactionBill(id, rest)
+      this.logger.info(
+        // eslint-disable-next-line max-len
+        `successfully updated transaction bill with id : ${id} : payload : ${JSON.stringify(data)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -123,6 +143,11 @@ export class BillController extends GeneralController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.updateBillService.updateCreditCardBill(data)
+      this.logger.info(
+        // eslint-disable-next-line max-len
+        `successfully updated transaction bill with id : ${data.id} : payload : ${JSON.stringify(data)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -139,6 +164,11 @@ export class BillController extends GeneralController {
           'Missing Required Fields: settled needs to be checked when setting a paid date'
         )
       const result = await this.updateBillService.updateCompanyBill(data.id, data)
+      this.logger.info(
+        // eslint-disable-next-line max-len
+        `successfully updated transaction bill with id : ${data.id} : payload : ${JSON.stringify(data)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

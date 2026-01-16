@@ -22,7 +22,7 @@ export class CompanyService extends GeneralService {
       const { name, userId } = createCompanyDto
       const company = await this.getOneByNameAndUserId(name, userId)
 
-      if (!company) {
+      if (company) {
         this.logger.error(
           `company already exists with this name : ${name}`,
           this.logDirectory
@@ -80,7 +80,7 @@ export class CompanyService extends GeneralService {
     try {
       const res = await this.companyRepository.find({
         where: { userId },
-        order: { updatedAt: 'DESC' }
+        order: { name: 'ASC' }
       })
       return res
     } catch (error) {
