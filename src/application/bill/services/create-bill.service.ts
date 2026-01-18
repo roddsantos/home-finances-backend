@@ -25,34 +25,45 @@ export class CreateBillService extends GeneralService {
   }
 
   async createTransactionBill(createTransactionBillDto: CreateBillTemplateDto) {
+    const result = {
+      banks: [],
+      creditCard: null,
+      bill: null
+    }
+
     try {
       this.logger.info('creating transaction bill', this.logDirectory)
       const { total, bank1Id, bank2Id, isPayment, settled, isRecurrent } =
         createTransactionBillDto
 
       if (!settled) {
-        return await this.billRepository.save({
+        result.bill = await this.billRepository.save({
           ...createTransactionBillDto,
           totalParcel: total
         })
+        return result
       }
 
       const bank1 = await this.bankService.getOneById(bank1Id)
-      await this.billService.updateBank(bank1, total, isPayment)
+      const updatedBank1 = await this.billService.updateBank(bank1, total, isPayment)
+      result.banks.push(updatedBank1)
 
       if (bank2Id) {
         const bank2 = await this.bankService.getOneById(bank2Id)
-        await this.billService.updateBank(bank2, total, !isPayment)
+        const updatedBank2 = await this.billService.updateBank(bank2, total, !isPayment)
+        result.banks.push(updatedBank2)
       }
 
       if (isRecurrent) {
         this.createRecurrentBill(createTransactionBillDto)
       }
 
-      return await this.billRepository.save({
+      result.bill = await this.billRepository.save({
         ...createTransactionBillDto,
         totalParcel: total
       })
+
+      return result
     } catch (error) {
       this.logger.error('error creating transaction bill : ' + error, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating transaction bill')
@@ -86,9 +97,7 @@ export class CreateBillService extends GeneralService {
 
       const bills = this.billService.parcelsCcBills(createCreditCardBillDto)
       if (settled) {
-        const cc = await this.ccService.getOneById(creditCardId, {
-          isClosed: false
-        })
+        const cc = await this.ccService.getOneById(creditCardId)
         if (cc) {
           const newCcObject: CreditCard = {
             ...cc,

@@ -86,10 +86,10 @@ export class CreditCardService extends GeneralService {
     }
   }
 
-  async getOneById(id: string, options?: any) {
+  async getOneById(id: string) {
     try {
       const res = await this.creditCardRepository.findOne({
-        where: { id, ...options }
+        where: { id }
       })
       return res
     } catch (error) {

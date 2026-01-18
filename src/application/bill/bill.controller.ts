@@ -57,7 +57,7 @@ export class BillController extends GeneralController {
       const result = await this.createBillService.createTransactionBill(data)
       this.logger.info(
         // eslint-disable-next-line max-len
-        `successfully created transaction bill with id : ${result.id} : payload : ${JSON.stringify(data)}`,
+        `successfully created transaction bill with id : ${result.bill.id} : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
@@ -117,9 +117,8 @@ export class BillController extends GeneralController {
   ) {
     try {
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyUpdateTemplate(data) || !data.bank1Id)
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing data to update')
+      if (!data.id) ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing id')
 
       const { id, ...rest } = data
       const result = await this.updateBillService.updateTransactionBill(id, rest)
@@ -166,7 +165,7 @@ export class BillController extends GeneralController {
       const result = await this.updateBillService.updateCompanyBill(data.id, data)
       this.logger.info(
         // eslint-disable-next-line max-len
-        `successfully updated transaction bill with id : ${data.id} : payload : ${JSON.stringify(data)}`,
+        `successfully updated company bill with id : ${data.id} : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
