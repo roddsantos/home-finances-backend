@@ -39,3 +39,8 @@ export const COMPANY_MODULE = {
 export const SAVING_MODULE = {
   bodyMiddleware: 'body.saving.middleware.ts'
 }
+
+export const USER_MODULE = {
+  service: 'user.service.ts',
+  controller: 'user.controller.ts'
+}

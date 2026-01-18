@@ -8,13 +8,18 @@ import { Body } from '@nestjs/common'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { Res } from '@nestjs/common'
 import { Response } from 'express'
-import { CreateUserDto } from './dto/create-user.dto'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { UpdateUserDto } from './dto/update-user.dto'
+import { GeneralController } from '../app/general/controller.general'
+import { USER_MODULE } from '../core/consts/filename.consts'
+import * as path from 'path'
+import { CreateUserTemplateDto, UpdateUserTemplateDto } from '../core/types/user'
+import { objectToString } from '../utils/conversions'
 
 @Controller('user')
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+export class UserController extends GeneralController {
+  constructor(private readonly userService: UserService) {
+    super(path.join(__dirname, USER_MODULE.controller))
+  }
 
   @Get('/:username')
   public async getUser(
@@ -23,7 +28,11 @@ export class UserController {
   ): Promise<Response<User>> {
     try {
       if (username === '') ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing username')
-      const result = await this.userService.getOne(username)
+      const result = await this.userService.getOneByUsername(username)
+      this.logger.info(
+        `user successfully retrieved : id : ${result.id}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -32,7 +41,7 @@ export class UserController {
 
   @Post()
   public async createUser(
-    @Body() data: CreateUserDto,
+    @Body() data: CreateUserTemplateDto,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
@@ -41,6 +50,7 @@ export class UserController {
       if (data.name === '' || data.surname == '' || data.username === '')
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       const result = await this.userService.create(data)
+      this.logger.info(`user saved into database : id : ${result.id}`, this.logDirectory)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -49,7 +59,7 @@ export class UserController {
 
   @Patch()
   public async updateUser(
-    @Body() data: UpdateUserDto,
+    @Body() data: UpdateUserTemplateDto,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
@@ -63,6 +73,10 @@ export class UserController {
       )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       const result = await this.userService.update(data)
+      this.logger.info(
+        `user updated successfully : id : ${result.id} : payload : ${objectToString(data)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -76,6 +90,7 @@ export class UserController {
   ): Promise<Response<boolean>> {
     try {
       await this.userService.delete(id)
+      this.logger.info(`user updated successfully : id : ${id}`, this.logDirectory)
       return ResponseHandler.sendNoContentResponse(res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
