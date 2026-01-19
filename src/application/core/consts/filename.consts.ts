@@ -21,9 +21,26 @@ export const THEME_MODULE = {
 }
 
 export const BANK_MODULE = {
-  service: 'bank.service.ts'
+  service: 'bank.service.ts',
+  bodyCreateMiddleware: 'body.create.bank.middleware.ts',
+  bodyUpdateMiddleware: 'body.create.bank.middleware.ts'
+}
+
+export const CATEGORY_MODULE = {
+  service: 'category.service.ts',
+  controller: 'category.controller.ts'
+}
+
+export const COMPANY_MODULE = {
+  service: 'company.service.ts',
+  controller: 'company.controller.ts'
 }
 
 export const SAVING_MODULE = {
   bodyMiddleware: 'body.saving.middleware.ts'
+}
+
+export const USER_MODULE = {
+  service: 'user.service.ts',
+  controller: 'user.controller.ts'
 }

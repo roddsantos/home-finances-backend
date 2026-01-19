@@ -33,7 +33,7 @@ export class AuthService {
    * @returns User if user credential is ok, null otherwise
    */
   async validateUser(username: string, password: string): Promise<User | null> {
-    const user = await this.userService.getOne(username)
+    const user = await this.userService.getOneByUsername(username)
     if (!user) return null
     const isRightPassword = await bcrypt.compare(user.password, password)
 

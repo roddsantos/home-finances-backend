@@ -1,18 +1,25 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
 import { CompanyService } from './company.service'
-import { CreateCompanyDto } from './dto/create-company.dto'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { Response } from 'express'
-import { UpdateCompanyDto } from './dto/update-company.dto'
 import { Company } from './company.entity'
+import { CreateCompanyTemplateDto, UpdateCompanyTemplateDto } from '../core/types/company'
+import { GeneralController } from '../app/general/controller.general'
+import * as path from 'path'
+import { COMPANY_MODULE } from '../core/consts/filename.consts'
 
 @Controller('company')
-export class CompanyController {
-  constructor(private readonly companyService: CompanyService) {}
+export class CompanyController extends GeneralController {
+  constructor(private readonly companyService: CompanyService) {
+    super(path.join(__dirname, COMPANY_MODULE.controller))
+  }
 
   @Post()
-  public async createCompany(@Body() data: CreateCompanyDto, @Res() res: Response) {
+  public async createCompany(
+    @Body() data: CreateCompanyTemplateDto,
+    @Res() res: Response
+  ) {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
@@ -25,6 +32,11 @@ export class CompanyController {
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
       const result = await this.companyService.create(data)
+
+      this.logger.info(
+        `company created succesfully with name : ${data.name}  : id : ${result.id}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -33,7 +45,7 @@ export class CompanyController {
 
   @Patch()
   public async updateCompany(
-    @Body() data: UpdateCompanyDto,
+    @Body() data: UpdateCompanyTemplateDto,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
@@ -42,6 +54,12 @@ export class CompanyController {
       if (data.name === '' || data.description === '' || data.color === '' || !data.id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       const result = await this.companyService.update(data)
+
+      this.logger.info(
+        // eslint-disable-next-line max-len
+        `company updated succesfully with payload : ${data ? JSON.stringify(data) : 'none'}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -55,6 +73,8 @@ export class CompanyController {
   ): Promise<Response<boolean>> {
     try {
       await this.companyService.delete(id)
+
+      this.logger.info(`company deleted succesfully with id : ${id}`, this.logDirectory)
       return ResponseHandler.sendNoContentResponse(res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -67,10 +87,9 @@ export class CompanyController {
     @Res() res: Response
   ): Promise<Response<Company>> {
     try {
-      if (!id) {
-        ErrorHandler.BAD_REQUEST('Companies - no user id provided')
-      }
       const result = await this.companyService.getAllById(id)
+
+      this.logger.info(`fetch companies for id : ${id}`, this.logDirectory)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

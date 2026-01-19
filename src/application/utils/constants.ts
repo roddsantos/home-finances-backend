@@ -7,7 +7,7 @@ export const DATA_SOURCE = 'DATA_SOURCE'
 
 export const BANK_REPOSITORY = 'BANK_REPOSITORY'
 
-export const initializeFilters: DiscriminatedUnionToObjectType<
+export const INITIALIZE_FILTERS: DiscriminatedUnionToObjectType<
   AvailableFilters | 'date',
   any
 > = {

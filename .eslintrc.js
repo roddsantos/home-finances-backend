@@ -14,7 +14,7 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js'],
   rules: {
-    'max-len': ['error', { code: 90 }],
+    'max-len': ['error', { code: 100 }],
     'prettier/prettier': [
       'error',
       {

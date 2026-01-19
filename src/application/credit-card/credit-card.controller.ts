@@ -1,28 +1,19 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-  Res
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
 import { CreditCardService } from './credit-card.service'
-import { CreateCreditCardDto } from './dto/create-credit-card.dto'
 import { Response } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { ResponseHandler } from '../utils/ResponseHandler'
-import { UpdateCreditCardDto } from './dto/update-credit-card.dto'
-import { GetCreditCardDto } from './dto/get-credit-cards.dto'
 import { CreditCard } from './credit-card.entity'
+import {
+  CreateCreditCardTemplateDto,
+  UpdateCreditCardTemplateDto
+} from '../core/types/credit-card'
 
 @Controller('credit-card')
 export class CreditCardController {
   constructor(private readonly creditCardService: CreditCardService) {}
 
-  hasMissingCreditCardData(data: Partial<CreateCreditCardDto>) {
+  hasMissingCreditCardData(data: Partial<CreateCreditCardTemplateDto>) {
     let flag = false
     if (data.year) flag = flag || data.year < new Date().getFullYear()
     if (data.month) flag = flag || data.month > 11 || data.month < 0
@@ -36,7 +27,7 @@ export class CreditCardController {
 
   @Post()
   public async createCreditCard(
-    @Body() data: CreateCreditCardDto,
+    @Body() data: CreateCreditCardTemplateDto,
     @Res() res: Response
   ): Promise<Response> {
     try {
@@ -54,7 +45,7 @@ export class CreditCardController {
 
   @Patch()
   public async updateCreditCard(
-    @Body() data: Partial<UpdateCreditCardDto>,
+    @Body() data: Partial<UpdateCreditCardTemplateDto>,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
@@ -84,14 +75,13 @@ export class CreditCardController {
     }
   }
 
-  @Get()
-  public async getCreditCard(
-    @Query() data: GetCreditCardDto,
+  @Get('/:id')
+  public async getCreditCards(
+    @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<CreditCard>> {
     try {
-      const { userId, ...rest } = data
-      const result = await this.creditCardService.getAllById(userId, rest)
+      const result = await this.creditCardService.getAllById(id)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
