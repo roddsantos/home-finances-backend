@@ -30,7 +30,7 @@ export class CategoryController extends GeneralController {
   }
 
   @Post()
-  public async createCompany(
+  public async createCategory(
     @Body() data: CreateCategoryTemplateDto,
     @Res() res: Response
   ) {

@@ -44,3 +44,8 @@ export const USER_MODULE = {
   service: 'user.service.ts',
   controller: 'user.controller.ts'
 }
+
+export const AUTH_MODULE = {
+  service: 'auth.service.ts',
+  controller: 'auth.controller.ts'
+}
