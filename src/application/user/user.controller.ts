@@ -1,18 +1,18 @@
-import { Controller, Delete, Patch } from '@nestjs/common'
+import { Controller, Param, Body, Res } from '@nestjs/common'
 import { UserService } from './user.service'
-import { Get } from '@nestjs/common'
-import { Param } from '@nestjs/common'
+import { Get, Post, Delete, Patch } from '@nestjs/common'
 import { User } from './user.entity'
-import { Post } from '@nestjs/common'
-import { Body } from '@nestjs/common'
 import { ResponseHandler } from '../utils/ResponseHandler'
-import { Res } from '@nestjs/common'
 import { Response } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { GeneralController } from '../app/general/controller.general'
 import { USER_MODULE } from '../core/consts/filename.consts'
 import * as path from 'path'
-import { CreateUserTemplateDto, UpdateUserTemplateDto } from '../core/types/user'
+import {
+  CreateUserTemplateDto,
+  UpdatePasswordTemplateDto,
+  UpdateUserTemplateDto
+} from '../core/types/user'
 import { objectToString } from '../utils/conversions'
 
 @Controller('user')
@@ -91,6 +91,23 @@ export class UserController extends GeneralController {
     try {
       await this.userService.delete(id)
       this.logger.info(`user updated successfully : id : ${id}`, this.logDirectory)
+      return ResponseHandler.sendNoContentResponse(res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Patch('/password')
+  public async updatePassword(
+    @Body() data: UpdatePasswordTemplateDto,
+    @Res() res: Response
+  ) {
+    try {
+      this.userService.updatePassword(data)
+      this.logger.info(
+        `password updated successfully : id : ${data.id}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendNoContentResponse(res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

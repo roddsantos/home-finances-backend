@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Res,
-  UseGuards
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
 import { CompanyService } from './company.service'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { ResponseHandler } from '../utils/ResponseHandler'
@@ -18,13 +8,13 @@ import { CreateCompanyTemplateDto, UpdateCompanyTemplateDto } from '../core/type
 import { GeneralController } from '../app/general/controller.general'
 import * as path from 'path'
 import { COMPANY_MODULE } from '../core/consts/filename.consts'
-import { JwtAuthGuard } from '../core/auth/jwt.guard'
 
 @Controller('company')
 export class CompanyController extends GeneralController {
   constructor(private readonly companyService: CompanyService) {
     super(path.join(__dirname, COMPANY_MODULE.controller))
   }
+
   @Post()
   public async createCompany(
     @Body() data: CreateCompanyTemplateDto,

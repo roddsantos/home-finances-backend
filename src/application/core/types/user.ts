@@ -17,3 +17,8 @@ export type CreateUserTemplateDto = Omit<
 >
 
 export type UpdateUserTemplateDto = Partial<User>
+
+export type UpdatePasswordTemplateDto = {
+  id: string
+  newPassword: string
+}

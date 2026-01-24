@@ -5,8 +5,13 @@ import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { GeneralService } from '../app/general/service.general'
 import * as path from 'path'
+import * as bcrypt from 'bcryptjs'
 import { USER_MODULE } from '../core/consts/filename.consts'
-import { CreateUserTemplateDto, UpdateUserTemplateDto } from '../core/types/user'
+import {
+  CreateUserTemplateDto,
+  UpdatePasswordTemplateDto,
+  UpdateUserTemplateDto
+} from '../core/types/user'
 import { objectToString } from '../utils/conversions'
 
 @Injectable()
@@ -41,6 +46,25 @@ export class UserService extends GeneralService {
     } catch (error) {
       this.logger.error(
         `error updating user : id : ${data.id} : payload : ${objectToString(data)}`,
+        this.logDirectory
+      )
+      ErrorHandler.handle(error)
+    }
+  }
+
+  async updatePassword(data: UpdatePasswordTemplateDto) {
+    try {
+      const { id, newPassword } = data
+      await this.getOneById(id)
+
+      const newEncriptedPassword = await await bcrypt.hash(newPassword, 10)
+      const payload = { password: newEncriptedPassword }
+
+      await this.userRepository.update({ id }, payload)
+      return { id }
+    } catch (error) {
+      this.logger.error(
+        `error updating password : payload : ${objectToString(data)}`,
         this.logDirectory
       )
       ErrorHandler.handle(error)
