@@ -9,9 +9,16 @@ import { UpdateBillService } from './services/update-bill.service'
 import { CreateBillService } from './services/create-bill.service'
 import { GetBillService } from './services/get-bill.service'
 import { QuickSettleBillService } from './services/quick-settle-bill.service'
+import { AuthModule } from '../core/auth/auth.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Bill]), BillModule, BankModule, CreditCardModule],
+  imports: [
+    TypeOrmModule.forFeature([Bill]),
+    BillModule,
+    BankModule,
+    CreditCardModule,
+    AuthModule
+  ],
   controllers: [BillController],
   providers: [
     UpdateBillService,

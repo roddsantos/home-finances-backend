@@ -81,7 +81,6 @@ export class CompanyController extends GeneralController {
     }
   }
 
-  // @UseGuards(JwtAuthGuard)
   @Get('/:id')
   public async getCompanies(
     @Param('id') id: string,

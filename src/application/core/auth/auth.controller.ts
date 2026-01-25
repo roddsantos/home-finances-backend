@@ -1,11 +1,11 @@
 import { Controller, Post, Body, Res, Get, Req } from '@nestjs/common'
 import { AuthService } from './auth.service'
-import { ErrorHandler } from '../utils/ErrorHandler'
-import { GeneralController } from '../app/general/controller.general'
-import { AUTH_MODULE } from '../core/consts/filename.consts'
+import { ErrorHandler } from 'src/application/utils/ErrorHandler'
+import { GeneralController } from 'src/application/app/general/controller.general'
+import { AUTH_MODULE } from 'src/application/core/consts/filename.consts'
 import { Response, Request } from 'express'
 import * as path from 'path'
-import { ResponseHandler } from '../utils/ResponseHandler'
+import { ResponseHandler } from 'src/application/utils/ResponseHandler'
 
 @Controller('auth')
 export class AuthController extends GeneralController {
@@ -19,7 +19,7 @@ export class AuthController extends GeneralController {
       const { username, password } = body
 
       const user = await this.authService.validateUser(username, password)
-      const token = await this.authService.generateToken(user.id, user.username)
+      const token = this.authService.generateToken(user.id, user.username)
 
       this.logger.info(`login successful : id : ${user.id}`, this.logDirectory)
       delete user.password
@@ -31,5 +31,14 @@ export class AuthController extends GeneralController {
   }
 
   @Get('validate')
-  async validateToken(@Req() req: Request, @Res() res: Response) {}
+  async validateToken(@Req() req: Request, @Res() res: Response) {
+    try {
+      const token = req.headers.authorization.split('Bearer ')[1]
+      const response = await this.authService.validateToken(token)
+
+      return ResponseHandler.sendResponse(response, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 }

@@ -47,5 +47,6 @@ export const USER_MODULE = {
 
 export const AUTH_MODULE = {
   service: 'auth.service.ts',
-  controller: 'auth.controller.ts'
+  controller: 'auth.controller.ts',
+  guard: 'auth.guard.ts'
 }
