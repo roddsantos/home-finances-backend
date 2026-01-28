@@ -7,6 +7,7 @@ import { GeneralService } from '../app/general/service.general'
 import * as path from 'path'
 import { BANK_MODULE } from '../core/consts/filename.consts'
 import { CreateBankTemplateDto, UpdateBankTemplateDto } from '../core/types/bank'
+import { objectToString } from '../utils/conversions'
 
 @Injectable()
 export class BankService extends GeneralService {
@@ -17,9 +18,9 @@ export class BankService extends GeneralService {
     super(path.join(__dirname, BANK_MODULE.service))
   }
 
-  async create(createBankDto: CreateBankTemplateDto) {
+  async create(userId: string, createBankDto: CreateBankTemplateDto) {
     try {
-      const { name, userId } = createBankDto
+      const { name } = createBankDto
       const bank = await this.getOneByNameAndUserId(name, userId)
 
       if (bank) {
@@ -30,9 +31,13 @@ export class BankService extends GeneralService {
         ErrorHandler.CONFLICT_MESSAGE(`bank already exists with this name : ${name}`)
       }
 
-      const res = await this.bankRepository.save(createBankDto)
+      const res = await this.bankRepository.save({ ...createBankDto, userId })
       return res
     } catch (error) {
+      this.logger.error(
+        `error creating bank : ${objectToString(error)}`,
+        this.logDirectory
+      )
       ErrorHandler.handle(error)
     }
   }
@@ -46,6 +51,10 @@ export class BankService extends GeneralService {
 
       return { ...bank, ...rest }
     } catch (error) {
+      this.logger.error(
+        `error updating bank : ${objectToString(error)}`,
+        this.logDirectory
+      )
       ErrorHandler.handle(error)
     }
   }
@@ -55,6 +64,10 @@ export class BankService extends GeneralService {
       const res = await this.bankRepository.delete(id)
       return res
     } catch (error) {
+      this.logger.error(
+        `error deleting bank : ${objectToString(error)}`,
+        this.logDirectory
+      )
       ErrorHandler.handle(error)
     }
   }
@@ -67,7 +80,7 @@ export class BankService extends GeneralService {
       return bank
     } catch (error) {
       this.logger.error(
-        `error fetching bank : userId : ${userId} : name : ${name}`,
+        `error fetching bank : userId : ${userId} : name : ${name} : error : ${objectToString(error)}`,
         this.logDirectory
       )
       ErrorHandler.handle(error)
@@ -76,10 +89,6 @@ export class BankService extends GeneralService {
 
   async getAllById(userId: string, isPiggyBank?: boolean) {
     try {
-      this.logger.info(
-        `retrieving all banks by userId : userId : ${userId}`,
-        this.logDirectory
-      )
       const res = await this.bankRepository.find({
         where: {
           userId,

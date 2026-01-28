@@ -29,6 +29,7 @@ export class UserController extends GeneralController {
     try {
       if (username === '') ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing username')
       const result = await this.userService.getOneByUsername(username)
+
       this.logger.info(
         `user successfully retrieved : id : ${result.id}`,
         this.logDirectory

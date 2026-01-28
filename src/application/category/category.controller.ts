@@ -1,6 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res
+} from '@nestjs/common'
 import { CategoryService } from './category.service'
-import { Response } from 'express'
+import { Response, Request } from 'express'
 import { Category } from './category.entity'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { ErrorHandler } from '../utils/ErrorHandler'
@@ -32,15 +42,13 @@ export class CategoryController extends GeneralController {
   @Post()
   public async createCategory(
     @Body() data: CreateCategoryTemplateDto,
+    @Req() req: Request,
     @Res() res: Response
   ) {
     try {
-      if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyData(data)) {
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      }
-      const result = await this.categoryService.create(data)
+      const userId = req.user.id
+      const result = await this.categoryService.create(userId, data)
+
       this.logger.info(
         `category created succesfully with name : ${data.name}  : id : ${result.id}`,
         this.logDirectory
@@ -88,13 +96,16 @@ export class CategoryController extends GeneralController {
     }
   }
 
-  @Get('/:id')
+  @Get('/')
   public async getAll(
     @Res() res: Response,
-    @Param('id') id: string
+    @Req() req: Request
   ): Promise<Response<Category>> {
     try {
-      const result = await this.categoryService.getAllById(id)
+      const userId = req.user.id
+      const result = await this.categoryService.getAllById(userId)
+
+      this.logger.info(`fetch categories by id : ${userId}`, this.logDirectory)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

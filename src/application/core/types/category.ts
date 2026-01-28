@@ -14,7 +14,7 @@ export type CategoryObjectType = {
 
 export type CreateCategoryTemplateDto = Omit<
   Category,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'userId'
 >
 
 export type UpdateCategoryTemplateDto = Partial<Category>

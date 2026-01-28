@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Theme } from './theme.entity'
 import { Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
+import { objectToString } from '../utils/conversions'
 
 @Injectable()
 export class ThemeService extends GeneralService {
@@ -33,33 +34,33 @@ export class ThemeService extends GeneralService {
     }
   }
 
-  async create(body: ThemeBody) {
+  async create(payload: ThemeBody) {
     try {
-      const result = await this.themeRepository.save(body)
-      this.logger.info(
-        `theme - theme saved into database : id : ${result.id}`,
-        this.logDirectory
-      )
+      const result = await this.themeRepository.save(payload)
 
       return result
     } catch (error) {
-      this.logger.error('theme - error creating theme : ' + error, this.logDirectory)
+      this.logger.error(
+        `error creating theme : payload : ${objectToString(payload)} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR('theme - error creating theme')
     }
   }
 
-  async update(body: UpdateThemeBody) {
+  async update(payload: UpdateThemeBody) {
     try {
-      const { id, ...data } = body
+      const { id, ...data } = payload
+
+      const theme = await this.getThemeById(id)
       await this.themeRepository.update({ id }, data)
-      this.logger.info(
-        `theme - theme updated into database : id : ${id}`,
+
+      return { ...theme, ...payload }
+    } catch (error) {
+      this.logger.error(
+        `error updating theme : payload : ${objectToString(payload)} : error : ${objectToString(error)}`,
         this.logDirectory
       )
-
-      return body
-    } catch (error) {
-      this.logger.error('theme - error updating theme : ' + error, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('theme - error updating theme')
     }
   }
@@ -68,15 +69,32 @@ export class ThemeService extends GeneralService {
     try {
       await this.themeRepository.delete({ id })
 
-      this.logger.info(
-        `theme - theme deleted successfully : id : ${id}`,
-        this.logDirectory
-      )
-
       return id
     } catch (error) {
-      this.logger.error('theme - error deleting theme : ' + error, this.logDirectory)
+      this.logger.error(
+        `error deleting theme : id : ${id} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR('theme - error deleting theme')
+    }
+  }
+
+  async getThemeById(id: string) {
+    try {
+      this.logger.info(`retrieving theme data : id : ${id}`, this.logDirectory)
+      const theme = await this.themeRepository.findOneBy({ id })
+
+      if (!theme) {
+        this.logger.error(`theme not found : id : ${id}`, this.logDirectory)
+        ErrorHandler.NOT_FOUND_MESSAGE('themes - theme not found')
+      }
+      return theme
+    } catch (error) {
+      this.logger.error(
+        `error fetching theme : id : ${id} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('themes - error retrieving theme')
     }
   }
 }

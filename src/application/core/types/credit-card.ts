@@ -20,7 +20,7 @@ export type CreditCardObjectType = {
 
 export type CreateCreditCardTemplateDto = Omit<
   CreditCard,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'limitLeft' | 'invoice'
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'limitLeft' | 'invoice' | 'userId'
 >
 
 export type UpdateCreditCardTemplateDto = Partial<CreditCard>

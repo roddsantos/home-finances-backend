@@ -6,6 +6,7 @@ import { AUTH_MODULE } from 'src/application/core/consts/filename.consts'
 import { Response, Request } from 'express'
 import * as path from 'path'
 import { ResponseHandler } from 'src/application/utils/ResponseHandler'
+import { Public } from 'src/application/utils/auth'
 
 @Controller('auth')
 export class AuthController extends GeneralController {
@@ -13,6 +14,7 @@ export class AuthController extends GeneralController {
     super(path.join(__dirname, AUTH_MODULE.service))
   }
 
+  @Public()
   @Post('login')
   async login(@Body() body: any, @Res() res: Response) {
     try {

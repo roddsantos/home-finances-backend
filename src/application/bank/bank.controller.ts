@@ -1,29 +1,45 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res
+} from '@nestjs/common'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { BankService } from './bank.service'
-import { Response } from 'express'
+import { Response, Request } from 'express'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { Bank } from './bank.entity'
 import { CreateBankTemplateDto, UpdateBankTemplateDto } from '../core/types/bank'
+import * as path from 'path'
+import { BANK_MODULE } from '../core/consts/filename.consts'
+import { GeneralController } from '../app/general/controller.general'
+import { objectToString } from '../utils/conversions'
 
 @Controller('bank')
-export class BankController {
-  constructor(private readonly bankService: BankService) {}
+export class BankController extends GeneralController {
+  constructor(private readonly bankService: BankService) {
+    super(path.join(__dirname, BANK_MODULE.controller))
+  }
 
   @Post()
-  public async createBank(@Body() data: CreateBankTemplateDto, @Res() res: Response) {
+  public async createBank(
+    @Body() payload: CreateBankTemplateDto,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
     try {
-      if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (
-        data.name == '' ||
-        data.description === '' ||
-        data.color === '' ||
-        data.userId === ''
-      ) {
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      }
-      const result = await this.bankService.create(data)
+      const userId = req.user.id
+      const result = await this.bankService.create(userId, payload)
+
+      this.logger.info(
+        `bank successfully created : payload : ${objectToString(payload)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -32,11 +48,16 @@ export class BankController {
 
   @Patch()
   public async updateBank(
-    @Body() data: UpdateBankTemplateDto,
+    @Body() payload: UpdateBankTemplateDto,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
-      const result = await this.bankService.update(data)
+      const result = await this.bankService.update(payload)
+
+      this.logger.info(
+        `bank successfully updated : payload : ${objectToString(payload)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -50,19 +71,24 @@ export class BankController {
   ): Promise<Response<boolean>> {
     try {
       await this.bankService.delete(id)
+
+      this.logger.info(`bank successfully updated : id : ${id}`, this.logDirectory)
       return ResponseHandler.sendNoContentResponse(res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
     }
   }
 
-  @Get('/:id')
+  @Get('/')
   public async getBank(
-    @Param('id') id: string,
-    @Res() res: Response
+    @Res() res: Response,
+    @Req() req: Request
   ): Promise<Response<Bank>> {
     try {
-      const result = await this.bankService.getAllById(id)
+      const userId = req.user?.id
+      const result = await this.bankService.getAllById(userId)
+
+      this.logger.info(`fetching banks : userId : ${userId}`, this.logDirectory)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

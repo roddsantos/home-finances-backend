@@ -17,9 +17,9 @@ export class CompanyService extends GeneralService {
     super(path.join(__dirname, COMPANY_MODULE.service))
   }
 
-  async create(createCompanyDto: CreateCompanyTemplateDto) {
+  async create(userId: string, createCompanyDto: CreateCompanyTemplateDto) {
     try {
-      const { name, userId } = createCompanyDto
+      const { name } = createCompanyDto
       const company = await this.getOneByNameAndUserId(name, userId)
 
       if (company) {
@@ -32,7 +32,7 @@ export class CompanyService extends GeneralService {
         )
       }
 
-      const res = this.companyRepository.save(createCompanyDto)
+      const res = this.companyRepository.save({ ...createCompanyDto, userId })
       return res
     } catch (error) {
       ErrorHandler.handle(error)

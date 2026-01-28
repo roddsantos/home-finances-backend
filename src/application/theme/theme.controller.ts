@@ -7,6 +7,7 @@ import * as path from 'path'
 import { THEME_MODULE } from '../core/consts/filename.consts'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { ThemeService } from './theme.service'
+import { objectToString } from '../utils/conversions'
 
 @Controller('theme')
 export class ThemeController extends GeneralController {
@@ -15,26 +16,32 @@ export class ThemeController extends GeneralController {
   }
 
   @Post()
-  public async createTheme(@Body() data: ThemeBody, @Res() res: Response) {
+  public async createTheme(@Body() payload: ThemeBody, @Res() res: Response) {
     try {
-      const result = await this.themeService.create(data)
+      const result = await this.themeService.create(payload)
 
+      this.logger.info(
+        `theme successfully created : payload : ${objectToString(payload)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      this.logger.error('theme - error creating theme : ' + error, this.logDirectory)
-      return ErrorHandler.errorResponse(res, error)
+      ErrorHandler.errorResponse(res, error)
     }
   }
 
   @Patch()
-  public async updateTheme(@Body() data: UpdateThemeBody, @Res() res: Response) {
+  public async updateTheme(@Body() payload: UpdateThemeBody, @Res() res: Response) {
     try {
-      const result = await this.themeService.update(data)
+      const result = await this.themeService.update(payload)
 
+      this.logger.info(
+        `theme successfully updated : payload : ${objectToString(payload)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      this.logger.error('theme - error updating theme : ' + error, this.logDirectory)
-      return ErrorHandler.errorResponse(res, error)
+      ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -44,17 +51,19 @@ export class ThemeController extends GeneralController {
       const result = await this.themeService.getAllByUserId(id)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
-      this.logger.error(
-        'theme - error fetching themes by userId : ' + error,
-        this.logDirectory
-      )
-      return ErrorHandler.errorResponse(res, error)
+      ErrorHandler.errorResponse(res, error)
     }
   }
 
   @Delete('/:id')
   public async deleteTheme(@Param('id') id: string, @Res() res: Response) {
-    const result = await this.themeService.delete(id)
-    return ResponseHandler.sendResponse(result, res)
+    try {
+      const result = await this.themeService.delete(id)
+
+      this.logger.info(`theme deleted successfully : id : ${id}`, this.logDirectory)
+      return ResponseHandler.sendResponse(result, res)
+    } catch (error) {
+      ErrorHandler.errorResponse(res, error)
+    }
   }
 }
