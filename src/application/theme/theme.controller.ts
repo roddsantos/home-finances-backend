@@ -1,7 +1,17 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res
+} from '@nestjs/common'
 import { ThemeBody, UpdateThemeBody } from '../core/types/theme'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { Response } from 'express'
+import { Response, Request } from 'express'
 import { GeneralController } from '../app/general/controller.general'
 import * as path from 'path'
 import { THEME_MODULE } from '../core/consts/filename.consts'
@@ -16,9 +26,14 @@ export class ThemeController extends GeneralController {
   }
 
   @Post()
-  public async createTheme(@Body() payload: ThemeBody, @Res() res: Response) {
+  public async createTheme(
+    @Body() payload: ThemeBody,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
     try {
-      const result = await this.themeService.create(payload)
+      const userId = req.user?.id
+      const result = await this.themeService.create({ ...payload, userId })
 
       this.logger.info(
         `theme successfully created : payload : ${objectToString(payload)}`,
@@ -31,9 +46,14 @@ export class ThemeController extends GeneralController {
   }
 
   @Patch()
-  public async updateTheme(@Body() payload: UpdateThemeBody, @Res() res: Response) {
+  public async updateTheme(
+    @Body() payload: UpdateThemeBody,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
     try {
-      const result = await this.themeService.update(payload)
+      const userId = req.user?.id
+      const result = await this.themeService.update({ ...payload, userId })
 
       this.logger.info(
         `theme successfully updated : payload : ${objectToString(payload)}`,
@@ -45,10 +65,13 @@ export class ThemeController extends GeneralController {
     }
   }
 
-  @Get('/:id')
-  public async getThemesByUserId(@Param('id') id: string, @Res() res: Response) {
+  @Get('')
+  public async getThemesByUserId(@Req() req: Request, @Res() res: Response) {
     try {
-      const result = await this.themeService.getAllByUserId(id)
+      const userId = req.user.id
+      const result = await this.themeService.getAllByUserId(userId)
+
+      this.logger.info(`fetching themes : userId : ${userId}`, this.logDirectory)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       ErrorHandler.errorResponse(res, error)

@@ -1,9 +1,9 @@
-import { Controller, Param, Body, Res } from '@nestjs/common'
+import { Controller, Param, Body, Res, Req } from '@nestjs/common'
 import { UserService } from './user.service'
 import { Get, Post, Delete, Patch } from '@nestjs/common'
 import { User } from './user.entity'
 import { ResponseHandler } from '../utils/ResponseHandler'
-import { Response } from 'express'
+import { Response, Request } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { GeneralController } from '../app/general/controller.general'
 import { USER_MODULE } from '../core/consts/filename.consts'
@@ -61,21 +61,19 @@ export class UserController extends GeneralController {
   @Patch()
   public async updateUser(
     @Body() data: UpdateUserTemplateDto,
+    @Req() req: Request,
     @Res() res: Response
   ): Promise<Response<number>> {
     try {
+      const id = req.user?.id
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (
-        data.name === '' ||
-        data.surname == '' ||
-        data.username === '' ||
-        data.id === ''
-      )
+      if (data.name === '' || data.surname == '' || data.username === '')
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      const result = await this.userService.update(data)
+      const result = await this.userService.update({ ...data, id })
+
       this.logger.info(
-        `user updated successfully : id : ${result.id} : payload : ${objectToString(data)}`,
+        `user updated successfully : id : ${id} : payload : ${objectToString(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendAcceptedResponse(result, res)
@@ -101,14 +99,13 @@ export class UserController extends GeneralController {
   @Patch('/password')
   public async updatePassword(
     @Body() data: UpdatePasswordTemplateDto,
+    @Req() req: Request,
     @Res() res: Response
   ) {
     try {
-      this.userService.updatePassword(data)
-      this.logger.info(
-        `password updated successfully : id : ${data.id}`,
-        this.logDirectory
-      )
+      const id = req.user?.id
+      this.userService.updatePassword({ ...data, id })
+      this.logger.info(`password updated successfully : id : ${id}`, this.logDirectory)
       return ResponseHandler.sendNoContentResponse(res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

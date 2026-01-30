@@ -55,7 +55,7 @@ export class CreateBillService extends GeneralService {
       }
 
       if (isRecurrent) {
-        this.createRecurrentBill(createTransactionBillDto)
+        this.createRecurrentBill({ ...createTransactionBillDto })
       }
 
       result.bill = await this.billRepository.save({

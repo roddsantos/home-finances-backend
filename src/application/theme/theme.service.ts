@@ -27,7 +27,7 @@ export class ThemeService extends GeneralService {
       return result
     } catch (error) {
       this.logger.error(
-        `theme - error fetching themes by userId : ${userId} : ` + error,
+        `error fetching themes by userId : ${userId} : ` + error,
         this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('theme - error fetching themes by userId')

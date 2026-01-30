@@ -13,9 +13,9 @@ export type ThemeBody = {
   inputSize: string
   padding: string
   theme: string
+  userId: string
 }
 
 export type UpdateThemeBody = ThemeBody & {
   id: string
-  userId: string
 }
