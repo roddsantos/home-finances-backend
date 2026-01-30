@@ -151,10 +151,7 @@ export class BillService extends GeneralService {
         income
       }
     } catch (error) {
-      this.logger.error(
-        'Bills - Error getting the bills list : ' + error,
-        this.logDirectory
-      )
+      this.logger.error('error getting the bills list : ' + error, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting the bills list')
     }
   }

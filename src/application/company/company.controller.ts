@@ -1,8 +1,18 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res
+} from '@nestjs/common'
 import { CompanyService } from './company.service'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { ResponseHandler } from '../utils/ResponseHandler'
-import { Response } from 'express'
+import { Response, Request } from 'express'
 import { Company } from './company.entity'
 import { CreateCompanyTemplateDto, UpdateCompanyTemplateDto } from '../core/types/company'
 import { GeneralController } from '../app/general/controller.general'
@@ -18,20 +28,12 @@ export class CompanyController extends GeneralController {
   @Post()
   public async createCompany(
     @Body() data: CreateCompanyTemplateDto,
+    @Req() req: Request,
     @Res() res: Response
   ) {
     try {
-      if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (
-        data.name == '' ||
-        data.description === '' ||
-        data.color === '' ||
-        data.userId === ''
-      ) {
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      }
-      const result = await this.companyService.create(data)
+      const userId = req.user.id
+      const result = await this.companyService.create(userId, data)
 
       this.logger.info(
         `company created succesfully with name : ${data.name}  : id : ${result.id}`,
@@ -81,15 +83,16 @@ export class CompanyController extends GeneralController {
     }
   }
 
-  @Get('/:id')
+  @Get('/')
   public async getCompanies(
-    @Param('id') id: string,
+    @Req() req: Request,
     @Res() res: Response
   ): Promise<Response<Company>> {
     try {
-      const result = await this.companyService.getAllById(id)
+      const userId = req.user?.id
+      const result = await this.companyService.getAllById(userId)
 
-      this.logger.info(`fetch companies for id : ${id}`, this.logDirectory)
+      this.logger.info(`fetch companies for id : ${userId}`, this.logDirectory)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

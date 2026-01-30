@@ -1,6 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Res } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  Res
+} from '@nestjs/common'
 import { CreditCardService } from './credit-card.service'
-import { Response } from 'express'
+import { Response, Request } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { CreditCard } from './credit-card.entity'
@@ -8,10 +18,15 @@ import {
   CreateCreditCardTemplateDto,
   UpdateCreditCardTemplateDto
 } from '../core/types/credit-card'
+import * as path from 'path'
+import { CREDIT_CARD_MODULE } from '../core/consts/filename.consts'
+import { GeneralController } from '../app/general/controller.general'
 
 @Controller('credit-card')
-export class CreditCardController {
-  constructor(private readonly creditCardService: CreditCardService) {}
+export class CreditCardController extends GeneralController {
+  constructor(private readonly creditCardService: CreditCardService) {
+    super(path.join(__dirname, CREDIT_CARD_MODULE.controller))
+  }
 
   hasMissingCreditCardData(data: Partial<CreateCreditCardTemplateDto>) {
     let flag = false
@@ -28,15 +43,13 @@ export class CreditCardController {
   @Post()
   public async createCreditCard(
     @Body() data: CreateCreditCardTemplateDto,
+    @Req() req: Request,
     @Res() res: Response
   ): Promise<Response> {
     try {
-      if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.hasMissingCreditCardData(data)) {
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      }
-      const result = await this.creditCardService.create(data)
+      const userId = req.user.id
+      const result = await this.creditCardService.create(userId, data)
+
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -75,12 +88,13 @@ export class CreditCardController {
     }
   }
 
-  @Get('/:id')
+  @Get('/')
   public async getCreditCards(
-    @Param('id') id: string,
+    @Req() req: Request,
     @Res() res: Response
   ): Promise<Response<CreditCard>> {
     try {
+      const id = req.user.id
       const result = await this.creditCardService.getAllById(id)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {

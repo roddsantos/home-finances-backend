@@ -20,9 +20,9 @@ export class CategoryService extends GeneralService {
     super(path.join(__dirname, CATEGORY_MODULE.service))
   }
 
-  async create(createCategoryDto: CreateCategoryTemplateDto) {
+  async create(userId: string, createCategoryDto: CreateCategoryTemplateDto) {
     try {
-      const { name, userId } = createCategoryDto
+      const { name } = createCategoryDto
       const category = await this.getOneByNameAndUserId(name, userId)
 
       if (category) {
@@ -35,7 +35,7 @@ export class CategoryService extends GeneralService {
         )
       }
 
-      const res = await this.categoryRepository.save(createCategoryDto)
+      const res = await this.categoryRepository.save({ ...createCategoryDto, userId })
       return res
     } catch (error) {
       ErrorHandler.handle(error)

@@ -20,31 +20,33 @@ export class CreditCardService extends GeneralService {
     super(path.join(__dirname, CREDIT_CARD_MODULE.service))
   }
 
-  async create(createCreditCard: CreateCreditCardTemplateDto) {
+  async create(userId: string, createCreditCard: CreateCreditCardTemplateDto) {
     try {
       const cc = await this.creditCardRepository.findOne({
         where: {
+          userId,
           name: createCreditCard.name,
-          userId: createCreditCard.userId,
           month: createCreditCard.month,
           year: createCreditCard.year
         }
       })
       if (cc) {
-        this.logger.error(
-          'Credit Card - This credit card already exists',
-          this.logDirectory
-        )
-        ErrorHandler.CONFLICT_MESSAGE('Credit Card - This credit card already exists')
+        this.logger.error('this credit card already exists', this.logDirectory)
+        ErrorHandler.CONFLICT_MESSAGE('credit Card - this credit card already exists')
       }
-      const res = this.creditCardRepository.save({
+      const res = await this.creditCardRepository.save({
         ...createCreditCard,
+        userId,
         limitLeft: createCreditCard.limit
       })
+      this.logger.info(
+        `category created succesfully with name : ${createCreditCard.name}  : id : ${res.id}`,
+        this.logDirectory
+      )
       return res
     } catch (error) {
-      this.logger.error('Credit Card - error creating credit card', this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error creating credit card')
+      this.logger.error('error creating credit card', this.logDirectory)
+      ErrorHandler.INTERNAL_SERVER_ERROR('credit Card - error creating credit card')
     }
   }
 
@@ -76,12 +78,9 @@ export class CreditCardService extends GeneralService {
       })
       return res
     } catch (error) {
-      this.logger.error(
-        'Credit Card - error retrieving all credit cards by id',
-        this.logDirectory
-      )
+      this.logger.error('error retrieving all credit cards by id', this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR(
-        'Credit Card - error retrieving all credit cards by id'
+        'credit card - error retrieving all credit cards by id'
       )
     }
   }

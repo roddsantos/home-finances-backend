@@ -15,7 +15,7 @@ export type BankObjectType = {
 
 export type CreateBankTemplateDto = Omit<
   Bank,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'userId'
 >
 
 export type UpdateBankTemplateDto = Partial<Bank>

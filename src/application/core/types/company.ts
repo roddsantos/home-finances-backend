@@ -13,7 +13,7 @@ export type CompanyObjectType = {
 
 export type CreateCompanyTemplateDto = Omit<
   Company,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'userId'
 >
 
 export type UpdateCompanyTemplateDto = Partial<Company>

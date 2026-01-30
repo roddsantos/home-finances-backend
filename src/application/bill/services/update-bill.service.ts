@@ -49,14 +49,15 @@ export class UpdateBillService extends GeneralService {
     return newCreditCardObject
   }
 
-  async updateTransactionBill(id: string, data: UpdateBillTemplateDto) {
+  async updateTransactionBill(data: UpdateBillTemplateDto) {
     const result = {
       banks: [],
       bill: null
     }
     try {
-      const bill = await this.getBillService.getBillById(id)
-      const { settled, bank1Id, bank2Id, total, isPayment, groupId, isRecurrent } = bill
+      const bill = await this.getBillService.getBillById(data.id)
+      const { id, settled, bank1Id, bank2Id, total, isPayment, groupId, isRecurrent } =
+        bill
 
       const newTotalDelta = data.total ? convertToFloat(data.total - total) : 0
 
@@ -98,7 +99,7 @@ export class UpdateBillService extends GeneralService {
     }
   }
 
-  async updateCompanyBill(id: string, data: UpdateBillTemplateDto) {
+  async updateCompanyBill(data: UpdateBillTemplateDto) {
     const result = {
       banks: [],
       creditCard: null,
@@ -106,8 +107,9 @@ export class UpdateBillService extends GeneralService {
     }
 
     try {
-      const bill = await this.getBillService.getBillById(id)
+      const bill = await this.getBillService.getBillById(data.id)
       const {
+        id,
         totalParcel,
         parcel,
         parcels,
@@ -130,12 +132,9 @@ export class UpdateBillService extends GeneralService {
       }
 
       if (!bank1Id && !creditCardId) {
-        this.logger.error(
-          'Bills - Neither credit card nor bank were found',
-          this.logDirectory
-        )
+        this.logger.error('neither credit card nor bank were found', this.logDirectory)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
-          'Bills - Neither credit card nor bank were found'
+          'bills - neither credit card nor bank were found'
         )
       }
 

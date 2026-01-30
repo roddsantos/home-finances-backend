@@ -12,16 +12,21 @@ import {
 import { BankService } from '../bank/bank.service'
 import { SavingsService } from '../savings/savings.service'
 import { convertToFloat } from '../utils/conversions'
+import * as path from 'path'
+import { DASHBOARD_MODULE } from '../core/consts/filename.consts'
+import { GeneralService } from '../app/general/service.general'
 
 @Injectable()
-export class DashboardService {
+export class DashboardService extends GeneralService {
   constructor(
     private readonly billService: BillService,
     private readonly bankService: BankService,
     @InjectRepository(CreditCard)
     private readonly creditCardRepository: Repository<CreditCard>,
     private readonly savingsService: SavingsService
-  ) {}
+  ) {
+    super(path.join(__dirname, DASHBOARD_MODULE.service))
+  }
 
   /**
    * Return a list of bills progression
@@ -70,6 +75,10 @@ export class DashboardService {
 
       return resultWithDelta.slice(0, monthSpan).reverse()
     } catch (error) {
+      this.logger.error(
+        `error retrieving all banks by userId : userId : ${userId} : month ${month} : year : ${year}`,
+        this.logDirectory
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR(error)
     }
   }
@@ -127,6 +136,10 @@ export class DashboardService {
         )
       }
     } catch (error) {
+      this.logger.error(
+        `error retrieving all banks savings userId : userId : ${userId} : month ${month} : year : ${year}`,
+        this.logDirectory
+      )
       ErrorHandler.handle(error)
     }
   }
@@ -141,6 +154,10 @@ export class DashboardService {
       })
       return result
     } catch (error) {
+      this.logger.error(
+        `error retrieving all credit cards by userId : userId : ${userId}`,
+        this.logDirectory
+      )
       return ErrorHandler.handle(error)
     }
   }
@@ -191,7 +208,11 @@ export class DashboardService {
 
       return { topCategories, otherCategories }
     } catch (error) {
-      ErrorHandler.INTERNAL_SERVER_ERROR('Error callculating categories summary')
+      this.logger.error(
+        `error extracting summary of categories : numberOfCategories : ${numberOfCategories}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('error callculating categories summary')
     }
   }
 }

@@ -10,9 +10,12 @@ import { getMonthBetweenOperator } from '../utils/operators'
 import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
 import { HomeSavingsType } from 'src/application/core/types/home'
 import { BillService } from '../bill/bill.service'
+import * as path from 'path'
+import { HOME_MODULE } from '../core/consts/filename.consts'
+import { GeneralService } from '../app/general/service.general'
 
 @Injectable()
-export class HomeService {
+export class HomeService extends GeneralService {
   constructor(
     @InjectRepository(Bank)
     private readonly bankRepository: Repository<Bank>,
@@ -22,7 +25,9 @@ export class HomeService {
     private readonly creditCardRepository: Repository<CreditCard>,
     private readonly savingsService: SavingsService,
     private readonly billsService: BillService
-  ) {}
+  ) {
+    super(path.join(__dirname, HOME_MODULE.controller))
+  }
 
   /**
    * service to get the total saving from all the user's banks

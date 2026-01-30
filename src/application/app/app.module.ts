@@ -29,6 +29,9 @@ import { IdMiddleware } from '../middlewares/general/id.middleware'
 import { UpdateBodyThemeMiddleware } from '../middlewares/theme/update.body.theme.middleware'
 import { BodySavingMiddleware } from '../middlewares/saving/body.saving.middleware'
 import { BodyUpdateBankMiddleware } from '../middlewares/bank/body.update.bank.middleware'
+import { APP_GUARD } from '@nestjs/core'
+import { AuthGuard } from '../core/auth/auth.guard'
+import { AuthModule } from '../core/auth/auth.module'
 // eslint-disable-next-line max-len
 
 @Module({
@@ -50,10 +53,18 @@ import { BodyUpdateBankMiddleware } from '../middlewares/bank/body.update.bank.m
     HomeModule,
     SavingsModule,
     ThemeModule,
-    UserModule
+    UserModule,
+    AuthModule
   ],
   controllers: [AppController],
-  providers: [AppService, SeedingService]
+  providers: [
+    AppService,
+    SeedingService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard
+    }
+  ]
 })
 export class AppModule implements OnApplicationBootstrap, NestModule {
   constructor(private readonly seedingService: SeedingService) {}
@@ -71,14 +82,10 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
     consumer
       .apply(IdMiddleware)
       .forRoutes(
-        { path: 'theme', method: RequestMethod.GET },
         { path: 'theme', method: RequestMethod.DELETE },
         { path: 'bill/quick-settle/:id', method: RequestMethod.PATCH },
-        { path: 'category/:id', method: RequestMethod.GET },
         { path: 'category/:id', method: RequestMethod.DELETE },
-        { path: 'bank/:id', method: RequestMethod.GET },
         { path: 'bank/:id', method: RequestMethod.DELETE },
-        { path: 'company/:id', method: RequestMethod.GET },
         { path: 'company/:id', method: RequestMethod.DELETE }
       )
 

@@ -44,4 +44,8 @@ export abstract class ErrorHandler {
   public static BAD_REQUEST(message: string) {
     throw new HttpException(message, HttpStatus.BAD_REQUEST)
   }
+
+  public static UNAUTHORIZED(message: string) {
+    throw new HttpException(message, HttpStatus.UNAUTHORIZED)
+  }
 }

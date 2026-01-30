@@ -5,9 +5,10 @@ import { Savings } from './savings.entity'
 import { Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { BankService } from '../bank/bank.service'
-import { convertToFloat } from '../utils/conversions'
+import { convertToFloat, objectToString } from '../utils/conversions'
 import * as path from 'path'
 import { GeneralService } from '../app/general/service.general'
+import { SAVING_MODULE } from '../core/consts/filename.consts'
 
 @Injectable()
 export class SavingsService extends GeneralService {
@@ -16,7 +17,7 @@ export class SavingsService extends GeneralService {
     private readonly savingRepository: Repository<Savings>,
     private readonly bankService: BankService
   ) {
-    super(path.join(__dirname, '../../logs'))
+    super(path.join(__dirname, SAVING_MODULE.service))
   }
 
   async create(newMonthlySavingDto: NewSavingDto) {
@@ -31,21 +32,35 @@ export class SavingsService extends GeneralService {
           year
         }
       })
-      if (saving)
-        ErrorHandler.CONFLICT_MESSAGE('A saving with these parameters already exists')
-
+      if (saving) {
+        this.logger.error(
+          `a saving with these parameters already exists : bankId : ${bankId} : month ${month} : year : ${year}`,
+          this.logDirectory
+        )
+        ErrorHandler.CONFLICT_MESSAGE(
+          'savings - a saving with these parameters already exists'
+        )
+      }
       const res = await this.savingRepository.save(newMonthlySavingDto)
       return res
     } catch (error) {
+      this.logger.error(
+        `error creating saving : bankId : ${bankId} : month ${month} : year : ${year}`,
+        this.logDirectory
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR(error)
     }
   }
 
-  async update(id: string, data: Omit<UpdateSavingDto, 'id'>) {
+  async update(id: string, payload: Omit<UpdateSavingDto, 'id'>) {
     try {
-      const res = await this.savingRepository.update({ id }, data)
+      const res = await this.savingRepository.update({ id }, payload)
       return res
     } catch (error) {
+      this.logger.error(
+        `error updating saving : id : ${id} : payload : ${objectToString(payload)}`,
+        this.logDirectory
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR(error)
     }
   }
@@ -55,6 +70,7 @@ export class SavingsService extends GeneralService {
       const res = await this.savingRepository.delete(id)
       return res
     } catch (error) {
+      this.logger.error(`error deleting saving : id : ${id}`, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR(error)
     }
   }
@@ -71,6 +87,10 @@ export class SavingsService extends GeneralService {
         data
       }
     } catch (error) {
+      this.logger.error(
+        `error fetcinhg savings by bank id : bankId : ${bankId}`,
+        this.logDirectory
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR(error)
     }
   }
@@ -83,6 +103,7 @@ export class SavingsService extends GeneralService {
       })
       return res
     } catch (error) {
+      this.logger.error(`error fetcinhg a saving id : id : ${id}`, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR(error)
     }
   }
@@ -108,7 +129,11 @@ export class SavingsService extends GeneralService {
       })
       return res
     } catch (error) {
-      throw error
+      this.logger.error(
+        `error fetching an individual saving : bankId : ${bankId} : month ${month} : year : ${year}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR(error)
     }
   }
 
@@ -166,10 +191,10 @@ export class SavingsService extends GeneralService {
       }))
     } catch (error) {
       this.logger.error(
-        'Bills - Error getting the bills list : ' + error,
+        `error fetching savings progress : userId : ${userId} : error : ${objectToString(error)}`,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR('Error getting savings progression')
+      ErrorHandler.INTERNAL_SERVER_ERROR('error fetching savings progress')
     }
   }
 }

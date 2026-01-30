@@ -15,19 +15,30 @@ import { Response } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { Savings } from './savings.entity'
+import { SAVING_MODULE } from '../core/consts/filename.consts'
+import * as path from 'path'
+import { GeneralController } from '../app/general/controller.general'
+import { objectToString } from '../utils/conversions'
 
 @Controller('savings')
-export class SavingsController {
-  constructor(private readonly savingsService: SavingsService) {}
+export class SavingsController extends GeneralController {
+  constructor(private readonly savingsService: SavingsService) {
+    super(path.join(__dirname, SAVING_MODULE.controller))
+  }
 
   private verifyBody(data: NewSavingDto) {
     return !data.bankId || !data.month || !data.year || !data.type || data.total < 0
   }
 
   @Post()
-  public async createSaving(@Body() newSavingDto: NewSavingDto, @Res() res: Response) {
+  public async createSaving(@Body() payload: NewSavingDto, @Res() res: Response) {
     try {
-      const result = await this.savingsService.create(newSavingDto)
+      const result = await this.savingsService.create(payload)
+
+      this.logger.info(
+        `saving successfully created : payload : ${objectToString(payload)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -35,16 +46,18 @@ export class SavingsController {
   }
 
   @Patch()
-  public async updateSaving(
-    @Body() updateSavingDto: UpdateSavingDto,
-    @Res() res: Response
-  ) {
+  public async updateSaving(@Body() payload: UpdateSavingDto, @Res() res: Response) {
     try {
-      if (!updateSavingDto.id) ErrorHandler.BAD_REQUEST('Id not found')
-      if (this.verifyBody(updateSavingDto)) ErrorHandler.BAD_REQUEST('Data not found')
+      if (!payload.id) ErrorHandler.BAD_REQUEST('Id not found')
+      if (this.verifyBody(payload)) ErrorHandler.BAD_REQUEST('Data not found')
 
-      const { id, ...rest } = updateSavingDto
+      const { id, ...rest } = payload
       const result = await this.savingsService.update(id, rest)
+
+      this.logger.info(
+        `saving successfully updated : payload : ${objectToString(payload)}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -58,6 +71,8 @@ export class SavingsController {
   ): Promise<Response<boolean>> {
     try {
       await this.savingsService.delete(id)
+
+      this.logger.info(`saving successfully deleted : id : ${id}`, this.logDirectory)
       return ResponseHandler.sendNoContentResponse(res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -72,6 +87,11 @@ export class SavingsController {
     try {
       const { bankId, page } = query
       const result = await this.savingsService.getAllByBankId(bankId, page)
+
+      this.logger.info(
+        `successfully retrieved savings by bank : bankId : ${bankId}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -79,12 +99,17 @@ export class SavingsController {
   }
 
   @Get('/:id')
-  public async getSavingByBank(
+  public async getSavingById(
     @Param('id') id: string,
     @Res() res: Response
   ): Promise<Response<Savings>> {
     try {
       const result = await this.savingsService.getOneByBankId(id)
+
+      this.logger.info(
+        `successfully retrieved saving by id : id : ${id}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
