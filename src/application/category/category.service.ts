@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Category } from './category.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { Repository } from 'typeorm'
+import { ILike, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import {
   CreateCategoryTemplateDto,
@@ -104,6 +104,39 @@ export class CategoryService extends GeneralService {
       return res
     } catch (error) {
       ErrorHandler.handle(error)
+    }
+  }
+
+  async getBySearchTerm(searchTerm: string, userId: string) {
+    if (!userId) {
+      this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
+      ErrorHandler.BAD_REQUEST('banks - userId not found')
+    }
+    if (!searchTerm) {
+      return []
+    }
+
+    try {
+      const searchResult = await this.categoryRepository.find({
+        select: { id: true, name: true, description: true },
+        where: { name: ILike(`%${searchTerm}%`), userId }
+      })
+      return searchResult.map((category) => ({
+        id: category.id,
+        description: category.description,
+        title: category.name,
+        type: 'category',
+        date: null,
+        value: null
+      }))
+    } catch (error) {
+      this.logger.error(
+        `error retrieving categories by search term : searchTerm : ${searchTerm} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE(
+        'categories - error retrieving categories by search term'
+      )
     }
   }
 }

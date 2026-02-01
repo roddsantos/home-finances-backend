@@ -70,7 +70,13 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
   constructor(private readonly seedingService: SeedingService) {}
 
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(DateMiddleware).forRoutes('home')
+    consumer
+      .apply(DateMiddleware)
+      .exclude({
+        path: 'home/search',
+        method: RequestMethod.GET
+      })
+      .forRoutes('home')
     consumer.apply(BodyThemeMiddleware).forRoutes({
       path: 'theme',
       method: RequestMethod.POST

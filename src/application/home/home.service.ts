@@ -13,6 +13,10 @@ import { BillService } from '../bill/bill.service'
 import * as path from 'path'
 import { HOME_MODULE } from '../core/consts/filename.consts'
 import { GeneralService } from '../app/general/service.general'
+import { BankService } from '../bank/bank.service'
+import { CategoryService } from '../category/category.service'
+import { CompanyService } from '../company/company.service'
+import { CreditCardService } from '../credit-card/credit-card.service'
 
 @Injectable()
 export class HomeService extends GeneralService {
@@ -24,7 +28,11 @@ export class HomeService extends GeneralService {
     @InjectRepository(CreditCard)
     private readonly creditCardRepository: Repository<CreditCard>,
     private readonly savingsService: SavingsService,
-    private readonly billsService: BillService
+    private readonly billsService: BillService,
+    private readonly bankService: BankService,
+    private readonly categoryService: CategoryService,
+    private readonly companyService: CompanyService,
+    private readonly creditCardService: CreditCardService
   ) {
     super(path.join(__dirname, HOME_MODULE.controller))
   }
@@ -151,7 +159,7 @@ export class HomeService extends GeneralService {
         paidBills
       }
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
     }
   }
 
@@ -180,7 +188,7 @@ export class HomeService extends GeneralService {
         count
       }
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
     }
   }
 
@@ -208,7 +216,25 @@ export class HomeService extends GeneralService {
         bills
       }
     } catch (error) {
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error)
+    }
+  }
+
+  async getSearchByTerm(searchTerm: string, userId: string) {
+    try {
+      const banks = await this.bankService.getBySearchTerm(searchTerm, userId)
+      const bills = await this.billsService.getBySearchTerm(searchTerm, userId)
+      const categories = await this.categoryService.getBySearchTerm(searchTerm, userId)
+      const companies = await this.companyService.getBySearchTerm(searchTerm, userId)
+      const creditCards = await this.creditCardService.getBySearchTerm(searchTerm, userId)
+
+      return { banks, bills, categories, companies, creditCards }
+    } catch (error) {
+      this.logger.error(
+        `error fetching items by search term : searchTerm : ${searchTerm}`,
+        this.logDirectory
+      )
+      ErrorHandler.handle(error)
     }
   }
 }

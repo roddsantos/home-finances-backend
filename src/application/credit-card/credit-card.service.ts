@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { CreditCard } from './credit-card.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { Repository } from 'typeorm'
+import { ILike, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as path from 'path'
 import { CREDIT_CARD_MODULE } from '../core/consts/filename.consts'
@@ -94,6 +94,39 @@ export class CreditCardService extends GeneralService {
     } catch (error) {
       this.logger.error('Credit Card - error retrieving credit card', this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error retrieving credit card')
+    }
+  }
+
+  async getBySearchTerm(searchTerm: string, userId: string) {
+    if (!userId) {
+      this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
+      ErrorHandler.BAD_REQUEST('banks - userId not found')
+    }
+    if (!searchTerm) {
+      return []
+    }
+
+    try {
+      const searchResult = await this.creditCardRepository.find({
+        select: { id: true, name: true, description: true },
+        where: { name: ILike(`%${searchTerm}%`), userId }
+      })
+      return searchResult.map((creditCard) => ({
+        id: creditCard.id,
+        description: creditCard.description,
+        title: creditCard.name,
+        type: 'credit-card',
+        date: null,
+        value: creditCard.invoice
+      }))
+    } catch (error) {
+      this.logger.error(
+        `error retrieving credit cards by search term : searchTerm : ${searchTerm} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE(
+        'credit cards - error retrieving credit cards by search term'
+      )
     }
   }
 }

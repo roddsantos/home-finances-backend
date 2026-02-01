@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Company } from './company.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { Repository } from 'typeorm'
+import { ILike, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { CreateCompanyTemplateDto, UpdateCompanyTemplateDto } from '../core/types/company'
 import * as path from 'path'
@@ -100,6 +100,39 @@ export class CompanyService extends GeneralService {
       return company
     } catch (error) {
       ErrorHandler.handle(error)
+    }
+  }
+
+  async getBySearchTerm(searchTerm: string, userId: string) {
+    if (!userId) {
+      this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
+      ErrorHandler.BAD_REQUEST('banks - userId not found')
+    }
+    if (!searchTerm) {
+      return []
+    }
+
+    try {
+      const searchResult = await this.companyRepository.find({
+        select: { id: true, name: true, description: true },
+        where: { name: ILike(`%${searchTerm}%`), userId }
+      })
+      return searchResult.map((company) => ({
+        id: company.id,
+        description: company.description,
+        title: company.name,
+        type: 'company',
+        date: null,
+        value: null
+      }))
+    } catch (error) {
+      this.logger.error(
+        `error retrieving companies by search term : searchTerm : ${searchTerm} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE(
+        'companies - error retrieving companies by search term'
+      )
     }
   }
 }

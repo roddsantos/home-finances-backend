@@ -1,5 +1,7 @@
 export type PaymentTypes = 'creditCard' | 'money' | 'companyCredit'
 
+export type ItemTypes = 'bill' | 'bank' | 'credit-card' | 'company' | 'category'
+
 export interface SuccessResponse<T> {
   data: T
   key: string

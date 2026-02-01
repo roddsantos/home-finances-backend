@@ -113,4 +113,22 @@ export class HomeController extends GeneralController {
       return ErrorHandler.errorResponse(res, error)
     }
   }
+
+  @Get('/search')
+  public async getItem(@Req() req: Request, @Query() query: any, @Res() res: Response) {
+    const userId = req.user.id
+    const { searchTerm } = query
+
+    try {
+      const result = await this.homeService.getSearchByTerm(searchTerm, userId)
+
+      this.logger.info(
+        `successfully retrieved items bu search term : searchTerm : ${searchTerm}`,
+        this.logDirectory
+      )
+      return ResponseHandler.sendResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 }
