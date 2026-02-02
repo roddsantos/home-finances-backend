@@ -8,6 +8,11 @@ export class NewSavingDto {
   type: MonthlySavingsTypes
 }
 
+export class BulkSavingDto {
+  month: number
+  year: number
+}
+
 export class UpdateSavingDto {
   id: string
   bankId: string
