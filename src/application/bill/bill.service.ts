@@ -159,7 +159,10 @@ export class BillService extends GeneralService {
   async getBillById(id: string) {
     try {
       this.logger.info(`retrieving bill data : id : ${id}`, this.logDirectory)
-      return await this.billRepository.findOneBy({ id })
+      return await this.billRepository.findOne({
+        relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
+        where: { id }
+      })
     } catch (error) {
       this.logger.error(
         `error updating transaction bill : bill not found : id : ${id}`,

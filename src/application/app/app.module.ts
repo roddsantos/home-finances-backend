@@ -72,10 +72,16 @@ export class AppModule implements OnApplicationBootstrap, NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(DateMiddleware)
-      .exclude({
-        path: 'home/search',
-        method: RequestMethod.GET
-      })
+      .exclude(
+        {
+          path: 'home/search',
+          method: RequestMethod.GET
+        },
+        {
+          path: 'home/item',
+          method: RequestMethod.GET
+        }
+      )
       .forRoutes('home')
     consumer.apply(BodyThemeMiddleware).forRoutes({
       path: 'theme',
