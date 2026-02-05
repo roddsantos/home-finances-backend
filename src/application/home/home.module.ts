@@ -10,11 +10,25 @@ import { CreditCardService } from '../credit-card/credit-card.service'
 import { CreditCard } from '../credit-card/credit-card.entity'
 import { SavingsService } from '../savings/savings.service'
 import { Savings } from '../savings/savings.entity'
+import { CategoryService } from '../category/category.service'
+import { Category } from '../category/category.entity'
+import { Company } from '../company/company.entity'
+import { CompanyService } from '../company/company.service'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Bank, Bill, CreditCard, Savings])],
+  imports: [
+    TypeOrmModule.forFeature([Bank, Bill, Category, Company, CreditCard, Savings])
+  ],
   controllers: [HomeController],
-  providers: [HomeService, BillService, BankService, CreditCardService, SavingsService],
+  providers: [
+    HomeService,
+    BillService,
+    BankService,
+    CategoryService,
+    CompanyService,
+    CreditCardService,
+    SavingsService
+  ],
   exports: [TypeOrmModule]
 })
 export class HomeModule {}

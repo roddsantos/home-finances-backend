@@ -7,11 +7,12 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res
 } from '@nestjs/common'
 import { SavingsService } from './savings.service'
-import { NewSavingDto, UpdateSavingDto } from './savings.dto'
-import { Response } from 'express'
+import { BulkSavingDto, NewSavingDto, UpdateSavingDto } from './savings.dto'
+import { Response, Request } from 'express'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { Savings } from './savings.entity'
@@ -37,6 +38,27 @@ export class SavingsController extends GeneralController {
 
       this.logger.info(
         `saving successfully created : payload : ${objectToString(payload)}`,
+        this.logDirectory
+      )
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
+
+  @Post('/bulk')
+  public async bulkSaving(
+    @Body() payload: BulkSavingDto,
+    @Res() res: Response,
+    @Req() req: Request
+  ) {
+    try {
+      const userId = req.user?.id
+      const { month, year } = payload
+      const result = await this.savingsService.bulkSaving(userId, month, year)
+
+      this.logger.info(
+        `created month savings successfully : payload : ${objectToString(payload)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)

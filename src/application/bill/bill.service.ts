@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Bill } from './bill.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { IsNull, LessThan, MoreThan, Not, Or, Repository } from 'typeorm'
+import { ILike, IsNull, LessThan, MoreThan, Not, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
@@ -159,7 +159,10 @@ export class BillService extends GeneralService {
   async getBillById(id: string) {
     try {
       this.logger.info(`retrieving bill data : id : ${id}`, this.logDirectory)
-      return await this.billRepository.findOneBy({ id })
+      return await this.billRepository.findOne({
+        relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
+        where: { id }
+      })
     } catch (error) {
       this.logger.error(
         `error updating transaction bill : bill not found : id : ${id}`,
@@ -323,6 +326,40 @@ export class BillService extends GeneralService {
     } catch (error) {
       this.logger.error('error getting daily bills count : ' + error, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting money bills')
+    }
+  }
+
+  async getBySearchTerm(searchTerm: string, userId: string) {
+    if (!userId) {
+      this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
+      ErrorHandler.BAD_REQUEST('banks - userId not found')
+    }
+
+    if (!searchTerm) {
+      return []
+    }
+    try {
+      const searchResult = await this.billRepository.find({
+        select: { id: true, name: true, description: true, due: true, totalParcel: true },
+        where: { name: ILike(`%${searchTerm}%`), userId },
+        order: { due: 'DESC' },
+        take: 20
+      })
+
+      return searchResult.map((bill) => ({
+        id: bill.id,
+        description: bill.description,
+        title: bill.name,
+        type: 'bill',
+        date: bill.due,
+        value: bill.totalParcel
+      }))
+    } catch (error) {
+      this.logger.error(
+        `error retrieving bill by search term : searchTerm : ${searchTerm} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE('bills - error retrieving bill by search term')
     }
   }
 }

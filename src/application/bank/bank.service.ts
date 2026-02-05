@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Bank } from './bank.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { Like, Or, Repository } from 'typeorm'
+import { ILike, Like, Or, Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { GeneralService } from '../app/general/service.general'
 import * as path from 'path'
@@ -120,6 +120,37 @@ export class BankService extends GeneralService {
     } catch (error) {
       this.logger.error(`error retrieving bank : id : ${id}`, this.logDirectory)
       ErrorHandler.NOT_FOUND_MESSAGE('banks - error retrieving bank')
+    }
+  }
+
+  async getBySearchTerm(searchTerm: string, userId: string) {
+    if (!userId) {
+      this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
+      ErrorHandler.BAD_REQUEST('banks - userId not found')
+    }
+    if (!searchTerm) {
+      return []
+    }
+
+    try {
+      const searchResult = await this.bankRepository.find({
+        select: { id: true, name: true, description: true, savings: true },
+        where: { name: ILike(`%${searchTerm}%`), userId }
+      })
+      return searchResult.map((bank) => ({
+        id: bank.id,
+        description: bank.description,
+        title: bank.name,
+        type: 'bank',
+        date: null,
+        value: bank.savings
+      }))
+    } catch (error) {
+      this.logger.error(
+        `error retrieving bank by search term : searchTerm : ${searchTerm} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE('banks - error retrieving bank by search term')
     }
   }
 }

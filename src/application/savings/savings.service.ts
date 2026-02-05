@@ -52,6 +52,45 @@ export class SavingsService extends GeneralService {
     }
   }
 
+  async bulkSaving(userId: string, month: number, year: number) {
+    const savingsPromises = []
+    try {
+      const allBanks = await this.bankService.getAllById(userId)
+
+      allBanks.forEach(async (bank) => {
+        const saving = await this.savingRepository.findOne({
+          where: {
+            type: 'start',
+            bankId: bank.id,
+            month,
+            year
+          }
+        })
+        if (!saving) {
+          savingsPromises.push(
+            await this.savingRepository.save({
+              bankId: bank.id,
+              total: bank.savings,
+              month,
+              year,
+              type: 'start'
+            })
+          )
+        }
+      })
+
+      const results = await Promise.allSettled(savingsPromises)
+      console.log(results)
+      return results
+    } catch (error) {
+      this.logger.error(
+        `error creating multiples savings : userId : ${userId} : month ${month} : year : ${year}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR(error)
+    }
+  }
+
   async update(id: string, payload: Omit<UpdateSavingDto, 'id'>) {
     try {
       const res = await this.savingRepository.update({ id }, payload)
