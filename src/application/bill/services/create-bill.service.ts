@@ -73,17 +73,23 @@ export class CreateBillService extends GeneralService {
   async createCompanyCreditBill(createCompanyBillDto: CreateBillTemplateDto) {
     try {
       this.logger.info('creating company bill', this.logDirectory)
-      const groupId = this.uuid.v4()
 
       const bills = this.billService.parcelsCompanyCreditBills(createCompanyBillDto)
 
       const allBills: BillObjectType[] = await Promise.all(
-        bills.map((b) => {
-          const res = this.billRepository.save({ ...b, groupId })
+        bills.map((bill) => {
+          const res = this.billRepository.save(bill)
           return res
         })
       )
-      return allBills
+
+      const result = {
+        banks: [],
+        creditCard: null,
+        bill: allBills[0]
+      }
+
+      return result
     } catch (error) {
       this.logger.error('error creating company bill : ' + error, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating company bill')

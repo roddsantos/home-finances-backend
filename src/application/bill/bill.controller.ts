@@ -127,8 +127,8 @@ export class BillController extends GeneralController {
         userId
       })
       this.logger.info(
-        // eslint-disable-next-line max-len
-        `successfully created company bill with groupId : ${result[0].groupId} : payload : ${JSON.stringify(data)}`,
+        `successfully created company bill with groupId : ${result.bill.groupId} :` +
+          ` payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)

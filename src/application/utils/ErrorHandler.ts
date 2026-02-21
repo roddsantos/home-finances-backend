@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Response } from 'express'
+import { objectToString } from './conversions'
 
 export abstract class ErrorHandler {
   static type: any
@@ -13,7 +14,9 @@ export abstract class ErrorHandler {
     try {
       throw error
     } catch (error) {
-      return res.status(error.status).json({ message: error.message })
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'unknown error' + objectToString(error) })
     }
   }
 

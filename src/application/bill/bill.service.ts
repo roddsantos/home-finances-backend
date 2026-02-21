@@ -48,6 +48,7 @@ export class BillService extends GeneralService {
 
   parcelsCompanyCreditBills(bill: CreateBillTemplateDto) {
     try {
+      const groupId = this.uuid.v4()
       const bills = [] as CreateBillTemplateDto[]
       const dueDate = new Date(bill.due)
       let dueDay = dueDate.getDate()
@@ -61,20 +62,26 @@ export class BillService extends GeneralService {
           new Date(newYear, newMonth, dueDay).getDate() !== dueDay
             ? new Date(newYear, newMonth + 1, 0).getDate()
             : dueDay
-
         const newDate = new Date(newYear, newMonth, newDay)
+
+        const delta = convertToFloat(i === bill.parcels - 1 ? bill.delta : 0)
+        const totalParcel =
+          convertToFloat((bill.total + bill.taxes) / bill.parcels) + delta
+        const taxes = convertToFloat(bill.taxes / bill.parcels)
+
         const parcelObject = {
           ...bill,
+          groupId,
           parcel: i,
-          totalParcel:
-            parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
-            (i === bill.parcels - 1 ? bill.delta : 0),
-          taxes: parseFloat((bill.taxes / bill.parcels).toFixed(2)),
-          delta: i === bill.parcels - 1 ? bill.delta : 0,
+          totalParcel,
+          taxes,
+          delta,
           paid: null,
           due: newDate
         }
+
         bills.push(parcelObject)
+
         dueMonth = newMonth
         dueYear = newYear
         dueDay = newDay

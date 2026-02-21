@@ -28,8 +28,10 @@ export type BillObjectType = {
 
 export type CreateBillTemplateDto = Omit<
   BillObjectType,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt'
->
+  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'groupId'
+> & {
+  groupId?: string
+}
 
 export type UpdateBillTemplateDto = Partial<BillObjectType>
 
