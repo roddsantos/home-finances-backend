@@ -28,4 +28,5 @@ export const INITIALIZE_FILTERS: DiscriminatedUnionToObjectType<
   date: []
 }
 
-export const DAY_START = [4, 0, 0]
+export const DAY_START = [0, 0, 0, 0]
+export const DAY_END = [23, 59, 59, 999]

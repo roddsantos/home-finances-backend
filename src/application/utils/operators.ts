@@ -10,7 +10,7 @@ import {
 } from 'typeorm'
 import { Bill } from '../bill/bill.entity'
 import { OptionalKeys } from 'src/application/core/types/general'
-import { DAY_START, INITIALIZE_FILTERS } from './constants'
+import { DAY_END, DAY_START, INITIALIZE_FILTERS } from './constants'
 import { AvailableFilters, FilterDisplay } from 'src/application/core/types/bill'
 
 /**
@@ -120,7 +120,7 @@ export function getDateOperators(filters: FilterDisplay[]) {
     yearFilters.forEach((year) =>
       dates.push([
         new Date(year, 0, 1, ...DAY_START),
-        new Date(year + 1, 0, 1, ...DAY_START)
+        new Date(year + 1, 0, 1, ...DAY_END)
       ])
     )
   } else {
@@ -128,7 +128,7 @@ export function getDateOperators(filters: FilterDisplay[]) {
       monthFilters.forEach((month) =>
         dates.push([
           new Date(year, month, 1, ...DAY_START),
-          new Date(year, month + 1, 1, ...DAY_START)
+          new Date(year, month + 1, 0, ...DAY_END)
         ])
       )
     )
