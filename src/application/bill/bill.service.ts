@@ -339,7 +339,7 @@ export class BillService extends GeneralService {
   async getBySearchTerm(searchTerm: string, userId: string) {
     if (!userId) {
       this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
-      ErrorHandler.BAD_REQUEST('banks - userId not found')
+      ErrorHandler.BAD_REQUEST('bills - userId not found')
     }
 
     if (!searchTerm) {
@@ -367,6 +367,27 @@ export class BillService extends GeneralService {
         this.logDirectory
       )
       ErrorHandler.NOT_FOUND_MESSAGE('bills - error retrieving bill by search term')
+    }
+  }
+
+  async getPinnedBills(userId: string, pinnedBills: string[]) {
+    if (!userId) {
+      this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
+      ErrorHandler.BAD_REQUEST('bills - userId not found')
+    }
+
+    try {
+      const apiCalls = pinnedBills.map((billId) => this.getBillById(billId))
+
+      const results = await Promise.all(apiCalls)
+
+      return results
+    } catch (error) {
+      this.logger.error(
+        `error retrieving pinned bills : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE('bills - error retrieving pinned bills')
     }
   }
 }

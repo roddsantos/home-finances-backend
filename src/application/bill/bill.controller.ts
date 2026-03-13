@@ -282,4 +282,22 @@ export class BillController extends GeneralController {
       return ErrorHandler.errorResponse(res, error)
     }
   }
+
+  @Get('/pinned')
+  public async getPinnedBills(
+    @Res() res: Response,
+    @Req() req: Request,
+    @Query() data: any
+  ) {
+    try {
+      const userId = req.user?.id
+      const { pinnedBills } = data
+
+      const result = await this.billService.getPinnedBills(userId, pinnedBills)
+
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error)
+    }
+  }
 }
