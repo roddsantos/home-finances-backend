@@ -10,17 +10,59 @@ import {
   CreateCreditCardTemplateDto,
   UpdateCreditCardTemplateDto
 } from '../core/types/credit-card'
+import { CreateBillTemplateDto } from '../core/types/bill'
+import { CreateBillService } from '../bill/services/create-bill.service'
+import { UpdateBillService } from '../bill/services/update-bill.service'
 
 @Injectable()
 export class CreditCardService extends GeneralService {
   constructor(
     @InjectRepository(CreditCard)
-    private readonly creditCardRepository: Repository<CreditCard>
+    private readonly creditCardRepository: Repository<CreditCard>,
+    private readonly createBillService: CreateBillService,
+    private readonly updateBillService: UpdateBillService
   ) {
     super(path.join(__dirname, CREDIT_CARD_MODULE.service))
   }
 
-  async create(userId: string, createCreditCard: CreateCreditCardTemplateDto) {
+  public getCreditCardBillPayload(
+    userId: string,
+    creditCard: CreateCreditCardTemplateDto
+  ) {
+    const year = creditCard.month === 11 ? creditCard.year + 1 : creditCard.year
+    const month = creditCard.month === 11 ? 0 : creditCard.month + 1
+
+    const payload: CreateBillTemplateDto = {
+      groupId: this.uuid.v4(),
+      name: `${creditCard.name} invoice`,
+      description: `${creditCard.name} - ${creditCard.month + 1}/${creditCard.year} invoice`,
+      total: 0,
+      totalParcel: 0,
+      settled: false,
+      parcels: 0,
+      parcel: 1,
+      taxes: 0,
+      delta: 0,
+      due: new Date(year, month, creditCard.due),
+      paid: null,
+      type: 'money',
+      companyId: null,
+      categoryId: creditCard.categoryId,
+      bank1Id: creditCard.bank1Id,
+      bank2Id: null,
+      isRecurrent: false,
+      creditCardId: null,
+      isPayment: true,
+      userId
+    }
+
+    return payload
+  }
+
+  async createNewCreditCard(
+    userId: string,
+    createCreditCard: CreateCreditCardTemplateDto
+  ) {
     try {
       const cc = await this.creditCardRepository.findOne({
         where: {
@@ -32,20 +74,35 @@ export class CreditCardService extends GeneralService {
       })
       if (cc) {
         this.logger.error('this credit card already exists', this.logDirectory)
-        ErrorHandler.CONFLICT_MESSAGE('credit Card - this credit card already exists')
+        ErrorHandler.CONFLICT_MESSAGE('credit card - this credit card already exists')
       }
-      const res = await this.creditCardRepository.save({
+
+      const payload = this.getCreditCardBillPayload(userId, createCreditCard)
+
+      const { bill } = await this.createBillService.createTransactionBill(payload)
+
+      const creditCard = await this.creditCardRepository.save({
         ...createCreditCard,
+        relatedBillId: bill.id,
         userId,
         limitLeft: createCreditCard.limit
       })
+
+      await this.updateBillService.updateTransactionBill({
+        id: bill.id,
+        creditCardId: creditCard.id
+      })
+
       this.logger.info(
-        `category created succesfully with name : ${createCreditCard.name}  : id : ${res.id}`,
+        `category created succesfully with name : ${createCreditCard.name}  : id : ${creditCard.id}`,
         this.logDirectory
       )
-      return res
+      return creditCard
     } catch (error) {
-      this.logger.error('error creating credit card', this.logDirectory)
+      this.logger.error(
+        `error creating credit card : error : ${error}`,
+        this.logDirectory
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR('credit Card - error creating credit card')
     }
   }
