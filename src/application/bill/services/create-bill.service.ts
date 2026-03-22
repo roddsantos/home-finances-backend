@@ -105,7 +105,7 @@ export class CreateBillService extends GeneralService {
       const { creditCardId, total, taxes, delta } = createCreditCardBillDto
       const groupId = this.uuid.v4()
 
-      const bills = this.billService.parcelsForBills(createCreditCardBillDto)
+      const bills = this.billService.parcelsForBills(createCreditCardBillDto, true)
 
       const cc = await this.ccService.getOneById(creditCardId)
       if (!cc) {
