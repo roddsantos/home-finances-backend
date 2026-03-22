@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { CreditCard } from './credit-card.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { ILike, Repository } from 'typeorm'
@@ -19,7 +19,9 @@ export class CreditCardService extends GeneralService {
   constructor(
     @InjectRepository(CreditCard)
     private readonly creditCardRepository: Repository<CreditCard>,
+    @Inject(forwardRef(() => CreateBillService))
     private readonly createBillService: CreateBillService,
+    @Inject(forwardRef(() => UpdateBillService))
     private readonly updateBillService: UpdateBillService
   ) {
     super(path.join(__dirname, CREDIT_CARD_MODULE.service))
@@ -103,17 +105,20 @@ export class CreditCardService extends GeneralService {
         `error creating credit card : error : ${error}`,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR('credit Card - error creating credit card')
+      ErrorHandler.INTERNAL_SERVER_ERROR('credit card - error creating credit card')
     }
   }
 
   async update(id: string, data: Partial<Omit<UpdateCreditCardTemplateDto, 'id'>>) {
     try {
-      const res = await this.creditCardRepository.update({ id }, data)
-      return { ...res, id }
+      const cc = await this.getOneById(id)
+
+      await this.creditCardRepository.update({ id }, data)
+
+      return { ...cc, ...data }
     } catch (error) {
-      this.logger.error('Credit Card - error updating credit card', this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error uppdating credit card')
+      this.logger.error('error updating credit card', this.logDirectory)
+      ErrorHandler.INTERNAL_SERVER_ERROR('credit card - error uppdating credit card')
     }
   }
 
@@ -123,7 +128,7 @@ export class CreditCardService extends GeneralService {
       return res
     } catch (error) {
       this.logger.error('Credit Card - error deleting credit card', this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error deleting credit card')
+      ErrorHandler.INTERNAL_SERVER_ERROR('credit card - error deleting credit card')
     }
   }
 

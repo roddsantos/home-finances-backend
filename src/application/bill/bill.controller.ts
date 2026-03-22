@@ -87,8 +87,13 @@ export class BillController extends GeneralController {
       const userId = req.user?.id
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || !data.creditCardId || data.parcels < 0)
+      if (this.verifyCreateTemplate(data) || !data.creditCardId || data.parcels < 0) {
+        this.logger.error(
+          `error creating credit card bill : payload : ${JSON.stringify(data)}`,
+          this.logDirectory
+        )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+      }
 
       const result = await this.createBillService.createCreditCardBill({
         ...data,
@@ -96,7 +101,7 @@ export class BillController extends GeneralController {
       })
       this.logger.info(
         // eslint-disable-next-line max-len
-        `successfully created credit card bill with groupId : ${result[0].groupId} : payload : ${JSON.stringify(data)}`,
+        `successfully created credit card bill with groupId : ${result.bill.groupId} : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
@@ -113,14 +118,29 @@ export class BillController extends GeneralController {
   ) {
     try {
       const userId = req.user?.id
-      if (!Boolean(data))
+      if (!Boolean(data)) {
+        this.logger.error(
+          `error creating credit card bill : payload : ${JSON.stringify(data)}`,
+          this.logDirectory
+        )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || !data.companyId || !Boolean(data.due))
+      }
+      if (this.verifyCreateTemplate(data) || !data.companyId || !Boolean(data.due)) {
+        this.logger.error(
+          `error creating credit card bill : payload : ${JSON.stringify(data)}`,
+          this.logDirectory
+        )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (data.creditCardId && data.bank1Id)
+      }
+      if (data.creditCardId && data.bank1Id) {
+        this.logger.error(
+          `error creating credit card bill : payload : ${JSON.stringify(data)}`,
+          this.logDirectory
+        )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
           "Bank and credit card can't be present together"
         )
+      }
 
       const result = await this.createBillService.createCompanyCreditBill({
         ...data,

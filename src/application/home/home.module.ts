@@ -4,31 +4,29 @@ import { HomeController } from './home.controller'
 import { HomeService } from './home.service'
 import { Bank } from '../bank/bank.entity'
 import { Bill } from '../bill/bill.entity'
-import { BillService } from '../bill/bill.service'
-import { BankService } from '../bank/bank.service'
-import { CreditCardService } from '../credit-card/credit-card.service'
 import { CreditCard } from '../credit-card/credit-card.entity'
-import { SavingsService } from '../savings/savings.service'
 import { Savings } from '../savings/savings.entity'
-import { CategoryService } from '../category/category.service'
 import { Category } from '../category/category.entity'
 import { Company } from '../company/company.entity'
-import { CompanyService } from '../company/company.service'
+import { BillModule } from '../bill/bill.module'
+import { BankModule } from '../bank/bank.module'
+import { CategoryModule } from '../category/category.module'
+import { CompanyModule } from '../company/company.module'
+import { CreditCardModule } from '../credit-card/credit-card.module'
+import { SavingsModule } from '../savings/savings.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Bank, Bill, Category, Company, CreditCard, Savings])
+    TypeOrmModule.forFeature([Bank, Bill, Category, Company, CreditCard, Savings]),
+    BillModule,
+    BankModule,
+    CategoryModule,
+    CompanyModule,
+    CreditCardModule,
+    SavingsModule
   ],
   controllers: [HomeController],
-  providers: [
-    HomeService,
-    BillService,
-    BankService,
-    CategoryService,
-    CompanyService,
-    CreditCardService,
-    SavingsService
-  ],
+  providers: [HomeService],
   exports: [TypeOrmModule]
 })
 export class HomeModule {}

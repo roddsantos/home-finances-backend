@@ -8,7 +8,7 @@ import { ErrorHandler } from 'src/application/utils/ErrorHandler'
 import { CreditCard } from 'src/application/credit-card/credit-card.entity'
 import { BillService } from '../bill.service'
 import { GetBillService } from './get-bill.service'
-import { Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 import { CreateBillService } from './create-bill.service'
@@ -27,6 +27,7 @@ export class UpdateBillService extends GeneralService {
     private readonly billService: BillService,
     private readonly getBillService: GetBillService,
     private readonly createBillService: CreateBillService,
+    @Inject(forwardRef(() => CreditCardService))
     private readonly creditCardService: CreditCardService
   ) {
     super(path.join(__dirname, BILL_MODULE.updateBillService))

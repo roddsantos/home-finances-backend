@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { BillController } from './bill.controller'
 import { BillService } from './bill.service'
 import { Bill } from './bill.entity'
@@ -14,9 +14,8 @@ import { AuthModule } from '../core/auth/auth.module'
 @Module({
   imports: [
     TypeOrmModule.forFeature([Bill]),
-    BillModule,
     BankModule,
-    CreditCardModule,
+    forwardRef(() => CreditCardModule),
     AuthModule
   ],
   controllers: [BillController],
@@ -27,6 +26,6 @@ import { AuthModule } from '../core/auth/auth.module'
     BillService,
     QuickSettleBillService
   ],
-  exports: [TypeOrmModule]
+  exports: [TypeOrmModule, CreateBillService, UpdateBillService, BillService]
 })
 export class BillModule {}
