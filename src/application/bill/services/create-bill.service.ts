@@ -119,7 +119,7 @@ export class CreateBillService extends GeneralService {
       }
       const newCcObject: CreditCard = {
         ...cc,
-        limit: cc.limit + (total + taxes + delta) * -1,
+        limitLeft: cc.limitLeft + (total + taxes + delta) * -1,
         invoice: cc.invoice + bills[0].totalParcel
       }
       const creditCard = await this.ccService.update(creditCardId, newCcObject)

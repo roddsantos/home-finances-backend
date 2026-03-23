@@ -39,12 +39,12 @@ export class UpdateBillService extends GeneralService {
     data: UpdateBillTemplateDto,
     bill: Bill
   ) {
-    const { limit, invoice } = creditCard
+    const { limitLeft, invoice } = creditCard
     const totalParcel = (data.totalParcel || bill.totalParcel) + totalParcelDiff
 
     const newCreditCardObject: CreditCard = {
       ...creditCard,
-      limit: limit - totalParcel,
+      limitLeft: limitLeft - totalParcel,
       invoice: invoice + totalParcel
     }
 
@@ -56,7 +56,8 @@ export class UpdateBillService extends GeneralService {
   async updateTransactionBill(data: UpdateBillTemplateDto) {
     const result = {
       banks: [],
-      bill: null
+      bill: null,
+      creditCard: null
     }
     try {
       const bill = await this.getBillService.getBillById(data.id)
