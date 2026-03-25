@@ -48,7 +48,7 @@ export class CreditCardController extends GeneralController {
   ): Promise<Response> {
     try {
       const userId = req.user.id
-      const result = await this.creditCardService.create(userId, data)
+      const result = await this.creditCardService.createNewCreditCard(userId, data)
 
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {

@@ -1,3 +1,4 @@
+import { Bill } from '../bill/bill.entity'
 import { User } from '../user/user.entity'
 import {
   Column,
@@ -5,7 +6,9 @@ import {
   DeleteDateColumn,
   Entity,
   EntityOptions,
+  JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm'
@@ -89,6 +92,15 @@ export class CreditCard {
     nullable: false
   })
   public isClosed: boolean
+
+  @OneToOne(() => Bill)
+  @JoinColumn({ name: 'relatedBillId' })
+  public relatedBill: Bill
+
+  @Column({
+    nullable: false
+  })
+  public relatedBillId: string
 
   @ManyToOne(() => User)
   public user: User

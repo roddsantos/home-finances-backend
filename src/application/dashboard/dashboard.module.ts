@@ -10,9 +10,15 @@ import { CreditCardService } from '../credit-card/credit-card.service'
 import { Bank } from '../bank/bank.entity'
 import { SavingsService } from '../savings/savings.service'
 import { Savings } from '../savings/savings.entity'
+import { BankModule } from '../bank/bank.module'
+import { BillModule } from '../bill/bill.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Savings, Bill, CreditCard, Bank])],
+  imports: [
+    TypeOrmModule.forFeature([Savings, Bill, CreditCard, Bank]),
+    BillModule,
+    BankModule
+  ],
   controllers: [DashboardController],
   providers: [
     DashboardService,

@@ -5,9 +5,9 @@ export class BanksCreateIsPiggyBankColumn1747704456507 implements MigrationInter
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.addColumn(
-      'banks',
+      'creditcards',
       new TableColumn({
-        name: 'isPiggyBank',
+        name: 'relatedBill',
         type: 'boolean',
         isNullable: false,
         default: 0

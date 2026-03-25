@@ -7,10 +7,11 @@ import { BillService } from '../bill.service'
 import { Bill } from '../bill.entity'
 import { CreditCardService } from 'src/application/credit-card/credit-card.service'
 import { CreditCard } from 'src/application/credit-card/credit-card.entity'
-import { Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 import { BillObjectType, CreateBillTemplateDto } from 'src/application/core/types/bill'
+import { UpdateBillService } from './update-bill.service'
 
 @Injectable()
 export class CreateBillService extends GeneralService {
@@ -19,6 +20,9 @@ export class CreateBillService extends GeneralService {
     private readonly billRepository: Repository<Bill>,
     private readonly bankService: BankService,
     private readonly billService: BillService,
+    @Inject(forwardRef(() => UpdateBillService))
+    private readonly updateBillService: UpdateBillService,
+    @Inject(forwardRef(() => CreditCardService))
     private readonly ccService: CreditCardService
   ) {
     super(path.join(__dirname, BILL_MODULE.createBillService))
@@ -74,7 +78,7 @@ export class CreateBillService extends GeneralService {
     try {
       this.logger.info('creating company bill', this.logDirectory)
 
-      const bills = this.billService.parcelsCompanyCreditBills(createCompanyBillDto)
+      const bills = this.billService.parcelsForBills(createCompanyBillDto)
 
       const allBills: BillObjectType[] = await Promise.all(
         bills.map((bill) => {
@@ -98,21 +102,34 @@ export class CreateBillService extends GeneralService {
 
   async createCreditCardBill(createCreditCardBillDto: CreateBillTemplateDto) {
     try {
-      const { creditCardId, total, taxes, delta, settled } = createCreditCardBillDto
+      const { creditCardId, total, taxes, delta } = createCreditCardBillDto
       const groupId = this.uuid.v4()
 
-      const bills = this.billService.parcelsCcBills(createCreditCardBillDto)
-      if (settled) {
-        const cc = await this.ccService.getOneById(creditCardId)
-        if (cc) {
-          const newCcObject: CreditCard = {
-            ...cc,
-            limit: cc.limit + (total + taxes + delta) * -1,
-            invoice: cc.invoice + bills[0].totalParcel * -1
-          }
-          await this.ccService.update(creditCardId, newCcObject)
-        } else throw ErrorHandler.CONFLICT_MESSAGE("This card can't be used")
+      const bills = this.billService.parcelsForBills(createCreditCardBillDto, true)
+
+      const cc = await this.ccService.getOneById(creditCardId)
+      if (!cc) {
+        this.logger.error(
+          `cant find credit card with id : ${creditCardId}`,
+          this.logDirectory
+        )
+        ErrorHandler.INTERNAL_SERVER_ERROR(
+          `cant find credit card with id : ${creditCardId}`
+        )
       }
+      const newCcObject: CreditCard = {
+        ...cc,
+        limitLeft: cc.limitLeft + (total + taxes + delta) * -1,
+        invoice: cc.invoice + bills[0].totalParcel
+      }
+      const creditCard = await this.ccService.update(creditCardId, newCcObject)
+
+      const bill = await this.billService.getBillById(creditCard.relatedBillId)
+      await this.updateBillService.updateTransactionBill({
+        id: bill.id,
+        total: bill.total + bills[0].totalParcel,
+        totalParcel: bill.totalParcel + bills[0].totalParcel
+      })
 
       const allBills = await Promise.all(
         bills.map((b) => {
@@ -120,7 +137,14 @@ export class CreateBillService extends GeneralService {
           return res
         })
       )
-      return allBills
+
+      const result = {
+        banks: [],
+        creditCard,
+        bill: allBills[0]
+      }
+
+      return result
     } catch (error) {
       this.logger.error('error creating credit card bill : ' + error, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating credit card bill')

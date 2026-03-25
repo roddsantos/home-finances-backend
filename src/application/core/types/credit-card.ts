@@ -13,6 +13,7 @@ export type CreditCardObjectType = {
   month: number
   year: number
   isClosed: boolean
+  relatedBillId: string
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -21,6 +22,9 @@ export type CreditCardObjectType = {
 export type CreateCreditCardTemplateDto = Omit<
   CreditCard,
   'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'limitLeft' | 'invoice' | 'userId'
->
+> & {
+  categoryId: string
+  bank1Id: string
+}
 
 export type UpdateCreditCardTemplateDto = Partial<CreditCard>

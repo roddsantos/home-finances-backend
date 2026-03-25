@@ -8,7 +8,7 @@ import { ErrorHandler } from 'src/application/utils/ErrorHandler'
 import { CreditCard } from 'src/application/credit-card/credit-card.entity'
 import { BillService } from '../bill.service'
 import { GetBillService } from './get-bill.service'
-import { Injectable } from '@nestjs/common'
+import { forwardRef, HttpException, Inject, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 import { CreateBillService } from './create-bill.service'
@@ -27,32 +27,37 @@ export class UpdateBillService extends GeneralService {
     private readonly billService: BillService,
     private readonly getBillService: GetBillService,
     private readonly createBillService: CreateBillService,
+    @Inject(forwardRef(() => CreditCardService))
     private readonly creditCardService: CreditCardService
   ) {
     super(path.join(__dirname, BILL_MODULE.updateBillService))
   }
 
-  private getUpdatedCreditCard(
+  private async getUpdatedCreditCard(
     creditCard: CreditCard,
     totalParcelDiff: number,
     data: UpdateBillTemplateDto,
     bill: Bill
   ) {
-    const { limit, invoice } = creditCard
+    const { limitLeft, invoice } = creditCard
     const totalParcel = (data.totalParcel || bill.totalParcel) + totalParcelDiff
 
     const newCreditCardObject: CreditCard = {
       ...creditCard,
-      limit: limit - totalParcel,
+      limitLeft: limitLeft - totalParcel,
       invoice: invoice + totalParcel
     }
+
+    await this.creditCardService.update(creditCard.id, newCreditCardObject)
+
     return newCreditCardObject
   }
 
   async updateTransactionBill(data: UpdateBillTemplateDto) {
     const result = {
       banks: [],
-      bill: null
+      bill: null,
+      creditCard: null
     }
     try {
       const bill = await this.getBillService.getBillById(data.id)
@@ -95,7 +100,7 @@ export class UpdateBillService extends GeneralService {
       return result
     } catch (error) {
       this.logger.error('error updating transaction bill : ' + error, this.logDirectory)
-      ErrorHandler.handle(error)
+      ErrorHandler.handle(error as HttpException)
     }
   }
 
@@ -154,7 +159,7 @@ export class UpdateBillService extends GeneralService {
 
       if (creditCardId) {
         const creditCard = await this.creditCardService.getOneById(creditCardId)
-        const newCreditCardObject = this.getUpdatedCreditCard(
+        const newCreditCardObject = await this.getUpdatedCreditCard(
           creditCard,
           totalParcelDiff,
           data,
@@ -170,92 +175,57 @@ export class UpdateBillService extends GeneralService {
       return result
     } catch (error) {
       this.logger.error('error updating company bill : ' + error, this.logDirectory)
-      ErrorHandler.handle(error)
+      ErrorHandler.handle(error as HttpException)
     }
   }
 
   async updateCreditCardBill(data: UpdateBillTemplateDto) {
+    const result = {
+      banks: [],
+      creditCard: null,
+      bill: null
+    }
+
     try {
       const bill = await this.getBillService.getBillById(data.id)
-      const {
-        total,
-        taxes,
-        delta,
-        groupId,
-        parcel,
-        parcels,
-        totalParcel,
-        creditCardId,
-        due,
-        settled
-      } = bill
+      const { id, taxes, delta, parcel, parcels, totalParcel, creditCardId, settled } =
+        bill
 
-      if (!groupId) {
-        throw ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - group id not found')
+      const newTotalDelta = data.totalParcel
+        ? convertToFloat(data.totalParcel - totalParcel)
+        : 0
+
+      if (newTotalDelta === 0 || !settled) {
+        await this.billRepository.update(id, { ...data })
+        result.bill = { ...bill, ...data }
+        return result
       }
-      const allBillsRelated = await this.billRepository.find({
-        where: {
-          groupId
-        }
-      })
-      if (allBillsRelated.length === 0)
-        throw ErrorHandler.NOT_FOUND_MESSAGE('Bill not found')
-      const firstBill = allBillsRelated[0]
 
-      let month = new Date(due).getMonth()
-      const allPromises = await Promise.all(
-        allBillsRelated.map((abr, i) => {
-          const newDate = new Date(new Date(due).setMonth(month))
-          const updateData = this.billRepository.update(abr.id, {
-            ...data,
-            parcel: abr.parcel,
-            totalParcel:
-              parseFloat(((total + taxes) / parcels).toFixed(2)) +
-              (i === parcels - 1 ? delta : 0),
-            paid: newDate.toISOString(),
-            due: newDate.toISOString()
-          })
-          month = month + 1
-          return updateData
-        })
+      if (!creditCardId) {
+        this.logger.error('missing creditCardId', this.logDirectory)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing creditCardId')
+      }
+
+      const newDelta = parcel === parcels - 1 ? data.delta || delta : 0
+      const newTaxes = data.taxes || taxes
+      const totalParcelDiff = newTaxes + newDelta + newTotalDelta
+
+      const creditCard = await this.creditCardService.getOneById(creditCardId)
+      const newCreditCardObject = await this.getUpdatedCreditCard(
+        creditCard,
+        totalParcelDiff,
+        data,
+        bill
       )
+      result.creditCard = newCreditCardObject
 
-      if (
-        (firstBill.total !== total ||
-          firstBill.taxes !== taxes ||
-          firstBill.delta !== delta) &&
-        parcel > 0
-      )
-        throw ErrorHandler.NOT_ACCEPTABLE(
-          "Can't change bill value after first one is processed"
-        )
+      await this.billRepository.update(id, { ...data })
+      result.bill = { ...bill, ...data }
 
-      if (allPromises.length !== allBillsRelated.length)
-        throw ErrorHandler.SOME_PROMISE_NOT_COMPLETED_MESSAGE(
-          'One or more bills were not updated'
-        )
-
-      if (settled && !firstBill.settled) {
-        const cc = await this.creditCardService.getOneById(creditCardId)
-        if (cc) {
-          const valueForLimit =
-            parcel > 0
-              ? total - (parcel * total + taxes + (parcels === parcel - 1 ? delta : 0))
-              : total + taxes + delta
-          const newCcObject: CreditCard = {
-            ...cc,
-            limit: cc.limit + valueForLimit * -1,
-            invoice: cc.invoice + totalParcel * -1
-          }
-          await this.creditCardService.update(creditCardId, newCcObject)
-        }
-      }
-      return {
-        affected: allBillsRelated.map((abr) => abr.id)
-      }
+      return result
     } catch (error) {
       this.logger.error('error updating credit card bill : ' + error, this.logDirectory)
-      ErrorHandler.handle(error)
+      ErrorHandler.handle(error as HttpException)
     }
   }
 }

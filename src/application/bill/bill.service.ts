@@ -6,7 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
 import { getMonthBetweenOperator, operatorFilter } from '../utils/operators'
-import { firstDayOfMonth, lastDayOfMonth } from '../utils/dates'
+import { firstDayOfMonth, getNextDate, lastDayOfMonth } from '../utils/dates'
 import { SumAndCountType } from 'src/application/core/types/general'
 import { convertToFloat } from '../utils/conversions'
 import * as path from 'path'
@@ -24,45 +24,16 @@ export class BillService extends GeneralService {
     super(path.join(__dirname, BILL_MODULE.service))
   }
 
-  parcelsCcBills(bill: CreateBillTemplateDto) {
-    const bills = [] as CreateBillTemplateDto[]
-    let month = new Date(bill.due).getMonth()
-
-    for (let i = 0; i < bill.parcels; i++) {
-      const newDateDue = new Date(new Date(bill.due).setMonth(month))
-      const newDatePaid = bill.paid ? new Date(new Date(bill.paid).setMonth(month)) : null
-      const parcelObject = {
-        ...bill,
-        parcel: i,
-        totalParcel:
-          parseFloat(((bill.total + bill.taxes) / bill.parcels).toFixed(2)) +
-          (i === bill.parcels - 1 ? bill.delta : 0),
-        paid: bill.paid ? newDatePaid : null,
-        due: newDateDue
-      }
-      bills.push(parcelObject)
-      month = month + 1
-    }
-    return bills
-  }
-
-  parcelsCompanyCreditBills(bill: CreateBillTemplateDto) {
+  parcelsForBills(bill: CreateBillTemplateDto, isCreditCardBill = false) {
     try {
       const groupId = this.uuid.v4()
       const bills = [] as CreateBillTemplateDto[]
       const dueDate = new Date(bill.due)
-      let dueDay = dueDate.getDate()
-      let dueMonth = dueDate.getMonth()
-      let dueYear = dueDate.getFullYear()
+      const paidDate = new Date(bill.paid)
 
       for (let i = 0; i < bill.parcels; i++) {
-        const newYear = dueMonth + 1 > 11 ? dueYear + 1 : dueYear
-        const newMonth = dueMonth + 1 > 11 ? 0 : dueMonth + 1
-        const newDay =
-          new Date(newYear, newMonth, dueDay).getDate() !== dueDay
-            ? new Date(newYear, newMonth + 1, 0).getDate()
-            : dueDay
-        const newDate = new Date(newYear, newMonth, newDay)
+        const newDueDate = getNextDate(dueDate, i + 1, isCreditCardBill)
+        const newPaidDate = getNextDate(paidDate, i + 1, isCreditCardBill)
 
         const delta = convertToFloat(i === bill.parcels - 1 ? bill.delta : 0)
         const totalParcel =
@@ -76,15 +47,11 @@ export class BillService extends GeneralService {
           totalParcel,
           taxes,
           delta,
-          paid: null,
-          due: newDate
+          paid: newPaidDate,
+          due: newDueDate
         }
 
         bills.push(parcelObject)
-
-        dueMonth = newMonth
-        dueYear = newYear
-        dueDay = newDay
       }
       return bills
     } catch (error) {
