@@ -313,6 +313,8 @@ export class BillController extends GeneralController {
       const userId = req.user?.id
       const { pinnedBills } = data
 
+      if (!pinnedBills) return ResponseHandler.sendCreatedResponse([], res)
+
       const result = await this.billService.getPinnedBills(userId, pinnedBills)
 
       return ResponseHandler.sendCreatedResponse(result, res)
