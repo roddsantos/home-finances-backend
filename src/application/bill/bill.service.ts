@@ -337,10 +337,14 @@ export class BillService extends GeneralService {
     }
   }
 
-  async getPinnedBills(userId: string, pinnedBills: string[]) {
+  async getPinnedBills(userId: string, pinnedBills: string | string[]) {
     if (!userId) {
       this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
       ErrorHandler.BAD_REQUEST('bills - userId not found')
+    }
+
+    if (typeof pinnedBills === 'string') {
+      pinnedBills = [pinnedBills]
     }
 
     try {

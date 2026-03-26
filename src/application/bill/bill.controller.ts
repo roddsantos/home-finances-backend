@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
   Param,
   Patch,
   Post,
@@ -73,7 +74,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -106,7 +107,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -153,7 +154,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -180,7 +181,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -208,7 +209,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -234,7 +235,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -254,7 +255,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -274,7 +275,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -299,7 +300,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -319,7 +320,7 @@ export class BillController extends GeneralController {
 
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 }
