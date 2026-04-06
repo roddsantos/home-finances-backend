@@ -21,7 +21,15 @@ export type CreditCardObjectType = {
 
 export type CreateCreditCardTemplateDto = Omit<
   CreditCard,
-  'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'limitLeft' | 'invoice' | 'userId'
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'deletedAt'
+  | 'limitLeft'
+  | 'invoice'
+  | 'userId'
+  | 'relatedBill'
+  | 'user'
 > & {
   categoryId: string
   bank1Id: string

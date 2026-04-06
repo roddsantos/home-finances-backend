@@ -12,6 +12,10 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 import { BillObjectType, CreateBillTemplateDto } from 'src/application/core/types/bill'
 import { UpdateBillService } from './update-bill.service'
+import {
+  CreateCreditCardTemplateDto,
+  CreditCardObjectType
+} from 'src/application/core/types/credit-card'
 
 @Injectable()
 export class CreateBillService extends GeneralService {
@@ -102,23 +106,38 @@ export class CreateBillService extends GeneralService {
 
   async createCreditCardBill(createCreditCardBillDto: CreateBillTemplateDto) {
     try {
-      const { creditCardId, total, taxes, delta } = createCreditCardBillDto
+      const { creditCardId, total, taxes, delta, userId } = createCreditCardBillDto
       const groupId = this.uuid.v4()
 
       const bills = this.billService.parcelsForBills(createCreditCardBillDto, true)
+      let creditCard = null
 
-      const cc = await this.ccService.getOneById(creditCardId)
+      const cc = await this.ccService.getValidCreditCard(creditCardId)
       if (!cc) {
-        this.logger.error(
-          `cant find credit card with id : ${creditCardId}`,
+        this.logger.warn(
+          `cant find valid credit card with id : ${creditCardId}`,
           this.logDirectory
         )
-        ErrorHandler.INTERNAL_SERVER_ERROR(
-          `cant find credit card with id : ${creditCardId}`
-        )
+        const oldCreditCard = await this.ccService.getOneById(creditCardId)
+
+        creditCard = await this.ccService.createNewCreditCard(userId, {
+          name: oldCreditCard.name,
+          description: oldCreditCard.description,
+          color: oldCreditCard.color,
+          flag: oldCreditCard.flag,
+          limit: oldCreditCard.limit,
+          day: oldCreditCard.day,
+          due: oldCreditCard.due,
+          month: oldCreditCard.month,
+          year: oldCreditCard.year,
+          isClosed: false,
+          categoryId: createCreditCardBillDto.categoryId,
+          bank1Id: createCreditCardBillDto.bank1Id
+        } as CreateCreditCardTemplateDto)
       }
       const newCcObject: CreditCard = {
         ...cc,
+        creditCardId: creditCard?.id || creditCardId,
         limitLeft: cc.limitLeft + (total + taxes + delta) * -1,
         invoice: cc.invoice + bills[0].totalParcel
       }

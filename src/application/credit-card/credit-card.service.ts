@@ -13,6 +13,7 @@ import {
 import { CreateBillTemplateDto } from '../core/types/bill'
 import { CreateBillService } from '../bill/services/create-bill.service'
 import { UpdateBillService } from '../bill/services/update-bill.service'
+import { objectToString } from '../utils/conversions'
 
 @Injectable()
 export class CreditCardService extends GeneralService {
@@ -96,7 +97,7 @@ export class CreditCardService extends GeneralService {
       })
 
       this.logger.info(
-        `category created succesfully with name : ${createCreditCard.name}  : id : ${creditCard.id}`,
+        `credit card created succesfully with name : ${createCreditCard.name}  : id : ${creditCard.id}`,
         this.logDirectory
       )
       return creditCard
@@ -147,6 +148,67 @@ export class CreditCardService extends GeneralService {
     }
   }
 
+  async getValidCreditCard(creditCardId: string) {
+    try {
+      const creditCard = await this.getOneById(creditCardId)
+      const today = new Date()
+
+      const isValidCreditCard =
+        (creditCard.day > today.getDate() && creditCard.month === today.getMonth() - 1) ||
+        (creditCard.day <= today.getDate() && creditCard.month === today.getMonth())
+
+      if (isValidCreditCard) {
+        return creditCard
+      }
+      const validCreditCard = await this.getCreditCardByNameMonthAndYear(
+        today.getMonth(),
+        today.getFullYear(),
+        creditCard.name,
+        creditCard.userId
+      )
+
+      if (!validCreditCard) return null
+
+      return validCreditCard
+    } catch (error) {
+      this.logger.error(
+        `error retrieving valid credit card : creditCardId : ${creditCardId} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR(
+        'credit card - error retrieving valid credit card'
+      )
+    }
+  }
+
+  async getCreditCardByNameMonthAndYear(
+    month: number,
+    year: number,
+    name: string,
+    userId: string
+  ) {
+    try {
+      const creditCard = await this.creditCardRepository.find({
+        where: {
+          month,
+          year,
+          name,
+          userId
+        }
+      })
+      return creditCard
+    } catch (error) {
+      this.logger.error(
+        `error retrieving credit card by month : ${month} : year :` +
+          ` ${year} : name : ${name} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR(
+        'credit card - error retrieving credit card by month'
+      )
+    }
+  }
+
   async getOneById(id: string) {
     try {
       const res = await this.creditCardRepository.findOne({
@@ -154,15 +216,15 @@ export class CreditCardService extends GeneralService {
       })
       return res
     } catch (error) {
-      this.logger.error('Credit Card - error retrieving credit card', this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR('Credit Card - error retrieving credit card')
+      this.logger.error('error retrieving credit card', this.logDirectory)
+      ErrorHandler.INTERNAL_SERVER_ERROR('credit card - error retrieving credit card')
     }
   }
 
   async getBySearchTerm(searchTerm: string, userId: string) {
     if (!userId) {
       this.logger.error(`userId not found : userId : ${userId}`, this.logDirectory)
-      ErrorHandler.BAD_REQUEST('banks - userId not found')
+      ErrorHandler.BAD_REQUEST('credit card - userId not found')
     }
     if (!searchTerm) {
       return []
