@@ -12,10 +12,6 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 import { BillObjectType, CreateBillTemplateDto } from 'src/application/core/types/bill'
 import { UpdateBillService } from './update-bill.service'
-import {
-  CreateCreditCardTemplateDto,
-  CreditCardObjectType
-} from 'src/application/core/types/credit-card'
 
 @Injectable()
 export class CreateBillService extends GeneralService {
@@ -106,11 +102,10 @@ export class CreateBillService extends GeneralService {
 
   async createCreditCardBill(createCreditCardBillDto: CreateBillTemplateDto) {
     try {
-      const { creditCardId, total, taxes, delta, userId } = createCreditCardBillDto
+      const { creditCardId, total, taxes, delta } = createCreditCardBillDto
       const groupId = this.uuid.v4()
 
       const bills = this.billService.parcelsForBills(createCreditCardBillDto, true)
-      let creditCard = null
 
       const cc = await this.ccService.getValidCreditCard(creditCardId)
       if (!cc) {
@@ -119,51 +114,64 @@ export class CreateBillService extends GeneralService {
           this.logDirectory
         )
         const oldCreditCard = await this.ccService.getOneById(creditCardId)
+        const newCreditCardBill = await this.billService.getBillById(
+          oldCreditCard.relatedBillId
+        )
+        const newCreditCard = await this.ccService.createCreditCardFromPrevious(
+          oldCreditCard,
+          newCreditCardBill
+        )
 
-        creditCard = await this.ccService.createNewCreditCard(userId, {
-          name: oldCreditCard.name,
-          description: oldCreditCard.description,
-          color: oldCreditCard.color,
-          flag: oldCreditCard.flag,
-          limit: oldCreditCard.limit,
-          day: oldCreditCard.day,
-          due: oldCreditCard.due,
-          month: oldCreditCard.month,
-          year: oldCreditCard.year,
-          isClosed: false,
-          categoryId: createCreditCardBillDto.categoryId,
-          bank1Id: createCreditCardBillDto.bank1Id
-        } as CreateCreditCardTemplateDto)
-      }
-      const newCcObject: CreditCard = {
-        ...cc,
-        creditCardId: creditCard?.id || creditCardId,
-        limitLeft: cc.limitLeft + (total + taxes + delta) * -1,
-        invoice: cc.invoice + bills[0].totalParcel
-      }
-      const creditCard = await this.ccService.update(creditCardId, newCcObject)
-
-      const bill = await this.billService.getBillById(creditCard.relatedBillId)
-      await this.updateBillService.updateTransactionBill({
-        id: bill.id,
-        total: bill.total + bills[0].totalParcel,
-        totalParcel: bill.totalParcel + bills[0].totalParcel
-      })
-
-      const allBills = await Promise.all(
-        bills.map((b) => {
-          const res = this.billRepository.save({ ...b, groupId })
-          return res
+        const bill = await this.billService.getBillById(newCreditCard.relatedBillId)
+        await this.updateBillService.updateTransactionBill({
+          id: bill.id,
+          total: bill.total + bills[0].totalParcel,
+          totalParcel: bill.totalParcel + bills[0].totalParcel
         })
-      )
 
-      const result = {
-        banks: [],
-        creditCard,
-        bill: allBills[0]
+        const allBills = await Promise.all(
+          bills.map((b) => {
+            const res = this.billRepository.save({ ...b, groupId })
+            return res
+          })
+        )
+
+        const result = {
+          banks: [],
+          creditCard: newCreditCard,
+          bill: allBills[0]
+        }
+
+        return result
+      } else {
+        const newCcObject: CreditCard = {
+          ...cc,
+          limitLeft: cc.limitLeft + (total + taxes + delta) * -1,
+          invoice: cc.invoice + bills[0].totalParcel
+        }
+        const creditCard = await this.ccService.update(cc.id, newCcObject)
+        const bill = await this.billService.getBillById(creditCard.relatedBillId)
+        await this.updateBillService.updateTransactionBill({
+          id: bill.id,
+          total: bill.total + bills[0].totalParcel,
+          totalParcel: bill.totalParcel + bills[0].totalParcel
+        })
+
+        const allBills = await Promise.all(
+          bills.map((b) => {
+            const res = this.billRepository.save({ ...b, groupId })
+            return res
+          })
+        )
+
+        const result = {
+          banks: [],
+          creditCard,
+          bill: allBills[0]
+        }
+
+        return result
       }
-
-      return result
     } catch (error) {
       this.logger.error('error creating credit card bill : ' + error, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating credit card bill')

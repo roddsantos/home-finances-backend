@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Param,
   Patch,
   Post,
@@ -52,7 +53,7 @@ export class CreditCardController extends GeneralController {
 
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -71,7 +72,7 @@ export class CreditCardController extends GeneralController {
       const result = await this.creditCardService.update(id, rest)
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -84,7 +85,7 @@ export class CreditCardController extends GeneralController {
       await this.creditCardService.delete(id)
       return ResponseHandler.sendNoContentResponse(res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 
@@ -98,7 +99,20 @@ export class CreditCardController extends GeneralController {
       const result = await this.creditCardService.getAllById(id)
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error)
+      return ErrorHandler.errorResponse(res, error as HttpException)
+    }
+  }
+
+  @Post('/close/:id')
+  public async closeCreditCard(
+    @Param('id') id: string,
+    @Res() res: Response
+  ): Promise<Response<CreditCard | null>> {
+    try {
+      const result = await this.creditCardService.closeCreditCard(id)
+      return ResponseHandler.sendCreatedResponse(result, res)
+    } catch (error) {
+      return ErrorHandler.errorResponse(res, error as HttpException)
     }
   }
 }

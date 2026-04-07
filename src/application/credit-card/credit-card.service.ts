@@ -14,6 +14,9 @@ import { CreateBillTemplateDto } from '../core/types/bill'
 import { CreateBillService } from '../bill/services/create-bill.service'
 import { UpdateBillService } from '../bill/services/update-bill.service'
 import { objectToString } from '../utils/conversions'
+import { Bill } from '../bill/bill.entity'
+import { QuickSettleBillService } from '../bill/services/quick-settle-bill.service'
+import { BillService } from '../bill/bill.service'
 
 @Injectable()
 export class CreditCardService extends GeneralService {
@@ -23,7 +26,11 @@ export class CreditCardService extends GeneralService {
     @Inject(forwardRef(() => CreateBillService))
     private readonly createBillService: CreateBillService,
     @Inject(forwardRef(() => UpdateBillService))
-    private readonly updateBillService: UpdateBillService
+    private readonly updateBillService: UpdateBillService,
+    @Inject(forwardRef(() => QuickSettleBillService))
+    private readonly quickSettleBillService: QuickSettleBillService,
+    @Inject(forwardRef(() => BillService))
+    private readonly billService: BillService
   ) {
     super(path.join(__dirname, CREDIT_CARD_MODULE.service))
   }
@@ -188,7 +195,7 @@ export class CreditCardService extends GeneralService {
     userId: string
   ) {
     try {
-      const creditCard = await this.creditCardRepository.find({
+      const creditCard = await this.creditCardRepository.findOne({
         where: {
           month,
           year,
@@ -251,6 +258,72 @@ export class CreditCardService extends GeneralService {
       ErrorHandler.NOT_FOUND_MESSAGE(
         'credit cards - error retrieving credit cards by search term'
       )
+    }
+  }
+
+  async createCreditCardFromPrevious(creditCard: CreditCard, bill: Bill) {
+    try {
+      const { name, description, color, flag, limit, day, due } = creditCard
+      const { categoryId, bank1Id } = bill
+      const newDate = new Date(creditCard.year, creditCard.month + 1, creditCard.day)
+
+      const payload = {
+        name,
+        description,
+        color,
+        flag,
+        limit,
+        day,
+        due,
+        month: newDate.getMonth(),
+        year: newDate.getFullYear(),
+        isClosed: false,
+        categoryId,
+        bank1Id,
+        relatedBillId: null
+      }
+
+      const newCreditCard = await this.createNewCreditCard(creditCard.userId, payload)
+
+      return newCreditCard
+    } catch (error) {
+      this.logger.error(
+        `error creating credit card from previous creditCard :` +
+          ` creditCardID : ${creditCard.id} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE(
+        'credit cards - error creating credit card from previous creditCard'
+      )
+    }
+  }
+
+  async closeCreditCard(creditCardId: string) {
+    try {
+      const creditCard = await this.getOneById(creditCardId)
+      const bill = await this.billService.getBillById(creditCard.relatedBillId)
+      await this.quickSettleBillService.quickSettle(creditCard.relatedBillId, {})
+
+      await this.update(creditCardId, { isClosed: true })
+
+      const existingCreditCard = await this.getCreditCardByNameMonthAndYear(
+        creditCard.month,
+        creditCard.year,
+        creditCard.name,
+        creditCard.userId
+      )
+      if (existingCreditCard) {
+        return null
+      }
+      const newCreditCard = await this.createCreditCardFromPrevious(creditCard, bill)
+      return newCreditCard
+    } catch (error) {
+      this.logger.error(
+        `error closing credit card :` +
+          ` creditCardID : ${creditCardId} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE('credit cards - error closing credit card')
     }
   }
 }
