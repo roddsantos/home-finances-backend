@@ -131,7 +131,11 @@ export class CreateBillService extends GeneralService {
 
         const allBills = await Promise.all(
           bills.map((b) => {
-            const res = this.billRepository.save({ ...b, groupId })
+            const res = this.billRepository.save({
+              ...b,
+              creditCardId: newCreditCard.id,
+              groupId
+            })
             return res
           })
         )
