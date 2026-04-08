@@ -27,7 +27,6 @@ export class CreditCardService extends GeneralService {
     private readonly createBillService: CreateBillService,
     @Inject(forwardRef(() => UpdateBillService))
     private readonly updateBillService: UpdateBillService,
-    @Inject(forwardRef(() => QuickSettleBillService))
     private readonly quickSettleBillService: QuickSettleBillService,
     @Inject(forwardRef(() => BillService))
     private readonly billService: BillService
@@ -140,10 +139,10 @@ export class CreditCardService extends GeneralService {
     }
   }
 
-  async getAllById(userId: string) {
+  async getAllByUserId(userId: string) {
     try {
       const res = await this.creditCardRepository.find({
-        where: { userId },
+        where: { userId, isClosed: false },
         order: { updatedAt: 'DESC' }
       })
       return res
@@ -302,12 +301,13 @@ export class CreditCardService extends GeneralService {
     try {
       const creditCard = await this.getOneById(creditCardId)
       const bill = await this.billService.getBillById(creditCard.relatedBillId)
-      await this.quickSettleBillService.quickSettle(creditCard.relatedBillId, {})
-
+      if (!bill.settled) {
+        await this.quickSettleBillService.quickSettle(creditCard.relatedBillId, {})
+      }
       await this.update(creditCardId, { isClosed: true })
 
       const existingCreditCard = await this.getCreditCardByNameMonthAndYear(
-        creditCard.month,
+        creditCard.month + 1,
         creditCard.year,
         creditCard.name,
         creditCard.userId
