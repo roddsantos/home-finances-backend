@@ -173,7 +173,7 @@ export class CreateBillService extends GeneralService {
         return result
       }
     } catch (error) {
-      this.logger.error('error creating credit card bill : ' + error, this.logDirectory)
+      this.logger.error(`error creating credit card bill : ${error}`, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error creating credit card bill')
     }
   }
