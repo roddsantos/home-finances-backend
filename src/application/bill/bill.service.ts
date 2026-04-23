@@ -1,25 +1,38 @@
-import { Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import { Bill } from './bill.entity'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { ILike, IsNull, LessThan, MoreThan, Not, Or, Repository } from 'typeorm'
+import {
+  ILike,
+  In,
+  IsNull,
+  LessThan,
+  MoreThan,
+  MoreThanOrEqual,
+  Not,
+  Or,
+  Repository
+} from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
 import { BankService } from '../bank/bank.service'
 import { getMonthBetweenOperator, operatorFilter } from '../utils/operators'
 import { firstDayOfMonth, getNextDate, lastDayOfMonth } from '../utils/dates'
 import { SumAndCountType } from 'src/application/core/types/general'
-import { convertToFloat } from '../utils/conversions'
+import { convertToFloat, objectToString } from '../utils/conversions'
 import * as path from 'path'
 import { GeneralService } from '../app/general/service.general'
 import { BILL_MODULE } from '../core/consts/filename.consts'
 import { CreateBillTemplateDto, FilterDisplay } from '../core/types/bill'
+import { CreditCardService } from '../credit-card/credit-card.service'
 
 @Injectable()
 export class BillService extends GeneralService {
   constructor(
     @InjectRepository(Bill)
     private readonly billRepository: Repository<Bill>,
-    private readonly bankService: BankService
+    private readonly bankService: BankService,
+    @Inject(forwardRef(() => CreditCardService))
+    private readonly creditCardService: CreditCardService
   ) {
     super(path.join(__dirname, BILL_MODULE.service))
   }
@@ -29,11 +42,13 @@ export class BillService extends GeneralService {
       const groupId = this.uuid.v4()
       const bills = [] as CreateBillTemplateDto[]
       const dueDate = new Date(bill.due)
-      const paidDate = new Date(bill.paid)
+      const paidDate = bill.paid ? new Date(bill.paid) : null
 
       for (let i = 0; i < bill.parcels; i++) {
         const newDueDate = getNextDate(dueDate, i + 1, isCreditCardBill)
-        const newPaidDate = getNextDate(paidDate, i + 1, isCreditCardBill)
+        const newPaidDate = paidDate
+          ? getNextDate(paidDate, i + 1, isCreditCardBill)
+          : null
 
         const delta = convertToFloat(i === bill.parcels - 1 ? bill.delta : 0)
         const totalParcel =
@@ -56,10 +71,10 @@ export class BillService extends GeneralService {
       return bills
     } catch (error) {
       this.logger.error(
-        'Bills - Unable to generate bills data : ' + error,
+        'Bills - Unable to generate bills data : error : ' + error,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Unable to generate bills data')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - Unable to generate bills data')
     }
   }
 
@@ -71,6 +86,22 @@ export class BillService extends GeneralService {
     await this.bankService.update(newBankValue)
 
     return newBankValue
+  }
+
+  async getAnyBills(filtering: any) {
+    try {
+      const bills = await this.billRepository.find({
+        where: { ...filtering }
+      })
+
+      return bills
+    } catch (error) {
+      this.logger.error(
+        `error fetching bills : payload : ${objectToString(filtering)} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error fetching bills')
+    }
   }
 
   async getBills(userId: string, page: number, take: number, data: any) {
@@ -125,8 +156,11 @@ export class BillService extends GeneralService {
         income
       }
     } catch (error) {
-      this.logger.error('error getting the bills list : ' + error, this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting the bills list')
+      this.logger.error(
+        'error getting the bills list : error : ' + error,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - Error getting the bills list')
     }
   }
 
@@ -139,12 +173,10 @@ export class BillService extends GeneralService {
       })
     } catch (error) {
       this.logger.error(
-        `error updating transaction bill : bill not found : id : ${id}`,
+        `error fetching bill by id : id : ${id} : error : ${error}`,
         this.logDirectory
       )
-      ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
-        'bills - error updating transaction bill : bill not found'
-      )
+      ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - error fetching bill by id')
     }
   }
 
@@ -196,7 +228,7 @@ export class BillService extends GeneralService {
       return bills
     } catch (error) {
       this.logger.error(
-        `error fetching bills by month : month: ${month} & year: ${year} : ` + error,
+        `error fetching bills by month : month: ${month} & year: ${year} : error : ${error}`,
         this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting bill by month')
@@ -231,10 +263,10 @@ export class BillService extends GeneralService {
       return moneyBills
     } catch (error) {
       this.logger.error(
-        'Bills - Error getting bills paid by money : ' + error,
+        'error getting bills paid by money : error : ${error}',
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting bills paid by money')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting bills paid by money')
     }
   }
 
@@ -262,10 +294,10 @@ export class BillService extends GeneralService {
       return incomeBills
     } catch (error) {
       this.logger.error(
-        'Bills - Error getting income bills : ' + error,
+        'error getting income bills : error : ${error}',
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR('Bills - Error getting income bills')
+      ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting income bills')
     }
   }
 
@@ -298,7 +330,10 @@ export class BillService extends GeneralService {
 
       return dailyBillsCount
     } catch (error) {
-      this.logger.error('error getting daily bills count : ' + error, this.logDirectory)
+      this.logger.error(
+        'error getting daily bills count : error : ${error}',
+        this.logDirectory
+      )
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error getting money bills')
     }
   }
@@ -359,6 +394,45 @@ export class BillService extends GeneralService {
         this.logDirectory
       )
       ErrorHandler.NOT_FOUND_MESSAGE('bills - error retrieving pinned bills')
+    }
+  }
+
+  async getCreditCardBillsFromNextMonths(
+    userId: string,
+    day: number,
+    month: number,
+    year: number,
+    groupId?: string
+  ) {
+    try {
+      const date = new Date(year, month, day)
+      const dateEnd = new Date(year, month + 1, day)
+      const creditCards = await this.creditCardService.getCreditCardsFromGroupId(groupId)
+
+      const creditCardIds = creditCards.map((creditCard) => creditCard.id)
+      const bills = await this.getAnyBills({
+        userId,
+        due: MoreThanOrEqual(date),
+        creditCardId: In(creditCardIds),
+        type: 'creditCard',
+        settled: true
+      })
+      const limitUsed = bills.reduce((count, bill) => bill.totalParcel + count, 0)
+      const invoice = bills.reduce(
+        (count, bill) => (bill.due < dateEnd ? bill.totalParcel + count : 0),
+        0
+      )
+
+      return { bills, limitUsed, invoice }
+    } catch (error) {
+      this.logger.error(
+        `error retrieving bills from next months : groupId : ${groupId} : userId : ${userId} ` +
+          `: day : ${day} : month : ${month} : year : ${year}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE(
+        'bills - error retrieving bills from next months : groupId ' + groupId
+      )
     }
   }
 }

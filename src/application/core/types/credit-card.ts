@@ -4,6 +4,7 @@ export type CreditCardObjectType = {
   id: string
   name: string
   description?: string
+  groupId: string
   color: string
   flag: string
   userId: string
@@ -30,9 +31,11 @@ export type CreateCreditCardTemplateDto = Omit<
   | 'userId'
   | 'relatedBill'
   | 'user'
+  | 'groupId'
 > & {
   categoryId: string
   bank1Id: string
+  limitLeft?: number
 }
 
 export type UpdateCreditCardTemplateDto = Partial<CreditCard>

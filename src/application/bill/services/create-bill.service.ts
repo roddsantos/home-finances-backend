@@ -19,6 +19,7 @@ export class CreateBillService extends GeneralService {
     @InjectRepository(Bill)
     private readonly billRepository: Repository<Bill>,
     private readonly bankService: BankService,
+    @Inject(forwardRef(() => BillService))
     private readonly billService: BillService,
     @Inject(forwardRef(() => UpdateBillService))
     private readonly updateBillService: UpdateBillService,

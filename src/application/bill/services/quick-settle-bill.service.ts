@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { forwardRef, Inject, Injectable } from '@nestjs/common'
 import * as path from 'path'
 import { GeneralService } from 'src/application/app/general/service.general'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
@@ -16,6 +16,7 @@ export class QuickSettleBillService extends GeneralService {
   constructor(
     @InjectRepository(Bill)
     private readonly billRepository: Repository<Bill>,
+    @Inject(forwardRef(() => BillService))
     private readonly billService: BillService,
     private readonly bankService: BankService,
     private readonly createBillService: CreateBillService

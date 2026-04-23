@@ -27,6 +27,11 @@ export class CreditCard {
   @Column({
     nullable: true
   })
+  public groupId: string
+
+  @Column({
+    nullable: true
+  })
   public description: string
 
   @Column({

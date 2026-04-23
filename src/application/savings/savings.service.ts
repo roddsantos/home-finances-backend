@@ -45,10 +45,10 @@ export class SavingsService extends GeneralService {
       return res
     } catch (error) {
       this.logger.error(
-        `error creating saving : bankId : ${bankId} : month ${month} : year : ${year}`,
+        `error creating saving : bankId : ${bankId} : month ${month} : year : ${year} : error : ${error}`,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR(error)
+      ErrorHandler.INTERNAL_SERVER_ERROR('savings - error creating saving')
     }
   }
 
@@ -80,14 +80,13 @@ export class SavingsService extends GeneralService {
       })
 
       const results = await Promise.allSettled(savingsPromises)
-      console.log(results)
       return results
     } catch (error) {
       this.logger.error(
-        `error creating multiples savings : userId : ${userId} : month ${month} : year : ${year}`,
+        `error creating multiples savings : userId : ${userId} : month ${month} : year : ${year} : error : ${error}`,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR(error)
+      ErrorHandler.INTERNAL_SERVER_ERROR('savings - error creating multiples savings')
     }
   }
 
@@ -97,10 +96,10 @@ export class SavingsService extends GeneralService {
       return res
     } catch (error) {
       this.logger.error(
-        `error updating saving : id : ${id} : payload : ${objectToString(payload)}`,
+        `error updating saving : id : ${id} : payload : ${objectToString(payload)} : error : ${error}`,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR(error)
+      ErrorHandler.INTERNAL_SERVER_ERROR('savings - error updating saving')
     }
   }
 
@@ -109,8 +108,11 @@ export class SavingsService extends GeneralService {
       const res = await this.savingRepository.delete(id)
       return res
     } catch (error) {
-      this.logger.error(`error deleting saving : id : ${id}`, this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR(error)
+      this.logger.error(
+        `error deleting saving : id : ${id} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('savings - error deleting saving')
     }
   }
 
@@ -127,10 +129,10 @@ export class SavingsService extends GeneralService {
       }
     } catch (error) {
       this.logger.error(
-        `error fetcinhg savings by bank id : bankId : ${bankId}`,
+        `error fetcinhg savings by bank id : bankId : ${bankId} : error : ${error}`,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR(error)
+      ErrorHandler.INTERNAL_SERVER_ERROR('savings - error fetching savings by bank id')
     }
   }
 
@@ -142,8 +144,11 @@ export class SavingsService extends GeneralService {
       })
       return res
     } catch (error) {
-      this.logger.error(`error fetcinhg a saving id : id : ${id}`, this.logDirectory)
-      ErrorHandler.INTERNAL_SERVER_ERROR(error)
+      this.logger.error(
+        `error fetcinhg a saving id : id : ${id} : error : ${error}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('savings - error fetching a saving id')
     }
   }
 
@@ -169,10 +174,10 @@ export class SavingsService extends GeneralService {
       return res
     } catch (error) {
       this.logger.error(
-        `error fetching an individual saving : bankId : ${bankId} : month ${month} : year : ${year}`,
+        `error fetching an individual saving : bankId : ${bankId} : month ${month} : year : ${year} : error : ${error}`,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR(error)
+      ErrorHandler.INTERNAL_SERVER_ERROR('savings - error fetching an individual saving')
     }
   }
 
@@ -230,7 +235,7 @@ export class SavingsService extends GeneralService {
       }))
     } catch (error) {
       this.logger.error(
-        `error fetching savings progress : userId : ${userId} : error : ${objectToString(error)}`,
+        `error fetching savings progress : userId : ${userId} : error : ${error}`,
         this.logDirectory
       )
       ErrorHandler.INTERNAL_SERVER_ERROR('error fetching savings progress')

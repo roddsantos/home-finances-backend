@@ -94,7 +94,8 @@ export class CreditCardService extends GeneralService {
         ...createCreditCard,
         relatedBillId: bill.id,
         userId,
-        limitLeft: createCreditCard.limit
+        limitLeft: createCreditCard?.limitLeft || createCreditCard.limit,
+        groupId: this.uuid.v4()
       })
 
       await this.updateBillService.updateTransactionBill({
@@ -262,12 +263,22 @@ export class CreditCardService extends GeneralService {
 
   async createCreditCardFromPrevious(creditCard: CreditCard, bill: Bill) {
     try {
-      const { name, description, color, flag, limit, day, due } = creditCard
+      const { name, description, color, flag, limit, day, due, groupId } = creditCard
       const { categoryId, bank1Id } = bill
       const newDate = new Date(creditCard.year, creditCard.month + 1, creditCard.day)
 
+      const { bills, invoice, limitUsed } =
+        await this.billService.getCreditCardBillsFromNextMonths(
+          creditCard.userId,
+          day,
+          newDate.getMonth(),
+          newDate.getFullYear(),
+          creditCard.groupId
+        )
+
       const payload = {
         name,
+        groupId,
         description,
         color,
         flag,
@@ -279,16 +290,25 @@ export class CreditCardService extends GeneralService {
         isClosed: false,
         categoryId,
         bank1Id,
-        relatedBillId: null
+        relatedBillId: null,
+        invoice,
+        limitLeft: limit - limitUsed
       }
 
       const newCreditCard = await this.createNewCreditCard(creditCard.userId, payload)
+
+      for (bill of bills) {
+        await this.updateBillService.updateCreditCardBill({
+          id: bill.id,
+          creditCardId: newCreditCard.id
+        })
+      }
 
       return newCreditCard
     } catch (error) {
       this.logger.error(
         `error creating credit card from previous creditCard :` +
-          ` creditCardID : ${creditCard.id} : error : ${objectToString(error)}`,
+          ` creditCardId : ${creditCard.id} : error : ${error}`,
         this.logDirectory
       )
       ErrorHandler.NOT_FOUND_MESSAGE(
@@ -324,6 +344,25 @@ export class CreditCardService extends GeneralService {
         this.logDirectory
       )
       ErrorHandler.NOT_FOUND_MESSAGE('credit cards - error closing credit card')
+    }
+  }
+
+  async getCreditCardsFromGroupId(groupId: string, options?: any) {
+    try {
+      const creditCards = await this.creditCardRepository.find({
+        where: { groupId, ...options }
+      })
+
+      return creditCards
+    } catch (error) {
+      this.logger.error(
+        `error fetching credit card from groupId :` +
+          ` groupId : ${groupId} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
+      ErrorHandler.NOT_FOUND_MESSAGE(
+        'credit cards - error fetching credit card from groupId'
+      )
     }
   }
 }
