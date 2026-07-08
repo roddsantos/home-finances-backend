@@ -38,16 +38,6 @@ export class BillController extends GeneralController {
     super(path.join(__dirname, BILL_MODULE.controller))
   }
 
-  verifyCreateTemplate(data: CreateBillTemplateDto) {
-    return (
-      !data.name || !data.description || !data.categoryId || data.total <= 0 || !data.due
-    )
-  }
-
-  verifyUpdateTemplate(data: UpdateBillTemplateDto) {
-    return !data.id
-  }
-
   @Post('/transaction')
   public async createTransaction(
     @Body() data: CreateBillTemplateDto,
@@ -57,8 +47,6 @@ export class BillController extends GeneralController {
     try {
       const userId = req.user?.id
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || !data.bank1Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (data.bank1Id === data.bank2Id)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Banks cant be the same')
@@ -88,13 +76,6 @@ export class BillController extends GeneralController {
       const userId = req.user?.id
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyCreateTemplate(data) || !data.creditCardId || data.parcels < 0) {
-        this.logger.error(
-          `error creating credit card bill : payload : ${JSON.stringify(data)}`,
-          this.logDirectory
-        )
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      }
 
       const result = await this.createBillService.createCreditCardBill({
         ...data,
@@ -126,7 +107,7 @@ export class BillController extends GeneralController {
         )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       }
-      if (this.verifyCreateTemplate(data) || !data.companyId || !Boolean(data.due)) {
+      if (!data.companyId || !Boolean(data.due)) {
         this.logger.error(
           `error creating credit card bill : payload : ${JSON.stringify(data)}`,
           this.logDirectory
@@ -195,8 +176,6 @@ export class BillController extends GeneralController {
       const userId = req.user?.id
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyUpdateTemplate(data) || !data.creditCardId)
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
 
       const result = await this.updateBillService.updateCreditCardBill({
         ...data,
@@ -221,7 +200,7 @@ export class BillController extends GeneralController {
   ) {
     try {
       const userId = req.user?.id
-      if (!Boolean(data) || this.verifyUpdateTemplate(data))
+      if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       if (data.paid && !data.settled)
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(

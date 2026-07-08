@@ -117,7 +117,7 @@ export class BillService extends GeneralService {
         order: { paid: 'ASC', due: 'ASC' }
       })
       const sum = await this.billRepository.sum('totalParcel', [
-        { ...finalFilter, userId }
+        { ...finalFilter, userId, bank2Id: IsNull() }
       ])
 
       let income = {

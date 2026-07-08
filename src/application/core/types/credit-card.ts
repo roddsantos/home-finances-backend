@@ -36,6 +36,7 @@ export type CreateCreditCardTemplateDto = Omit<
   categoryId: string
   bank1Id: string
   limitLeft?: number
+  invoice?: number
 }
 
 export type UpdateCreditCardTemplateDto = Partial<CreditCard>

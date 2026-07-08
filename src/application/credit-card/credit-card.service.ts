@@ -100,7 +100,9 @@ export class CreditCardService extends GeneralService {
 
       await this.updateBillService.updateTransactionBill({
         id: bill.id,
-        creditCardId: creditCard.id
+        creditCardId: creditCard.id,
+        total: createCreditCard.invoice,
+        totalParcel: createCreditCard.invoice
       })
 
       this.logger.info(
@@ -297,9 +299,9 @@ export class CreditCardService extends GeneralService {
 
       const newCreditCard = await this.createNewCreditCard(creditCard.userId, payload)
 
-      for (bill of bills) {
+      for (const b of bills) {
         await this.updateBillService.updateCreditCardBill({
-          id: bill.id,
+          id: b.id,
           creditCardId: newCreditCard.id
         })
       }
@@ -321,9 +323,7 @@ export class CreditCardService extends GeneralService {
     try {
       const creditCard = await this.getOneById(creditCardId)
       const bill = await this.billService.getBillById(creditCard.relatedBillId)
-      if (!bill.settled) {
-        await this.quickSettleBillService.quickSettle(creditCard.relatedBillId, {})
-      }
+
       await this.update(creditCardId, { isClosed: true })
 
       const existingCreditCard = await this.getCreditCardByNameMonthAndYear(

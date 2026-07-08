@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { BILL_MODULE } from 'src/application/core/consts/filename.consts'
 import { BillObjectType, CreateBillTemplateDto } from 'src/application/core/types/bill'
 import { UpdateBillService } from './update-bill.service'
+import { UpdateCreditCardTemplateDto } from 'src/application/core/types/credit-card'
 
 @Injectable()
 export class CreateBillService extends GeneralService {
@@ -149,9 +150,8 @@ export class CreateBillService extends GeneralService {
 
         return result
       } else {
-        const newCcObject: CreditCard = {
-          ...cc,
-          limitLeft: cc.limitLeft + (total + taxes + delta) * -1,
+        const newCcObject: UpdateCreditCardTemplateDto = {
+          limitLeft: cc.limitLeft - (total + taxes + delta),
           invoice: cc.invoice + bills[0].totalParcel
         }
         const creditCard = await this.ccService.update(cc.id, newCcObject)
