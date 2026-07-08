@@ -26,6 +26,12 @@ import { AuthModule } from '../core/auth/auth.module'
     BillService,
     QuickSettleBillService
   ],
-  exports: [TypeOrmModule, CreateBillService, UpdateBillService, BillService]
+  exports: [
+    TypeOrmModule,
+    CreateBillService,
+    UpdateBillService,
+    BillService,
+    QuickSettleBillService
+  ]
 })
 export class BillModule {}

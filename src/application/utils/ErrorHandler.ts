@@ -6,6 +6,10 @@ export abstract class ErrorHandler {
   static type: any
   static entityReferenceError: any
 
+  public static parseError(error: HttpException) {
+    return error.message
+  }
+
   public static handle(error?: HttpException) {
     throw new HttpException(error.message || '', HttpStatus.INTERNAL_SERVER_ERROR)
   }

@@ -21,7 +21,7 @@ export class WinstonLogger implements LoggerService {
       format: format.combine(
         format.colorize({
           all: true,
-          colors: { info: 'blue', error: 'red', warn: 'orange' }
+          colors: { info: 'blue', error: 'red', warn: 'yellow' }
         }),
         format.timestamp({
           format: 'YYYY-MM-DD HH:mm:ss'
