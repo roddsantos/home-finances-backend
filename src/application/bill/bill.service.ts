@@ -195,10 +195,6 @@ export class BillService extends GeneralService {
     relations: string[] = []
   ): Promise<Bill[]> {
     try {
-      this.logger.info(
-        `fetching bills by month : month: ${month} & year: ${year}`,
-        this.logDirectory
-      )
       const bills = await this.billRepository.find({
         relations,
         where: [

@@ -23,7 +23,8 @@
     "migration:run": "npm run typeorm migration:run -- -d ./src/application/database/typeorm.ts",
     "migration:generate": "npm run typeorm -- -d ./src/application/database/typeorm.ts migration:generate ./src/application/database/migrations/",
     "migration:create": "npm run typeorm -- migration:create ./src/application/database/migrations/%npm_config_name%",
-    "migration:revert": "npm run typeorm -- -d ./src/application/database/typeorm.ts migration:revert"
+    "migration:revert": "npm run typeorm -- -d ./src/application/database/typeorm.ts migration:revert",
+    "git:prune": "git branch -vv | Where-Object { $_ -match 'gone\\]' } | ForEach-Object { $_.Trim().Split()[0] } | ForEach-Object { git branch -D $_ }"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

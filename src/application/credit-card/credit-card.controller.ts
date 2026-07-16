@@ -112,10 +112,11 @@ export class CreditCardController extends GeneralController {
 
   @Patch('/close/:id')
   public async closeCreditCard(
-    @Param('id') id: string,
+    @Req() req: Request,
     @Res() res: Response
   ): Promise<Response<CreditCard | null>> {
     try {
+      const id = req.user.id
       const result = await this.creditCardService.closeCreditCard(id)
       this.logger.info(
         `successfully closed credit card invoice : credit card id : ${id}`,

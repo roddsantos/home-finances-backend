@@ -1,7 +1,7 @@
 import { InjectRepository } from '@nestjs/typeorm'
-import { MoreThanOrEqual, Repository } from 'typeorm'
+import { Repository } from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
-import { Injectable } from '@nestjs/common'
+import { HttpException, Injectable } from '@nestjs/common'
 import { Bill } from '../bill/bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
 import { BillService } from '../bill/bill.service'
@@ -15,6 +15,7 @@ import { convertToFloat } from '../utils/conversions'
 import * as path from 'path'
 import { DASHBOARD_MODULE } from '../core/consts/filename.consts'
 import { GeneralService } from '../app/general/service.general'
+import { CreditCardService } from '../credit-card/credit-card.service'
 
 @Injectable()
 export class DashboardService extends GeneralService {
@@ -23,6 +24,7 @@ export class DashboardService extends GeneralService {
     private readonly bankService: BankService,
     @InjectRepository(CreditCard)
     private readonly creditCardRepository: Repository<CreditCard>,
+    private readonly creditCardService: CreditCardService,
     private readonly savingsService: SavingsService
   ) {
     super(path.join(__dirname, DASHBOARD_MODULE.service))
@@ -126,11 +128,11 @@ export class DashboardService extends GeneralService {
 
       return {
         piggyBanksProgression,
-        totalIncome,
-        totalBanks,
+        totalIncome: convertToFloat(totalIncome),
+        totalBanks: convertToFloat(totalBanks),
         totalSettled: convertToFloat(totalSettled),
         totalSavings: convertToFloat(totalSavings),
-        totalPending,
+        totalPending: convertToFloat(totalPending),
         totalPreview: convertToFloat(
           totalSavings + totalIncome - totalSettled - totalPending
         )
@@ -140,25 +142,55 @@ export class DashboardService extends GeneralService {
         `error retrieving all banks savings userId : userId : ${userId} : month ${month} : year : ${year}`,
         this.logDirectory
       )
-      ErrorHandler.handle(error)
+      ErrorHandler.handle(error as HttpException)
     }
   }
 
-  async getCreditCards(userId: string) {
+  async getCreditCards(userId: string, month: number, year: number) {
     try {
-      const result = this.creditCardRepository.find({
-        where: {
-          month: MoreThanOrEqual(new Date().getMonth() - 4),
-          userId
+      const groupIds = await this.creditCardService.getDistinctCreditCards(userId)
+      const result = await Promise.all(
+        groupIds.map((groupIdObject) =>
+          this.creditCardService.getCreditCardsFromGroupId(groupIdObject.groupId)
+        )
+      )
+
+      let arrayOfNulls
+      const treated = result.map((ccs) => {
+        if (ccs.length !== 6) {
+          arrayOfNulls = new Array(6 - ccs.length).fill(null)
+        }
+        const ccTracker = [...arrayOfNulls, ...ccs]
+        return {
+          color: ccs[0]?.color || '',
+          title: ccs[0]?.name || '',
+          data: ccTracker
+            .map((cc, i) => {
+              return {
+                month: new Date(year, month - i, 1).getMonth(),
+                year: new Date(year, month - i, 1).getFullYear(),
+                invoice: cc ? cc.invoice : 0,
+                delta:
+                  i === 0
+                    ? 0
+                    : convertToFloat(
+                        (!Boolean(ccTracker[i - 1])
+                          ? 0
+                          : (cc.invoice - ccTracker[i - 1].invoice) /
+                            ccTracker[i - 1].invoice) * 100
+                      )
+              }
+            })
+            .slice(1)
         }
       })
-      return result
+      return treated
     } catch (error) {
       this.logger.error(
-        `error retrieving all credit cards by userId : userId : ${userId}`,
+        `error retrieving all credit cards info by userId : userId : ${userId}`,
         this.logDirectory
       )
-      return ErrorHandler.handle(error)
+      ErrorHandler.handle(error as HttpException)
     }
   }
 

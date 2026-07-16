@@ -40,3 +40,10 @@ export function getNextDate(
 
   return newDate
 }
+
+export function isInsideDateDelta(date: Date, delta: number) {
+  const milli = date.getTime()
+  const now = new Date().getTime()
+
+  return now + delta < milli
+}

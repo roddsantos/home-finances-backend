@@ -1,3 +1,4 @@
+import { Bill } from 'src/application/bill/bill.entity'
 import { ItemTypes } from './general'
 
 export type HomeSavingsType = {
@@ -13,3 +14,24 @@ export type HomeSearchReturnItemType = {
   title: string
   description: string
 }
+
+export type HomeExpensesResponseType = {
+  sumOfBills: number
+  numberOfBills: number
+  delta: number
+  paidBills: number
+}
+
+export type HomeSavingsResponseType = {
+  countBanks: number
+  totalBanks: number
+  totalIncome: number
+  totalSavingsPreview: number
+}
+
+export type HomeCreditCardResponseType = {
+  count: number
+  total: number
+}
+
+export type HomeRecentBillsResponseType = Bill[]
