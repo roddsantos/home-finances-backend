@@ -4,11 +4,12 @@ import { CompanyService } from './company.service'
 import { Company } from './company.entity'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { AuthModule } from 'src/application/core/auth/auth.module'
+import { CacheService } from '../cache/cache.service'
 
 @Module({
   imports: [AuthModule, TypeOrmModule.forFeature([Company])],
   controllers: [CompanyController],
-  providers: [CompanyService],
+  providers: [CompanyService, CacheService],
   exports: [TypeOrmModule, CompanyService]
 })
 export class CompanyModule {}

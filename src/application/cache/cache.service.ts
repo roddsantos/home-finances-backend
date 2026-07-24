@@ -58,7 +58,7 @@ export class CacheService extends GeneralService {
       data
     }
     this.logger.log(
-      `cache saved : section : ${section} : key : ${key} : ${data}`,
+      `cache saved : section : ${section.toUpperCase()} : key : ${key}`,
       this.logDirectory
     )
   }
@@ -148,13 +148,13 @@ export class CacheService extends GeneralService {
       const cacheData = this._getCache(section, key)
       if (cacheData) {
         this.logger.log(
-          `cache hit : section : ${section} : key : ${key}`,
+          `cache hit : section : ${section.toUpperCase()} : key : ${key}`,
           this.logDirectory
         )
         return cacheData.data
       } else {
         this.logger.log(
-          `cache missed - proceed to database query : section : ${section} : key : ${key}`,
+          `cache missed - proceed to database query : section : ${section.toUpperCase()} : key : ${key}`,
           this.logDirectory
         )
       }

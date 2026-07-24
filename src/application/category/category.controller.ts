@@ -62,10 +62,9 @@ export class CategoryController extends GeneralController {
   ): Promise<Response<number>> {
     try {
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('category - missing data to update')
 
       const userId = req.user.id
-
       const result = await this.categoryService.update(data)
       this.cacheService.deleteCacheBySectionAndKey('categories', userId)
 
@@ -73,7 +72,6 @@ export class CategoryController extends GeneralController {
         `category updated succesfully with payload : ${data ? JSON.stringify(data) : 'none'}`,
         this.logDirectory
       )
-
       return ResponseHandler.sendAcceptedResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -88,7 +86,6 @@ export class CategoryController extends GeneralController {
   ): Promise<Response<boolean>> {
     try {
       const userId = req.user.id
-
       await this.categoryService.delete(id)
       this.cacheService.deleteCacheBySectionAndKey('categories', userId)
 
@@ -118,9 +115,9 @@ export class CategoryController extends GeneralController {
           userId,
           result as unknown as CategoryObjectType[]
         )
+        this.logger.info(`fetch categories by id : ${userId}`, this.logDirectory)
       }
 
-      this.logger.info(`fetch categories by id : ${userId}`, this.logDirectory)
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
