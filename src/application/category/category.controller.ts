@@ -15,28 +15,22 @@ import { Category } from './category.entity'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import {
+  CategoryObjectType,
   CreateCategoryTemplateDto,
   UpdateCategoryTemplateDto
 } from '../core/types/category'
 import * as path from 'path'
 import { CATEGORY_MODULE } from '../core/consts/filename.consts'
 import { GeneralController } from '../app/general/controller.general'
+import { CacheService } from '../cache/cache.service'
 
 @Controller('/category')
 export class CategoryController extends GeneralController {
-  constructor(private readonly categoryService: CategoryService) {
+  constructor(
+    private readonly categoryService: CategoryService,
+    private readonly cacheService: CacheService
+  ) {
     super(path.join(__dirname, CATEGORY_MODULE.controller))
-  }
-
-  verifyData(data: any) {
-    const isCreate = Boolean(data.id)
-    return (
-      data.name == '' ||
-      data.description === '' ||
-      data.color === '' ||
-      (isCreate ? data.userId === '' : data.id === '') ||
-      data.icon == ''
-    )
   }
 
   @Post()
@@ -48,6 +42,7 @@ export class CategoryController extends GeneralController {
     try {
       const userId = req.user.id
       const result = await this.categoryService.create(userId, data)
+      this.cacheService.deleteCacheBySectionAndKey('categories', userId)
 
       this.logger.info(
         `category created succesfully with name : ${data.name}  : id : ${result.id}`,
@@ -62,17 +57,19 @@ export class CategoryController extends GeneralController {
   @Patch()
   public async updateCategory(
     @Body() data: UpdateCategoryTemplateDto,
-    @Res() res: Response
+    @Res() res: Response,
+    @Req() req: Request
   ): Promise<Response<number>> {
     try {
       if (!Boolean(data))
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (this.verifyData(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+
+      const userId = req.user.id
+
       const result = await this.categoryService.update(data)
+      this.cacheService.deleteCacheBySectionAndKey('categories', userId)
 
       this.logger.info(
-        // eslint-disable-next-line max-len
         `category updated succesfully with payload : ${data ? JSON.stringify(data) : 'none'}`,
         this.logDirectory
       )
@@ -84,12 +81,21 @@ export class CategoryController extends GeneralController {
   }
 
   @Delete('/:id')
-  public async deleteUser(
+  public async deleteCategory(
     @Param('id') id: string,
-    @Res() res: Response
+    @Res() res: Response,
+    @Req() req: Request
   ): Promise<Response<boolean>> {
     try {
+      const userId = req.user.id
+
       await this.categoryService.delete(id)
+      this.cacheService.deleteCacheBySectionAndKey('categories', userId)
+
+      this.logger.info(
+        `category deleted succesfully : categoryId : ${id}`,
+        this.logDirectory
+      )
       return ResponseHandler.sendNoContentResponse(res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)
@@ -103,7 +109,16 @@ export class CategoryController extends GeneralController {
   ): Promise<Response<Category>> {
     try {
       const userId = req.user.id
-      const result = await this.categoryService.getAllById(userId)
+
+      let result = this.cacheService.cacheResponse('categories', userId)
+
+      if (!result) {
+        result = await this.categoryService.getAllById(userId)
+        this.cacheService.setCachedCategories(
+          userId,
+          result as unknown as CategoryObjectType[]
+        )
+      }
 
       this.logger.info(`fetch categories by id : ${userId}`, this.logDirectory)
       return ResponseHandler.sendResponse(result, res)

@@ -8,133 +8,164 @@ import {
   CachedHome,
   CachedSettings,
   CacheGeneralType,
+  CacheSectionsType,
   CacheUser
 } from '../core/types/cache'
 import { isInsideDateDelta } from '../utils/dates'
+import { GeneralService } from '../app/general/service.general'
+import * as path from 'path'
+import { CACHE_MODULE } from '../core/consts/filename.consts'
+import { ErrorHandler } from '../utils/ErrorHandler'
 
-export class CacheService {
-  private cachedBanks: CacheUser<CachedBanks>
-  private cachedCreditCards: CacheUser<CachedCreditCards>
-  private cachedCompanies: CacheUser<CachedCompanies>
-  private cachedCategories: CacheUser<CachedCategories>
-  private cachedBills: CacheUser<CachedBills>
-  private cachedSettings: CacheUser<CachedSettings>
-  private cachedDashboard: CacheUser<CachedDashboard>
-  private cachedHome: CacheUser<CachedHome>
-
-  private ttl: number = 60 * 60 * 24 * 1000
-
-  constructor() {}
-
-  private _getExpirationDate() {
-    const nowDateMilli = new Date().getTime()
-    const newDateMilli = nowDateMilli + this.ttl
-    return new Date(newDateMilli)
+export class CacheService extends GeneralService {
+  private cache: Record<CacheSectionsType, CacheUser> = {
+    banks: {},
+    creditCards: {},
+    companies: {},
+    categories: {},
+    bills: {},
+    settings: {},
+    dashboard: {},
+    home: {}
   }
 
-  private _getCache<T>(key: string, caches: CacheUser<T>): CacheGeneralType<T> | null {
-    const cache = caches[key]
+  private ttl: number = 60 * 60 * 24 * 1000 * 5
 
-    if (!cache) return null
+  constructor() {
+    super(path.join(__dirname, CACHE_MODULE.service))
+  }
 
-    if (!isInsideDateDelta(cache.expiresAt, this.ttl)) {
-      delete caches[key]
+  private _getExpirationDate() {
+    return new Date(Date.now() + this.ttl)
+  }
+
+  private _getCache(section: string, key: string): CacheGeneralType<unknown> | null {
+    const sectionData: CacheGeneralType = this.cache[section][key]
+
+    if (!sectionData) return null
+
+    if (!isInsideDateDelta(sectionData.expiresAt)) {
+      delete this.cache[section][key]
       return null
     }
 
-    return cache
+    return sectionData
   }
 
-  private _setCache<T>(key: string, cache: CacheUser<T>, data: any) {
-    cache[key] = {
-      expiresAt: new Date(Date.now() + this.ttl),
+  private _setCache<T>(section: CacheSectionsType, key: string, data: T) {
+    this.cache[section][key] = {
+      expiresAt: this._getExpirationDate(),
       data
     }
+    this.logger.log(
+      `cache saved : section : ${section} : key : ${key} : ${data}`,
+      this.logDirectory
+    )
   }
 
   public getCachedBanks(key: string) {
-    return this._getCache(key, this.cachedBanks)
+    return this._getCache('banks', key)
   }
 
-  public setCachedBanks(key: string, data: CachedBanks['data']) {
-    this._setCache<CachedBanks>(key, this.cachedBanks, data)
+  public setCachedBanks(key: string, data: CachedBanks['data']): void {
+    this._setCache('banks', key, data)
   }
 
   public getCachedCreditCards(key: string) {
-    return this._getCache(key, this.cachedCreditCards)
+    return this._getCache('creditCards', key)
   }
 
-  public setCachedCreditCards(key: string, data: CachedCreditCards['data']) {
-    this._setCache<CachedCreditCards>(key, this.cachedCreditCards, data)
+  public setCachedCreditCards(key: string, data: CachedCreditCards['data']): void {
+    this._setCache('creditCards', key, data)
   }
 
   public getCachedCompanies(key: string) {
-    return this._getCache(key, this.cachedCompanies)
+    return this._getCache('companies', key)
   }
 
-  public setCachedCompanies(key: string, data: CachedCompanies['data']) {
-    this._setCache<CachedCompanies>(key, this.cachedCompanies, data)
+  public setCachedCompanies(key: string, data: CachedCompanies['data']): void {
+    this._setCache('companies', key, data)
   }
 
   public getCachedCategories(key: string) {
-    return this._getCache(key, this.cachedCategories)
+    return this._getCache('categories', key)
   }
 
-  public setCachedCategories(key: string, data: CachedCategories['data']) {
-    this._setCache<CachedCompanies>(key, this.cachedCategories, data)
+  public setCachedCategories(key: string, data: CachedCategories['data']): void {
+    this._setCache('categories', key, data)
   }
 
   public getCachedBills(key: string) {
-    return this._getCache(key, this.cachedBills)
+    return this._getCache('bills', key)
   }
 
-  public setCachedBills(key: string, data: CachedBills['data']) {
-    this._setCache<CachedBills>(key, this.cachedBills, data)
+  public setCachedBills(key: string, data: CachedBills['data']): void {
+    this._setCache('bills', key, data)
   }
 
   public getCachedSettings(key: string) {
-    return this._getCache(key, this.cachedSettings)
+    return this._getCache('settings', key)
   }
 
-  public setCachedSettings(key: string, data: CachedSettings['data']) {
-    this._setCache<CachedSettings>(key, this.cachedSettings, data)
+  public setCachedSettings(key: string, data: CachedSettings['data']): void {
+    this._setCache('settings', key, data)
   }
 
   public getCachedDashboard(key: string) {
-    return this._getCache(key, this.cachedDashboard)
+    return this._getCache('dashboard', key)
   }
 
-  public setCachedDashboard(key: string, data: CachedDashboard['data']) {
-    this._setCache<CachedDashboard>(key, this.cachedDashboard, data)
+  public setCachedDashboard(key: string, data: CachedDashboard['data']): void {
+    this._setCache('dashboard', key, data)
   }
 
   public getCachedHome(key: string) {
-    return this._getCache(key, this.cachedHome)
+    return this._getCache('home', key)
   }
 
-  public setCachedHome(key: string, data: CachedHome['data']) {
-    this._setCache<CachedHome>(key, this.cachedHome, data)
+  public setCachedHome(key: string, data: CachedHome['data']): void {
+    this._setCache('home', key, data)
   }
 
-  public deleteCacheByKey(key: string) {
-    delete this.cachedBanks[key]
-    delete this.cachedCreditCards[key]
-    delete this.cachedBills[key]
-    delete this.cachedCategories[key]
-    delete this.cachedCompanies[key]
-    delete this.cachedDashboard[key]
-    delete this.cachedHome[key]
-    delete this.cachedSettings[key]
+  public deleteCacheByKey(key: string): void {
+    Object.values(this.cache).forEach((cache) => {
+      delete cache[key]
+    })
   }
 
-  public clearCache() {
-    this.cachedBanks = {}
-    this.cachedCreditCards = {}
-    this.cachedBills = {}
-    this.cachedCategories = {}
-    this.cachedCompanies = {}
-    this.cachedDashboard = {}
-    this.cachedHome = {}
-    this.cachedSettings = {}
+  public deleteCacheBySectionAndKey(section: CacheSectionsType, key: string): void {
+    delete this.cache[section][key]
+  }
+
+  public clearCache(): void {
+    Object.keys(this.cache).forEach((section) => {
+      this.cache[section as CacheSectionsType] = {}
+    })
+  }
+
+  public cacheResponse(section: CacheSectionsType, key: string) {
+    try {
+      const cacheData = this._getCache(section, key)
+      if (cacheData) {
+        this.logger.log(
+          `cache hit : section : ${section} : key : ${key}`,
+          this.logDirectory
+        )
+        return cacheData.data
+      } else {
+        this.logger.log(
+          `cache missed - proceed to database query : section : ${section} : key : ${key}`,
+          this.logDirectory
+        )
+      }
+    } catch (error) {
+      this.logger.error(
+        `error fetching cache : section : ${section} : key : ${key} : error : ${error}`,
+        this.logDirectory
+      )
+      throw ErrorHandler.INTERNAL_SERVER_ERROR(
+        `cache - error fetching cache : section : ${section} : key : ${key}`
+      )
+    }
   }
 }

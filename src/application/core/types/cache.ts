@@ -11,12 +11,12 @@ import {
 } from './home'
 import { ThemeObjectType } from './theme'
 
-export type CacheGeneralType<T> = {
+export type CacheGeneralType<T = unknown> = {
   expiresAt: Date
   data: T
 }
 
-export type CacheUser<T> = Record<string, CacheGeneralType<T>>
+export type CacheUser<T = unknown> = Record<string, CacheGeneralType<T>>
 
 export type CachedBanks = CacheGeneralType<BankObjectType[]>
 
