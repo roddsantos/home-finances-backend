@@ -21,7 +21,7 @@ export class WinstonLogger implements LoggerService {
       format: format.combine(
         format.colorize({
           all: true,
-          colors: { info: 'blue', error: 'red', warn: 'yellow' }
+          colors: { info: 'blue', error: 'red', warn: 'yellow', log: 'white' }
         }),
         format.timestamp({
           format: 'YYYY-MM-DD HH:mm:ss'
@@ -43,8 +43,8 @@ export class WinstonLogger implements LoggerService {
     return splittedPath[1] || ''
   }
 
-  log(message: string, context?: string) {
-    this.logger.info(message, { context })
+  log(message: string, path?: string) {
+    this.logger.verbose(`{${this.reducePath(path)}} - ${message}`)
   }
 
   error(message: string, path: string) {

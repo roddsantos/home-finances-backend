@@ -63,3 +63,8 @@ export const HOME_MODULE = {
   service: 'home.service.ts',
   controller: 'home.controller.ts'
 }
+
+export const CACHE_MODULE = {
+  service: 'cache.service.ts',
+  controller: 'cache.controller.ts'
+}

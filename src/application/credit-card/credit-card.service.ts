@@ -350,7 +350,9 @@ export class CreditCardService extends GeneralService {
   async getCreditCardsFromGroupId(groupId: string, options?: any) {
     try {
       const creditCards = await this.creditCardRepository.find({
-        where: { groupId, ...options }
+        where: { groupId, ...options },
+        order: { createdAt: 'ASC' },
+        take: 6
       })
 
       return creditCards
@@ -362,6 +364,23 @@ export class CreditCardService extends GeneralService {
       )
       ErrorHandler.NOT_FOUND_MESSAGE(
         'credit cards - error fetching credit card from groupId'
+      )
+    }
+  }
+
+  async getDistinctCreditCards(userId: string) {
+    try {
+      const groupIds = await this.creditCardRepository
+        .createQueryBuilder('creditcards')
+        .select('DISTINCT creditcards.groupId', 'groupId')
+        .where('creditcards.userId = :userId', { userId })
+        .getRawMany()
+
+      return groupIds
+    } catch (error) {
+      this.logger.error(
+        `error fetching credit cards group ids: userId: ${userId}: error: ${objectToString(error)}`,
+        this.logDirectory
       )
     }
   }

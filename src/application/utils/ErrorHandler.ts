@@ -14,13 +14,13 @@ export abstract class ErrorHandler {
     throw new HttpException(error.message || '', HttpStatus.INTERNAL_SERVER_ERROR)
   }
 
-  public static errorResponse(res: Response, error: HttpException) {
+  public static errorResponse(res: Response, error: unknown) {
     try {
-      throw error
-    } catch (error) {
+      throw error as HttpException
+    } catch (err) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ message: 'unknown error' + objectToString(error) })
+        .json({ message: 'unknown error' + objectToString(err) })
     }
   }
 

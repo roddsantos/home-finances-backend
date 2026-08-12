@@ -14,14 +14,22 @@ import { ErrorHandler } from '../utils/ErrorHandler'
 import { ResponseHandler } from '../utils/ResponseHandler'
 import { Response, Request } from 'express'
 import { Company } from './company.entity'
-import { CreateCompanyTemplateDto, UpdateCompanyTemplateDto } from '../core/types/company'
+import {
+  CompanyObjectType,
+  CreateCompanyTemplateDto,
+  UpdateCompanyTemplateDto
+} from '../core/types/company'
 import { GeneralController } from '../app/general/controller.general'
 import * as path from 'path'
 import { COMPANY_MODULE } from '../core/consts/filename.consts'
+import { CacheService } from '../cache/cache.service'
 
 @Controller('company')
 export class CompanyController extends GeneralController {
-  constructor(private readonly companyService: CompanyService) {
+  constructor(
+    private readonly companyService: CompanyService,
+    private readonly cacheService: CacheService
+  ) {
     super(path.join(__dirname, COMPANY_MODULE.controller))
   }
 
@@ -34,6 +42,7 @@ export class CompanyController extends GeneralController {
     try {
       const userId = req.user.id
       const result = await this.companyService.create(userId, data)
+      this.cacheService.deleteCacheBySectionAndKey('companies', userId)
 
       this.logger.info(
         `company created succesfully with name : ${data.name}  : id : ${result.id}`,
@@ -48,17 +57,18 @@ export class CompanyController extends GeneralController {
   @Patch()
   public async updateCompany(
     @Body() data: UpdateCompanyTemplateDto,
-    @Res() res: Response
+    @Res() res: Response,
+    @Req() req: Request
   ): Promise<Response<number>> {
     try {
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (data.name === '' || data.description === '' || data.color === '' || !data.id)
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('company - missing data to update')
+
+      const userId = req.user.id
       const result = await this.companyService.update(data)
+      this.cacheService.deleteCacheBySectionAndKey('companies', userId)
 
       this.logger.info(
-        // eslint-disable-next-line max-len
         `company updated succesfully with payload : ${data ? JSON.stringify(data) : 'none'}`,
         this.logDirectory
       )
@@ -71,10 +81,13 @@ export class CompanyController extends GeneralController {
   @Delete('/:id')
   public async deleteCompany(
     @Param('id') id: string,
-    @Res() res: Response
+    @Res() res: Response,
+    @Req() req: Request
   ): Promise<Response<boolean>> {
     try {
+      const userId = req.user.id
       await this.companyService.delete(id)
+      this.cacheService.deleteCacheBySectionAndKey('companies', userId)
 
       this.logger.info(`company deleted succesfully with id : ${id}`, this.logDirectory)
       return ResponseHandler.sendNoContentResponse(res)
@@ -89,10 +102,19 @@ export class CompanyController extends GeneralController {
     @Res() res: Response
   ): Promise<Response<Company>> {
     try {
-      const userId = req.user?.id
-      const result = await this.companyService.getAllById(userId)
+      const userId = req.user.id
 
-      this.logger.info(`fetch companies for id : ${userId}`, this.logDirectory)
+      let result = this.cacheService.cacheResponse('companies', userId)
+
+      if (!result) {
+        result = await this.companyService.getAllById(userId)
+        this.cacheService.setCachedCompanies(
+          userId,
+          result as unknown as CompanyObjectType[]
+        )
+        this.logger.info(`fetch companies for id : ${userId}`, this.logDirectory)
+      }
+
       return ResponseHandler.sendResponse(result, res)
     } catch (error) {
       return ErrorHandler.errorResponse(res, error)

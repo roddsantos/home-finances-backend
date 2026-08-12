@@ -99,10 +99,18 @@ export class DashboardController extends GeneralController {
   }
 
   @Get('/credit-cards')
-  public async getCreditCards(@Req() req: Request, @Res() res: Response) {
+  public async getCreditCards(
+    @Query() query: any,
+    @Req() req: Request,
+    @Res() res: Response
+  ) {
     const userId = req.user.id
+    const { month, year } = query
+
+    const monthRef = month || new Date().getMonth()
+    const yearRef = year || new Date().getFullYear()
     try {
-      const result = await this.dashboardService.getCreditCards(userId)
+      const result = await this.dashboardService.getCreditCards(userId, monthRef, yearRef)
 
       this.logger.info(
         `successfully retrieved credit cards resume : userId : ${userId}`,
@@ -125,7 +133,7 @@ export class DashboardController extends GeneralController {
 
     const monthRef = month || new Date().getMonth()
     const yearRef = year || new Date().getFullYear()
-    const numberOfCategories = categories || 5
+    const numberOfCategories = categories || 6
 
     try {
       const bills = await this.billService.getBillsByMonth(userId, monthRef, yearRef, [

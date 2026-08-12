@@ -40,3 +40,7 @@ export function getNextDate(
 
   return newDate
 }
+
+export function isInsideDateDelta(finalDate: Date) {
+  return Date.now() < finalDate.getTime()
+}

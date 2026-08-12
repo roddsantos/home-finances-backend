@@ -102,7 +102,7 @@ export class HomeController extends GeneralController {
     const yearRef = parseInt(year) || new Date().getFullYear()
 
     try {
-      const result = await this.homeService.getLastFiveBills(userId, monthRef, yearRef)
+      const result = await this.homeService.getNextFiveBills(userId, monthRef, yearRef)
 
       this.logger.info(
         `successfully retrieved recent bills : userId : ${userId} : month ${month} : year : ${year}`,
