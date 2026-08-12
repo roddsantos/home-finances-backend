@@ -11,7 +11,7 @@ import {
 } from 'src/application/core/types/dashboard'
 import { BankService } from '../bank/bank.service'
 import { SavingsService } from '../savings/savings.service'
-import { convertToFloat } from '../utils/conversions'
+import { convertToFloat, objectToString } from '../utils/conversions'
 import * as path from 'path'
 import { DASHBOARD_MODULE } from '../core/consts/filename.consts'
 import { GeneralService } from '../app/general/service.general'
@@ -155,12 +155,8 @@ export class DashboardService extends GeneralService {
         )
       )
 
-      let arrayOfNulls
       const treated = result.map((ccs) => {
-        if (ccs.length !== 6) {
-          arrayOfNulls = new Array(6 - ccs.length).fill(null)
-        }
-        const ccTracker = [...arrayOfNulls, ...ccs]
+        const ccTracker = [...new Array(Math.max(0, 6 - ccs.length)).fill(null), ...ccs]
         return {
           color: ccs[0]?.color || '',
           title: ccs[0]?.name || '',
@@ -187,7 +183,7 @@ export class DashboardService extends GeneralService {
       return treated
     } catch (error) {
       this.logger.error(
-        `error retrieving all credit cards info by userId : userId : ${userId}`,
+        `error retrieving all credit cards info by userId : userId : ${userId} : ${objectToString(error)}`,
         this.logDirectory
       )
       ErrorHandler.handle(error as HttpException)

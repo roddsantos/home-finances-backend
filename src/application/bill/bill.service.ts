@@ -22,7 +22,11 @@ import { convertToFloat, objectToString } from '../utils/conversions'
 import * as path from 'path'
 import { GeneralService } from '../app/general/service.general'
 import { BILL_MODULE } from '../core/consts/filename.consts'
-import { CreateBillTemplateDto, FilterDisplay } from '../core/types/bill'
+import {
+  BillsControllerResponseType,
+  CreateBillTemplateDto,
+  FilterDisplay
+} from '../core/types/bill'
 import { CreditCardService } from '../credit-card/credit-card.service'
 
 @Injectable()
@@ -104,7 +108,12 @@ export class BillService extends GeneralService {
     }
   }
 
-  async getBills(userId: string, page: number, take: number, data: any) {
+  async getBills(
+    userId: string,
+    page: number,
+    take: number,
+    data: any
+  ): Promise<BillsControllerResponseType> {
     try {
       const parsedFilter: FilterDisplay[] = JSON.parse(data) as FilterDisplay[]
       const finalFilter = operatorFilter(parsedFilter)

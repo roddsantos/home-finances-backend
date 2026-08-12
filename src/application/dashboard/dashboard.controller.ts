@@ -133,7 +133,7 @@ export class DashboardController extends GeneralController {
 
     const monthRef = month || new Date().getMonth()
     const yearRef = year || new Date().getFullYear()
-    const numberOfCategories = categories || 5
+    const numberOfCategories = categories || 6
 
     try {
       const bills = await this.billService.getBillsByMonth(userId, monthRef, yearRef, [

@@ -32,6 +32,7 @@ import { BodyUpdateBankMiddleware } from '../middlewares/bank/body.update.bank.m
 import { APP_GUARD } from '@nestjs/core'
 import { AuthGuard } from '../core/auth/auth.guard'
 import { AuthModule } from '../core/auth/auth.module'
+import { CacheModule } from '../cache/cache.module'
 // eslint-disable-next-line max-len
 
 @Module({
@@ -54,7 +55,8 @@ import { AuthModule } from '../core/auth/auth.module'
     SavingsModule,
     ThemeModule,
     UserModule,
-    AuthModule
+    AuthModule,
+    CacheModule
   ],
   controllers: [AppController],
   providers: [

@@ -70,7 +70,8 @@ export class QuickSettleBillService extends GeneralService {
         ...data
       }
 
-      return await this.billRepository.update(id, payload)
+      await this.billRepository.update(id, payload)
+      return bill
     } catch (error) {
       this.logger.error(`error quick updating bill :  id : ${id}`, this.logDirectory)
       ErrorHandler.INTERNAL_SERVER_ERROR('bills - error quick updating bill')

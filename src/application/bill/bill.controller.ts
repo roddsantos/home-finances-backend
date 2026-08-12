@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  HttpException,
   Param,
   Patch,
   Post,
@@ -26,6 +25,7 @@ import { GeneralController } from '../app/general/controller.general'
 import * as path from 'path'
 import { BILL_MODULE } from '../core/consts/filename.consts'
 import { objectToString } from '../utils/conversions'
+import { CacheService } from '../cache/cache.service'
 
 @Controller('bill')
 export class BillController extends GeneralController {
@@ -33,7 +33,8 @@ export class BillController extends GeneralController {
     private readonly billService: BillService,
     private readonly updateBillService: UpdateBillService,
     private readonly createBillService: CreateBillService,
-    private readonly quickSettleBillService: QuickSettleBillService
+    private readonly quickSettleBillService: QuickSettleBillService,
+    private readonly cacheService: CacheService
   ) {
     super(path.join(__dirname, BILL_MODULE.controller))
   }
@@ -46,23 +47,34 @@ export class BillController extends GeneralController {
   ) {
     try {
       const userId = req.user?.id
+
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing body data')
+      if (!data.bank1Id) {
+        this.logger.error(
+          `error creating credit card bill : missing bank1Id : payload : ${JSON.stringify(data)}`,
+          this.logDirectory
+        )
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing bank1Id')
+      }
       if (data.bank1Id === data.bank2Id)
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Banks cant be the same')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - banks cant be the same')
 
       const result = await this.createBillService.createTransactionBill({
         ...data,
         userId
       })
+
+      this.cacheService.deleteCacheBySectionAndKey('bills', userId)
+      if (data.settled) this.cacheService.deleteCacheBySectionAndKey('banks', userId)
+
       this.logger.info(
-        // eslint-disable-next-line max-len
         `successfully created transaction bill with id : ${result.bill.id} : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -74,21 +86,33 @@ export class BillController extends GeneralController {
   ) {
     try {
       const userId = req.user?.id
+
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing body data')
+      if (!data.creditCardId) {
+        this.logger.error(
+          `error creating credit card bill : missing creditCardId : payload : ${JSON.stringify(data)}`,
+          this.logDirectory
+        )
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing creditCardId')
+      }
 
       const result = await this.createBillService.createCreditCardBill({
         ...data,
         userId
       })
+
+      this.cacheService.deleteCacheBySectionAndKey('bills', userId)
+      if (data.settled)
+        this.cacheService.deleteCacheBySectionAndKey('creditCards', userId)
+
       this.logger.info(
-        // eslint-disable-next-line max-len
         `successfully created credit card bill with groupId : ${result.bill.groupId} : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -100,27 +124,23 @@ export class BillController extends GeneralController {
   ) {
     try {
       const userId = req.user?.id
-      if (!Boolean(data)) {
+
+      if (!Boolean(data))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing body data')
+      if (!data.companyId) {
         this.logger.error(
-          `error creating credit card bill : payload : ${JSON.stringify(data)}`,
+          `error creating credit card bill : missing companyId : payload : ${JSON.stringify(data)}`,
           this.logDirectory
         )
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      }
-      if (!data.companyId || !Boolean(data.due)) {
-        this.logger.error(
-          `error creating credit card bill : payload : ${JSON.stringify(data)}`,
-          this.logDirectory
-        )
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing companyId')
       }
       if (data.creditCardId && data.bank1Id) {
         this.logger.error(
-          `error creating credit card bill : payload : ${JSON.stringify(data)}`,
+          `bank and credit card can't be present together : payload : ${objectToString(data)}`,
           this.logDirectory
         )
         ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
-          "Bank and credit card can't be present together"
+          "bills - bank and credit card can't be present together"
         )
       }
 
@@ -128,6 +148,13 @@ export class BillController extends GeneralController {
         ...data,
         userId
       })
+
+      if (data.settled) {
+        if (data.creditCardId)
+          this.cacheService.deleteCacheBySectionAndKey('creditCards', userId)
+        if (data.bank1Id) this.cacheService.deleteCacheBySectionAndKey('banks', userId)
+      }
+
       this.logger.info(
         `successfully created company bill with groupId : ${result.bill.groupId} :` +
           ` payload : ${JSON.stringify(data)}`,
@@ -135,7 +162,7 @@ export class BillController extends GeneralController {
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -148,21 +175,26 @@ export class BillController extends GeneralController {
     try {
       const userId = req.user?.id
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing data to update')
-      if (!data.id) ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing id')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing body data')
+      if (!data.id)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing required field : id')
 
       const result = await this.updateBillService.updateTransactionBill({
         ...data,
         userId
       })
+
+      this.cacheService.deleteCacheBySectionAndKey('bills', userId)
+      if (result.bill.settled && (data.total || data.totalParcel))
+        this.cacheService.deleteCacheBySectionAndKey('banks', userId)
+
       this.logger.info(
-        // eslint-disable-next-line max-len
         `successfully updated transaction bill with id : ${data.id} : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -175,20 +207,26 @@ export class BillController extends GeneralController {
     try {
       const userId = req.user?.id
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing body data')
+      if (!data.id)
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing required field : id')
 
       const result = await this.updateBillService.updateCreditCardBill({
         ...data,
         userId
       })
+
+      this.cacheService.deleteCacheBySectionAndKey('bills', userId)
+      if (result.bill.settled && (data.total || data.totalParcel))
+        this.cacheService.deleteCacheBySectionAndKey('creditCards', userId)
+
       this.logger.info(
-        // eslint-disable-next-line max-len
         `successfully updated transaction bill with id : ${data.id} : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -201,20 +239,21 @@ export class BillController extends GeneralController {
     try {
       const userId = req.user?.id
       if (!Boolean(data))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
-      if (data.paid && !data.settled)
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
-          'Missing Required Fields: settled needs to be checked when setting a paid date'
-        )
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('bills - missing body data')
       const result = await this.updateBillService.updateCompanyBill({ ...data, userId })
+      if (result.bill.settled && (data.total || data.totalParcel)) {
+        if (result.bill.creditCardId)
+          this.cacheService.deleteCacheBySectionAndKey('creditCards', userId)
+        if (result.bill.bank1Id)
+          this.cacheService.deleteCacheBySectionAndKey('banks', userId)
+      }
       this.logger.info(
-        // eslint-disable-next-line max-len
         `successfully updated company bill with id : ${data.id} : payload : ${JSON.stringify(data)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -222,19 +261,27 @@ export class BillController extends GeneralController {
   public async quickSetting(
     @Param('id') id: string,
     @Body() data: UpdateBillTemplateDto,
-    @Res() res: Response
+    @Res() res: Response,
+    @Req() req: Request
   ) {
     try {
+      const userId = req.user.id
       const result = await this.quickSettleBillService.quickSettle(id, data)
 
       const payload = Object.keys(data).length > 0 ? JSON.stringify(data) : 'none'
+
+      this.cacheService.deleteCacheBySectionAndKey('bills', userId)
+      if (result.creditCardId)
+        this.cacheService.deleteCacheBySectionAndKey('creditCards', userId)
+      if (result.bank1Id) this.cacheService.deleteCacheBySectionAndKey('banks', userId)
+
       this.logger.info(
         `quick settle bill successfully updated : payload : ${payload}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -242,19 +289,28 @@ export class BillController extends GeneralController {
   public async redoQuickSetting(
     @Param('id') id: string,
     @Body() data: UpdateBillTemplateDto,
+    @Req() req: Request,
     @Res() res: Response
   ) {
     try {
+      const userId = req.user.id
       const result = await this.quickSettleBillService.reversingQuickSettle(id, data)
 
       const payload = Object.keys(data).length > 0 ? JSON.stringify(data) : 'none'
+
+      this.cacheService.deleteCacheBySectionAndKey('bills', userId)
+      if ((data.settled || data.total) && data.creditCardId)
+        this.cacheService.deleteCacheBySectionAndKey('creditCards', userId)
+      if ((data.settled || data.total) && data.bank1Id)
+        this.cacheService.deleteCacheBySectionAndKey('banks', userId)
+
       this.logger.info(
         `quick settle bill successfully reversed : id : ${id} payload : ${payload}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -266,20 +322,39 @@ export class BillController extends GeneralController {
   ) {
     try {
       const userId = req.user?.id
-      if (!Boolean(filters.page) || !Boolean(filters.limit))
-        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE('Missing Required Fields')
       const { page, limit, data } = filters
+      // let result
 
+      if (!Boolean(filters.page) || !Boolean(filters.limit))
+        ErrorHandler.UNPROCESSABLE_ENTITY_MESSAGE(
+          'bills - missing required fields : page and/or limit'
+        )
+
+      // const resultCache: CachedBillsObjectType = this.cacheService.cacheResponse(
+      //   'bills',
+      //   userId
+      // ) as CachedBillsObjectType
+
+      // if (
+      //   !resultCache ||
+      //   (resultCache.page !== page && resultCache.pagination !== limit)
+      // ) {
+      //   result = await this.billService.getBills(userId, page, limit, data)
+      //   this.cacheService.setCachedBills(userId, {
+      //     page,
+      //     pagination: limit,
+      //     ...result
+      //   })
+      // } else result = resultCache
       const result = await this.billService.getBills(userId, page, limit, data)
 
       this.logger.info(
-        // eslint-disable-next-line max-len
         `fetching bills : userId : ${userId} : page : ${page} : limit : ${limit} : filters : ${objectToString(filters)}`,
         this.logDirectory
       )
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 
@@ -299,7 +374,7 @@ export class BillController extends GeneralController {
 
       return ResponseHandler.sendCreatedResponse(result, res)
     } catch (error) {
-      return ErrorHandler.errorResponse(res, error as HttpException)
+      return ErrorHandler.errorResponse(res, error)
     }
   }
 }

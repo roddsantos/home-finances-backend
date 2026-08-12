@@ -68,3 +68,13 @@ export type GroupedFilterType = {
   field: string
   value: any
 }
+
+export type BillsControllerResponseType = {
+  count: number
+  data: BillObjectType[]
+  total: number
+  income: {
+    total: number
+    count: number
+  }
+}

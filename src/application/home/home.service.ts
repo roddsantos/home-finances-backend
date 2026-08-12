@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Bank } from '../bank/bank.entity'
-import { IsNull, LessThan, Like, MoreThan, Or, Repository } from 'typeorm'
+import {
+  IsNull,
+  LessThan,
+  Like,
+  MoreThan,
+  MoreThanOrEqual,
+  Or,
+  Repository
+} from 'typeorm'
 import { ErrorHandler } from '../utils/ErrorHandler'
 import { Bill } from '../bill/bill.entity'
 import { CreditCard } from '../credit-card/credit-card.entity'
@@ -18,6 +26,7 @@ import { CategoryService } from '../category/category.service'
 import { CompanyService } from '../company/company.service'
 import { CreditCardService } from '../credit-card/credit-card.service'
 import { ItemTypes } from '../core/types/general'
+import { objectToString } from '../utils/conversions'
 
 @Injectable()
 export class HomeService extends GeneralService {
@@ -217,7 +226,47 @@ export class HomeService extends GeneralService {
         bills
       }
     } catch (error) {
-      ErrorHandler.handle(error)
+      this.logger.error(
+        `error fetching LAST five bills : userId : ${userId} : month : ${month} : year : ${month} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('home - error fetching LAST five bills')
+    }
+  }
+
+  async getNextFiveBills(userId: string, month: number, year: number) {
+    try {
+      const startDate = new Date()
+
+      const bills = await this.billRepository.find({
+        relations: ['creditCard', 'company', 'bank1', 'bank2', 'category'],
+        where: [
+          {
+            userId,
+            type: Or(Like('companyCredit'), Like('creditCard')),
+            due: MoreThanOrEqual(startDate),
+            parcel: 0,
+            settled: false
+          },
+          {
+            userId,
+            type: 'money',
+            due: MoreThanOrEqual(startDate),
+            settled: false
+          }
+        ],
+        take: 5,
+        order: { due: 'ASC' }
+      })
+      return {
+        bills
+      }
+    } catch (error) {
+      this.logger.error(
+        `error fetching NEXT five bills : userId : ${userId} : month : ${month} : year : ${month} : error : ${objectToString(error)}`,
+        this.logDirectory
+      )
+      ErrorHandler.INTERNAL_SERVER_ERROR('home - error fetching NEXT five bills')
     }
   }
 

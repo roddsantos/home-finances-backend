@@ -18,6 +18,7 @@ import { CACHE_MODULE } from '../core/consts/filename.consts'
 import { ErrorHandler } from '../utils/ErrorHandler'
 
 export class CacheService extends GeneralService {
+  private readonly instanceId = Math.random().toString(36).substring(2, 8)
   private cache: Record<CacheSectionsType, CacheUser> = {
     banks: {},
     creditCards: {},
@@ -33,6 +34,7 @@ export class CacheService extends GeneralService {
 
   constructor() {
     super(path.join(__dirname, CACHE_MODULE.service))
+    this.logger.log(`cache created : instanceId : ${this.instanceId}`, this.logDirectory)
   }
 
   private _getExpirationDate() {
@@ -135,6 +137,10 @@ export class CacheService extends GeneralService {
 
   public deleteCacheBySectionAndKey(section: CacheSectionsType, key: string): void {
     delete this.cache[section][key]
+    this.logger.log(
+      `cache deleted : section : ${section} : key : ${key}`,
+      this.logDirectory
+    )
   }
 
   public clearCache(): void {

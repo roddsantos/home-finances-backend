@@ -186,59 +186,69 @@ export class SavingsService extends GeneralService {
     monthSpan: number,
     month?: number,
     year?: number
-  ): Promise<any> {
+  ) {
     try {
       const piggyBanks = await this.bankService.getAllById(userId, true)
 
+      const now = new Date()
+      const targetMonth = month ?? now.getMonth()
+      const targetYear = year ?? now.getFullYear()
+
       const piggyBanksResume = []
-      let previousMonthSaved = 0
 
-      for (const index in piggyBanks) {
-        const pbIndex = parseInt(index)
-        const info = {
-          bank: piggyBanks[pbIndex].name,
-          color: piggyBanks[pbIndex].color,
-          savings: piggyBanks[pbIndex].savings,
-          progression: []
-        }
+      for (const piggyBank of piggyBanks) {
+        let previousMonthSaved = 0
 
-        const progressionAux = []
+        const progression = []
 
         for (let i = monthSpan; i >= 0; i--) {
+          const date = new Date(targetYear, targetMonth - i, 1)
+
           const monthSaving = await this.savingRepository.findOne({
             where: {
-              bankId: piggyBanks[pbIndex].id,
-              month: (month || new Date().getMonth()) - i
+              bankId: piggyBank.id,
+              month: date.getMonth(),
+              year: date.getFullYear()
             }
           })
 
-          const savingDiff = (monthSaving?.total || 0) - previousMonthSaved
+          const currentMonthSaved = monthSaving?.total ?? 0
 
-          progressionAux.push({
-            savedValue: Boolean(monthSaving) ? savingDiff : 0,
-            delta:
-              !Boolean(progressionAux[monthSpan - 1 - i]) || !Boolean(previousMonthSaved)
-                ? 0
-                : convertToFloat((savingDiff / previousMonthSaved - 1) * 100),
-            month: new Date(year, month - i, 1).getMonth(),
-            year: new Date(year, month - i, 1).getFullYear()
+          const savingDiff = currentMonthSaved - previousMonthSaved
+
+          const hasPreviousMonth = progression.length > 0
+
+          const delta =
+            hasPreviousMonth && previousMonthSaved !== 0
+              ? convertToFloat((savingDiff / previousMonthSaved) * 100)
+              : 0
+
+          progression.push({
+            savedValue: monthSaving ? savingDiff : 0,
+            delta,
+            month: date.getMonth(),
+            year: date.getFullYear()
           })
-          previousMonthSaved = monthSaving ? monthSaving.total : 0
+
+          previousMonthSaved = currentMonthSaved
         }
-        info.progression = progressionAux
-        piggyBanksResume.push(info)
+
+        piggyBanksResume.push({
+          bank: piggyBank.name,
+          color: piggyBank.color,
+          savings: piggyBank.savings,
+          progression: progression.slice(1)
+        })
       }
 
-      return piggyBanksResume.map((pbr) => ({
-        ...pbr,
-        progression: pbr.progression.slice(1, monthSpan + 1)
-      }))
+      return piggyBanksResume
     } catch (error) {
       this.logger.error(
         `error fetching savings progress : userId : ${userId} : error : ${error}`,
         this.logDirectory
       )
-      ErrorHandler.INTERNAL_SERVER_ERROR('error fetching savings progress')
+
+      throw ErrorHandler.INTERNAL_SERVER_ERROR('error fetching savings progress')
     }
   }
 }

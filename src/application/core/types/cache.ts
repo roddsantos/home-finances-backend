@@ -1,5 +1,5 @@
 import { BankObjectType } from './bank'
-import { BillObjectType } from './bill'
+import { BillsControllerResponseType } from './bill'
 import { CategoryObjectType } from './category'
 import { CompanyObjectType } from './company'
 import { CreditCardObjectType } from './credit-card'
@@ -26,11 +26,12 @@ export type CachedCategories = CacheGeneralType<CategoryObjectType[]>
 
 export type CachedCompanies = CacheGeneralType<CompanyObjectType[]>
 
-export type CachedBills = CacheGeneralType<{
+export type CachedBillsObjectType = {
   page: number
   pagination: number
-  bills: BillObjectType[]
-}>
+} & BillsControllerResponseType
+
+export type CachedBills = CacheGeneralType<CachedBillsObjectType>
 
 export type CachedSettings = CacheGeneralType<{
   selectedTheme: string
